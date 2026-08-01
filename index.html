@@ -1,0 +1,118 @@
+import random
+import tkinter as tk
+from tkinter import messagebox
+
+
+class MathBossGame:
+
+  def __init__(self, root):
+    self.root = root
+    self.root.title("เกมสู้บอสคณิตศาสตร์ (Math Boss Battle)")
+    self.root.geometry("400x550")
+
+    # กำหนดค่า HP บอส
+    self.boss_hp = 100
+
+    # --- 1. ส่วนแสดงภาพบอส ---
+    try:
+      # ดึงภาพ boss.png มาแสดง
+      self.boss_img = tk.PhotoImage(file="boss.png")
+      self.boss_label = tk.Label(root, image=self.boss_img)
+    except Exception:
+      # หากหาภาพไม่เจอ ให้แสดงข้อความแทนชั่วคราว
+      self.boss_label = tk.Label(
+          root, text="👹\n(ใส่ไฟล์ boss.png)", font=("Arial", 28)
+      )
+
+    self.boss_label.pack(pady=10)
+
+    # --- 2. แสดงหลอดพลังชีวิต ---
+    self.hp_label = tk.Label(
+        root,
+        text=f"HP บอส: {self.boss_hp} / 100",
+        font=("Arial", 16, "bold"),
+        fg="red",
+    )
+    self.hp_label.pack(pady=5)
+
+    # --- 3. ส่วนโจทย์คณิตศาสตร์ ---
+    self.question_label = tk.Label(root, text="", font=("Arial", 22, "bold"))
+    self.question_label.pack(pady=15)
+
+    # ช่องสำหรับพิมพ์คำตอบ
+    self.entry = tk.Entry(root, font=("Arial", 18), justify="center")
+    self.entry.pack(pady=5)
+    self.entry.bind("<Return>", lambda event: self.check_answer())
+
+    # ปุ่มโจมตี
+    self.submit_btn = tk.Button(
+        root,
+        text="⚔️ โจมตี!",
+        font=("Arial", 14, "bold"),
+        bg="#ff4d4d",
+        fg="white",
+        command=self.check_answer,
+    )
+    self.submit_btn.pack(pady=10)
+
+    # ข้อความแสดงผลลัพธ์
+    self.result_label = tk.Label(root, text="", font=("Arial", 12))
+    self.result_label.pack(pady=5)
+
+    # เริ่มสุ่มโจทย์แรก
+    self.generate_question()
+
+  def generate_question(self):
+    """ฟังก์ชันสำหรับสุ่มโจทย์คณิตศาสตร์"""
+    num1 = random.randint(1, 12)
+    num2 = random.randint(1, 12)
+    operator = random.choice(["+", "-", "*"])
+
+    # ป้องกันไม่ให้ผลลบติดลบ
+    if operator == "-" and num1 < num2:
+      num1, num2 = num2, num1
+
+    if operator == "+":
+      self.answer = num1 + num2
+    elif operator == "-":
+      self.answer = num1 - num2
+    else:
+      self.answer = num1 * num2
+
+    self.question_label.config(text=f"{num1} {operator} {num2} = ?")
+    self.entry.delete(0, tk.END)
+
+  def check_answer(self):
+    """ฟังก์ชันตรวจคำตอบและลด HP บอส"""
+    user_input = self.entry.get().strip()
+
+    if not user_input.isdigit():
+      self.result_label.config(text="⚠️ กรุณากรอกเฉพาะตัวเลข!", fg="orange")
+      return
+
+    if int(user_input) == self.answer:
+      damage = random.randint(15, 25)
+      self.boss_hp -= damage
+      if self.boss_hp < 0:
+        self.boss_hp = 0
+
+      self.hp_label.config(text=f"HP บอส: {self.boss_hp} / 100")
+      self.result_label.config(
+          text=f"✨ ถูกต้อง! โจมตีใส่บอส {damage} หน่วย!", fg="green"
+      )
+
+      if self.boss_hp == 0:
+        messagebox.showinfo(
+            "ชัยชนะ!", "🎉 ยินดีด้วย! คุณสามารถปราบบอสลงได้สำเร็จ!"
+        )
+        self.root.destroy()
+      else:
+        self.generate_question()
+    else:
+      self.result_label.config(text="❌ ตอบผิด! บอสหลบได้!", fg="red")
+
+
+if __name__ == "__main__":
+  root = tk.Tk()
+  app = MathBossGame(root)
+  root.mainloop()
