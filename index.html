@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math RPG M.2: Ultimate Edition by Tawan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; font-family: 'Chakra Petch', 'Kanit', sans-serif; user-select: none; }
+        body {
+            background: #020205; color: #fff; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden;
+        }
+        .shake { animation: shakeEffect 0.3s ease-in-out; }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-8px, 5px); }
+            50% { transform: translate(8px, -5px); }
+            75% { transform: translate(-5px, -5px); }
+        }
+        .game-card {
+            background: linear-gradient(145deg, rgba(12,12,25,0.98), rgba(4,4,10,0.99));
+            border: 2px solid #00ffcc; border-radius: 24px; padding: 18px; width: 100%; max-width: 480px;
+            box-shadow: 0 0 35px rgba(0, 255, 204, 0.3); text-align: center; position: relative;
+        }
+        .creator-tag {
+            background: rgba(0, 255, 204, 0.1); border: 1px dashed #00ffcc; color: #00ffcc;
+            font-size: 11px; font-weight: bold; padding: 4px; border-radius: 8px; margin-bottom: 8px;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .sound-btn {
+            position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.1);
+            border: 1px solid #00ffcc; color: #00ffcc; border-radius: 50%; width: 34px; height: 34px;
+            cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; z-index: 10;
+        }
+        h1, h2 { text-shadow: 0 0 10px #00ffcc; margin: 6px 0; }
+        .btn {
+            background: linear-gradient(90deg, #ff0055, #ff5000); border: none; color: white; padding: 10px;
+            font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; margin: 4px 0;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); text-transform: uppercase; transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-class { background: linear-gradient(90deg, #7928CA, #B800FF); font-size: 11px; padding: 6px; text-align: left; padding-left: 10px; }
+        .btn-diff { background: linear-gradient(90deg, #0070F3, #00FFCC); color: #000; font-weight: 700; margin: 3px 0; padding: 7px; font-size: 12px; }
+        .btn-sec { background: linear-gradient(90deg, #00b09b, #96c93d); color: #000; box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4); }
+        
+        .battle-arena {
+            display: flex; justify-content: space-between; align-items: center; margin: 8px 0;
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.3); border-radius: 16px; padding: 8px;
+        }
+        .combatant { width: 45%; text-align: center; }
+        
+        /* สไตล์ตัวละครพิกเซลสุดเท่ */
+        .pixel-avatar-box {
+            width: 75px; height: 85px; margin: 0 auto; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, rgba(0,255,204,0.2) 0%, rgba(0,0,0,0.95) 85%);
+            border: 2px solid #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.5);
+            position: relative; animation: float 3s infinite ease-in-out;
+        }
+        .boss-pixel-avatar {
+            border-color: #ff0055; box-shadow: 0 0 15px rgba(255,0,85,0.6);
+            background: radial-gradient(circle, rgba(255,0,85,0.25) 0%, rgba(0,0,0,0.95) 85%);
+            animation: bossAnim 2.5s infinite ease-in-out;
+        }
+        .pixel-art {
+            font-family: monospace; font-size: 13px; line-height: 11px; font-weight: bold;
+            text-shadow: 0 0 5px currentColor; letter-spacing: 1px;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes bossAnim { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .hp-container { background: #111; border: 1px solid #444; border-radius: 8px; padding: 2px; margin-top: 4px; position: relative; }
+        .hp-bar { background: linear-gradient(90deg, #00ffcc, #0070F3); height: 10px; border-radius: 5px; width: 100%; transition: width 0.4s ease; }
+        .boss-hp-bar { background: linear-gradient(90deg, #ff0055, #ff5000); }
+        .hp-text { font-size: 8px; font-weight: bold; margin-top: 1px; color: #aaa; }
+
+        .timer-container { background: #111; border: 1px solid #00ffcc; border-radius: 8px; height: 6px; width: 100%; overflow: hidden; margin: 5px 0; }
+        .timer-bar { background: #00ffcc; height: 100%; width: 100%; transition: width 1s linear; }
+
+        .math-box { background: rgba(0,0,0,0.7); border: 1px solid #00ffcc; border-radius: 14px; padding: 8px; margin: 6px 0; }
+        .math-expr { font-size: 16px; color: #fff; text-shadow: 0 0 10px #00ffcc; font-weight: bold; }
+
+        input[type="number"], input[type="text"] {
+            width: 80%; padding: 7px; font-size: 15px; text-align: center; border-radius: 12px;
+            border: 2px solid #00ffcc; background: #080810; color: #00ffcc; outline: none; margin-bottom: 5px; font-weight: bold;
+        }
+        .badge { display: inline-block; padding: 2px 7px; border-radius: 20px; background: rgba(0, 255, 204, 0.15); border: 1px solid #00ffcc; color: #00ffcc; font-size: 9px; }
+        .hint-box { background: rgba(255, 0, 85, 0.15); border: 1px dashed #ff0055; border-radius: 10px; padding: 6px; margin-top: 5px; font-size: 10px; color: #ff99bb; text-align: left; max-height: 100px; overflow-y: auto; }
+        .scroll-area { max-height: 260px; overflow-y: auto; padding-right: 4px; }
+        
+        .skill-bar { display: flex; gap: 4px; margin-bottom: 5px; }
+        .skill-btn { flex: 1; background: linear-gradient(90deg, #333, #555); border: 1px solid #00ffcc; color: #fff; font-size: 9px; padding: 5px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .skill-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; }
+        
+        table { width: 100%; font-size: 10px; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid rgba(0,255,204,0.3); padding: 4px; text-align: center; }
+        th { background: rgba(0,255,204,0.2); color: #00ffcc; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="game-card" id="game-card">
+    <div class="creator-tag">🎮 พัฒนาโดย Tawan (Math M.2 Exclusive)</div>
+    <button class="sound-btn" id="sound-btn" onclick="toggleAudio()">🔊</button>
+
+    <!-- หน้าแรกเข้าเกม -->
+    <div id="screen-login">
+        <h2>🚀 MATH RPG M.2</h2>
+        <p style="color:#aaa; font-size:10px; margin-bottom: 8px;">เจาะลึกเฉพาะคณิตศาสตร์ ม.2 ทุกบทหลักสูตร สพฐ.</p>
+        <input type="text" id="player-username" placeholder="พิมพ์ชื่อผู้เล่น..." maxlength="15">
+        <button class="btn" onclick="goToClassSelect()">⚔️ เริ่มต้นผจญภัย</button>
+        <div class="menu-grid">
+            <button class="btn btn-sec" onclick="showLeaderboard()">🏆 บันทึกคะแนน</button>
+            <button class="btn" style="background:linear-gradient(90deg, #7928CA, #B800FF);" onclick="showShop()">🛒 ร้านค้าไอเทม</button>
+        </div>
+    </div>
+
+    <!-- ตารางคะแนนสูงสุด -->
+    <div id="screen-leaderboard" style="display:none;">
+        <h2>🏆 HALL OF FAME</h2>
+        <div class="scroll-area">
+            <table id="leaderboard-table">
+                <tr><th>อันดับ</th><th>ชื่อ</th><th>อาชีพ</th><th>บท</th><th>คะแนน</th></tr>
+            </table>
+        </div>
+        <button class="btn" style="margin-top: 8px;" onclick="backToLogin()">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- ร้านค้าไอเทม -->
+    <div id="screen-shop" style="display:none;">
+        <h2>🛒 SHOP & POTIONS</h2>
+        <p style="color:#aaa; font-size:10px;">ใช้แต้มคะแนนสะสมซื้อไอเทมช่วยเหลือ</p>
+        <div class="scroll-area" style="text-align: left; padding: 5px;">
+            <div style="background:rgba(255,255,255,0.05); padding:6px; border-radius:8px; margin-bottom:6px; font-size:11px;">
+                <b>❤️ ยาฟื้นฟูพลังชีวิต (+50 HP)</b><br><span style="color:#00ffcc;">ราคา: 100 คะแนน</span>
+                <button class="btn" style="padding:4px; font-size:10px; margin-top:4px;" onclick="buyItem('heal')">ซื้อและใช้ทันที</button>
+            </div>
+            <div style="background:rgba(255,255,255,0.05); padding:6px; border-radius:8px; margin-bottom:6px; font-size:11px;">
+                <b>🛡️ ผงเกราะเวทมนตร์ถาวร</b><br><span style="color:#00ffcc;">ราคา: 200 คะแนน</span>
+                <button class="btn" style="padding:4px; font-size:10px; margin-top:4px;" onclick="buyItem('shield')">ซื้อ</button>
+            </div>
+        </div>
+        <button class="btn" style="margin-top: 8px;" onclick="backToLogin()">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- เลือกอาชีพ (24 คลาส) -->
+    <div id="screen-class" style="display:none;">
+        <h2>⚔️ 24 HERO CLASSES</h2>
+        <p style="color:#aaa; font-size:10px; margin-bottom: 5px;">เลือกคลาสผู้กล้าประจำตัว</p>
+        <div class="scroll-area" id="class-list-container"></div>
+        <button class="btn btn-sec" style="margin-top:5px;" onclick="backToLogin()">🔙 เปลี่ยนชื่อ</button>
+    </div>
+
+    <!-- เลือกบทเรียน ม.2 -->
+    <div id="screen-diff" style="display:none;">
+        <h2>📚 เลือกบทเรียน ม.2</h2>
+        <div class="badge" id="class-badge" style="margin-bottom: 5px;"></div>
+        <div class="scroll-area" id="chapter-list">
+            <button class="btn btn-diff" onclick="startChapter(1)">📖 บทที่ 1: เลขยกกำลังและสัญกรณ์ฯ</button>
+            <button class="btn btn-diff" onclick="startChapter(2)">📖 บทที่ 2: ความเท่ากันทุกประการ</button>
+            <button class="btn btn-diff" onclick="startChapter(3)">📖 บทที่ 3: เส้นขนานและมุมแย้ง</button>
+            <button class="btn btn-diff" onclick="startChapter(4)">📖 บทที่ 4: การแยกตัวประกอบพหุนามดีกรีสอง</button>
+            <button class="btn btn-diff" onclick="startChapter(5)">📖 บทที่ 5: สถิติ (ฮิสโทแกรม/ค่ากลาง)</button>
+            <button class="btn btn-diff" onclick="startChapter(6)">📖 บทที่ 6: ทฤษฎีบทพีทาโกรัส</button>
+        </div>
+        <button class="btn btn-sec" style="margin-top:5px;" onclick="backToClassSelect()">🔙 เปลี่ยนอาชีพ</button>
+    </div>
+
+    <!-- หน้าจอต่อสู้หลัก -->
+    <div id="screen-battle" style="display:none;">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: #00ffcc; margin-bottom: 2px;">
+            <span id="chapter-badge" class="badge">บทที่ 1</span>
+            <span id="combo-badge" class="badge">🔥 COMBO: 0</span>
+        </div>
+        
+        <div class="battle-arena">
+            <div class="combatant">
+                <div class="pixel-avatar-box" id="player-avatar-box">
+                    <div class="pixel-art" id="player-pixel" style="color: #00ffcc;">
+                        [o_o]<br>/|#\<br> / \
+                    </div>
+                </div>
+                <div style="font-size: 9px; font-weight: bold; margin-top: 2px;" id="player-name-lbl">HERO</div>
+                <div class="hp-container">
+                    <div class="hp-bar" id="player-hp-bar"></div>
+                </div>
+                <div class="hp-text" id="player-hp-text">HP: 100/100</div>
+            </div>
+
+            <div style="font-size: 14px; font-weight: bold; color: #ff0055;">VS</div>
+
+            <div class="combatant">
+                <div class="pixel-avatar-box boss-pixel-avatar">
+                    <div class="pixel-art" style="color: #ff0055;">
+                        [>_<]<br>\\m//#<br> / \
+                    </div>
+                </div>
+                <div style="font-size: 9px; font-weight: bold; margin-top: 2px; color:#ff0055;" id="boss-name">BOSS</div>
+                <div class="hp-container">
+                    <div class="hp-bar boss-hp-bar" id="hp-bar"></div>
+                </div>
+                <div class="hp-text" id="hp-text">HP: 100/100</div>
+            </div>
+        </div>
+
+        <div class="skill-bar">
+            <button class="skill-btn" id="skill-heal" onclick="useSkillHeal()">❤️ ฮีล (50p)</button>
+            <button class="skill-btn" id="skill-shield" onclick="useSkillShield()">🛡️ โล่ป้อง</button>
+            <button class="skill-btn" id="skill-skip" onclick="useSkillSkip()">⚡ ข้ามข้อ (-10HP)</button>
+        </div>
+
+        <div style="font-size:9px; color:#aaa; margin-top:1px;">⏱️ เวลาคิด (4 นาทีต่อข้อ):</div>
+        <div class="timer-container">
+            <div class="timer-bar" id="timer-bar"></div>
+        </div>
+
+        <div class="math-box">
+            <div class="math-expr" id="math-problem">2² = ?</div>
+        </div>
+
+        <input type="number" id="player-answer" placeholder="ใส่คำตอบ" onkeydown="if(event.key==='Enter') attack()">
+        <button class="btn" onclick="attack()">⚡ โจมตี!</button>
+        
+        <div id="log-msg" style="margin-top: 3px; font-weight: bold; font-size: 10px;"></div>
+        <div id="hint-msg" class="hint-box" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let soundEnabled = true;
+    let bgmInterval = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playSound(type) {
+        if (!soundEnabled) return;
+        initAudio();
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(250, now); osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'crit') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(700, now); osc.frequency.setValueAtTime(1100, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(140, now); osc.frequency.linearRampToValueAtTime(60, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.3);
+            }
+        } catch(e){}
+    }
+
+    function startBGM() {
+        if (bgmInterval) return;
+        const notes = [220, 247, 261, 293, 329, 349, 392];
+        bgmInterval = setInterval(() => {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                let now = audioCtx.currentTime;
+                osc.type = 'sine';
+                let note = notes[Math.floor(Math.random() * notes.length)];
+                osc.frequency.setValueAtTime(note, now);
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.8);
+            } catch(e){}
+        }, 2000);
+    }
+
+    function toggleAudio() {
+        initAudio();
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+        if(soundEnabled) startBGM();
+    }
+
+    // 24 คลาสอาชีพพิกเซลสุดเท่
+    const classData = [
+        { id: 'warrior', name: 'Warrior (นักรบ)', pixel: '[o_o]<br>/|#\\<br> / \\', desc: 'พลังโจมตีรุนแรง +35%' },
+        { id: 'mage', name: 'Mage (จอมเวท)', pixel: '[*_*]<br>/|\\*<br> / \\', desc: 'สะสมมานาโจมตีแรงทวีคูณทุก 3 คอมโบ' },
+        { id: 'rogue', name: 'Rogue (โจรเงา)', pixel: '[>_<]<br>/|/|<br> / \\', desc: 'โอกาสติดคริติคอล x3 สูงมาก' },
+        { id: 'paladin', name: 'Paladin (อัศวิน)', pixel: '[+_+]<br>\\|/#<br> / \\', desc: 'พลังชีวิตสูง 180 HP' },
+        { id: 'alchemist', name: 'Alchemist (นักแปรธาตุ)', pixel: '[o.o]<br>\\|/o<br> / \\', desc: 'คะแนนและคอมโบไวขึ้น 2 เท่า' },
+        { id: 'archer', name: 'Archer (นักธนู)', pixel: '[>o<]<br>-|>|<br> / \\', desc: 'ยิงแม่นยำ โบนัสดาเมจ +15' },
+        { id: 'necromancer', name: 'Necromancer (เนโครแมนเซอร์)', pixel: '[x_x]<br>\\|/|<br> / \\', desc: 'ชุบชีวิตเมื่อ HP หมด 1 ครั้ง' },
+        { id: 'berserker', name: 'Berserker (เบอร์เซิร์ก)', pixel: '[O_O]<br>/|\\|<br> / \\', desc: 'ยิ่ง HP น้อย ยิ่งตีแรง' },
+        { id: 'monk', name: 'Monk (นักบวช)', pixel: '[-_-]<br>\\|/<br> / \\', desc: 'ลดข้อผิดพลาด ป้องกันการหัก HP' },
+        { id: 'assassin', name: 'Assassin (นักฆ่า)', pixel: '[._.]<br>/|\\<br> / \\', desc: 'ลอบสังหารจุดอ่อนบอส' },
+        { id: 'priest', name: 'Priest (นักบุญ)', pixel: '[*_*]<br>\\|/<br> / \\', desc: 'ฟื้นฟู HP ทุกครั้งที่ตอบถูก' },
+        { id: 'wizard', name: 'Wizard (มหาบัณฑิต)', pixel: '[o_o]<br>#|#<br> / \\', desc: 'เชี่ยวชาญสูตรคณิตศาสตร์ ม.2' },
+        { id: 'ninja', name: 'Ninja (นินจา)', pixel: '[-.-]<br>/|\\<br> / \\', desc: 'ความเร็วสูงและการหลบหลีกยอดเยี่ยม' },
+        { id: 'samurai', name: 'Samurai (ซามูไร)', pixel: '[^_^[<br>\\|/<br> / \\', desc: 'วิถีดาบเดียวเฉียบคม' },
+        { id: 'pirate', name: 'Pirate (โจรสลัด)', pixel: '[~_~]<br>/|\\<br> / \\', desc: 'เสี่ยงโชคโบนัสดาเมจสุ่ม' },
+        { id: 'viking', name: 'Viking (ไวกิ้ง)', pixel: '[>_<]<br>/|\\<br> / \\', desc: 'พละกำลังทำลายล้างบอส' },
+        { id: 'druid', name: 'Druid (ดรูอิด)', pixel: '[o_o]<br>\\|/<br> / \\', desc: 'พลังธรรมชาติฟื้นฟูต่อเนื่อง' },
+        { id: 'sorcerer', name: 'Sorcerer (ซอร์เซอเรอร์)', pixel: '[*_*]<br>/|\\<br> / \\', desc: 'สายฟ้าเวทมนตร์รุนแรงสองเท่า' },
+        { id: 'warlock', name: 'Warlock (วอร์ล็อค)', pixel: '[>_<]<br>\\|/<br> / \\', desc: 'คำสาปบอสรับดาเมจเพิ่ม' },
+        { id: 'templar', name: 'Templar (เทมพลาร์)', pixel: '[+_+]<br>\\|/<br> / \\', desc: 'เกราะเหล็กกล้าลดความเสียหาย' },
+        { id: 'sniper', name: 'Sniper (พลซุ่มยิง)', pixel: '[>_>][<_<]<br>/|\\<br> / \\', desc: 'คำนวณแม่นยำ คริติคอลชัวร์' },
+        { id: 'beastmaster', name: 'Beastmaster (เจ้าแห่งอสูร)', pixel: '[o_o]<br>/|\\<br> / \\', desc: 'สัตว์ป่าช่วยโจมตีเสริม' },
+        { id: 'chronomancer', name: 'Chronomancer (ผู้ควบคุมเวลา)', pixel: '[O_o]<br>/|\\<br> / \\', desc: 'เพิ่มเวลาคิดโจทย์พิเศษ' },
+        { id: 'elementalist', name: 'Elementalist (ปรมาจารย์ธาตุ)', pixel: '[*_*]<br>/|\\<br> / \\', desc: 'พลังธาตุทำลายล้างสูงสุด' }
+    ];
+
+    let playerName = "Player";
+    let playerClass = '', currentChapter = 1;
+    let bossHp = 100, maxBossHp = 100;
+    let playerHp = 100, maxPlayerHp = 100;
+    let currentAns = 0, currentHint = "";
+    let shieldActive = false, comboCount = 0, score = 0;
+    let timerInterval = null, timeLeft = 240;
+    let usedQuestions = new Set();
+    let hasRevived = false;
+
+    window.onload = function() {
+        const classContainer = document.getElementById('class-list-container');
+        classData.forEach(cls => {
+            let btn = document.createElement('button');
+            btn.className = 'btn btn-class';
+            btn.innerHTML = `<span style="font-family:monospace; font-size:10px;">${cls.pixel.split('<br>')[0]}</span> <b>${cls.name}</b><br><span style="font-size:9px; color:#ddd;">${cls.desc}</span>`;
+            btn.onclick = () => selectClass(cls.id);
+            classContainer.appendChild(btn);
+        });
+    }
+
+    function goToClassSelect() {
+        let nameInput = document.getElementById('player-username').value.trim();
+        if(nameInput !== "") playerName = nameInput;
+        initAudio(); startBGM(); playSound('click');
+        document.getElementById('screen-login').style.display = 'none';
+        document.getElementById('screen-class').style.display = 'block';
+    }
+
+    function backToLogin() {
+        playSound('click');
+        document.getElementById('screen-class').style.display = 'none';
+        document.getElementById('screen-leaderboard').style.display = 'none';
+        document.getElementById('screen-shop').style.display = 'none';
+        document.getElementById('screen-login').style.display = 'block';
+    }
+
+    function backToClassSelect() {
+        playSound('click');
+        document.getElementById('screen-diff').style.display = 'none';
+        document.getElementById('screen-class').style.display = 'block';
+    }
+
+    function showLeaderboard() {
+        playSound('click');
+        document.getElementById('screen-login').style.display = 'none';
+        document.getElementById('screen-leaderboard').style.display = 'block';
+        
+        let lbData = JSON.parse(localStorage.getItem('math_rpg_scores_m2') || '[]');
+        lbData.sort((a, b) => b.score - a.score);
+        
+        let tableHtml = `<tr><th>อันดับ</th><th>ชื่อ</th><th>อาชีพ</th><th>บท</th><th>คะแนน</th></tr>`;
+        if(lbData.length === 0) {
+            tableHtml += `<tr><td colspan="5" style="color:#aaa;">ยังไม่มีบันทึกคะแนน</td></tr>`;
+        } else {
+            lbData.forEach((item, index) => {
+                tableHtml += `<tr><td>${index+1}</td><td>${item.name}</td><td>${item.className}</td><td>บทที่ ${item.chapter}</td><td>${item.score}</td></tr>`;
+            });
+        }
+        document.getElementById('leaderboard-table').innerHTML = tableHtml;
+    }
+
+    function showShop() {
+        playSound('click');
+        document.getElementById('screen-login').style.display = 'none';
+        document.getElementById('screen-shop').style.display = 'block';
+    }
+
+    function buyItem(type) {
+        playSound('click');
+        if(type === 'heal') {
+            if(score >= 100) {
+                score -= 100;
+                playerHp = Math.min(maxPlayerHp, playerHp + 50);
+                alert('❤️ ซื้อและใช้ยาฟื้นฟูสำเร็จ (+50 HP)');
+            } else {
+                alert('❌ คะแนนสะสมไม่พอ (ต้องการ 100 คะแนน)');
+            }
+        } else if(type === 'shield') {
+            if(score >= 200) {
+                score -= 200;
+                shieldActive = true;
+                alert('🛡️ ซื้อเกราะเวทมนตร์สำเร็จ ป้องกันความเสียหายถาวร 1 ครั้ง');
+            } else {
+                alert('❌ คะแนนสะสมไม่พอ (ต้องการ 200 คะแนน)');
+            }
+        }
+    }
+
+    function saveScoreToLeaderboard() {
+        let lbData = JSON.parse(localStorage.getItem('math_rpg_scores_m2') || '[]');
+        let foundIndex = lbData.findIndex(item => item.name === playerName);
+        if(foundIndex >= 0) {
+            if(score > lbData[foundIndex].score) {
+                lbData[foundIndex].score = score;
+                lbData[foundIndex].chapter = currentChapter;
+                lbData[foundIndex].className = playerClass;
+            }
+        } else {
+            lbData.push({ name: playerName, className: playerClass, chapter: currentChapter, score: score });
+        }
+        localStorage.setItem('math_rpg_scores_m2', JSON.stringify(lbData));
+    }
+
+    function selectClass(clsId) {
+        playSound('click');
+        playerClass = clsId;
+        if(clsId === 'mage') shieldActive = true;
+        document.getElementById('screen-class').style.display = 'none';
+        document.getElementById('screen-diff').style.display = 'block';
+        
+        const found = classData.find(c => c.id === clsId);
+        document.getElementById('class-badge').innerText = `HERO: ${found ? found.name : clsId}`;
+        document.getElementById('player-name-lbl').innerText = playerName;
+        document.getElementById('player-pixel').innerHTML = found ? found.pixel : '[o_o]<br>/|#\\<br> / \\';
+    }
+
+    function startChapter(chapNum) {
+        playSound('click');
+        currentChapter = chapNum;
+        comboCount = 0;
+        score = 0;
+        hasRevived = false;
+        usedQuestions.clear();
+        document.getElementById('screen-diff').style.display = 'none';
+        document.getElementById('screen-battle').style.display = 'block';
+        
+        maxBossHp = 100 + (chapNum * 30);
+        bossHp = maxBossHp;
+        
+        maxPlayerHp = (playerClass === 'paladin') ? 180 : 100;
+        playerHp = maxPlayerHp;
+        
+        document.getElementById('boss-name').innerText = `BOSS Ch.${chapNum}`;
+        document.getElementById('chapter-badge').innerText = `บทที่ ${chapNum}`;
+        
+        updateHpUI();
+        nextQuestion();
+    }
+
+    function updateHpUI() {
+        const bossPct = Math.max(0, (bossHp / maxBossHp) * 100);
+        document.getElementById('hp-bar').style.width = bossPct + '%';
+        document.getElementById('hp-text').innerText = `HP: ${bossHp} / ${maxBossHp}`;
+
+        const playerPct = Math.max(0, (playerHp / maxPlayerHp) * 100);
+        document.getElementById('player-hp-bar').style.width = playerPct + '%';
+        document.getElementById('player-hp-text').innerText = `HP: ${playerHp} / ${maxPlayerHp}`;
+
+        document.getElementById('combo-badge').innerText = `🔥 COMBO: ${comboCount} | ⭐ SCORE: ${score}`;
+    }
+
+    function generateProblem(chap) {
+        let expr = "", ans = 0, hint = "";
+        let attempts = 0;
+
+        do {
+            attempts++;
+            if(chap === 1) {
+                let b = Math.floor(Math.random() * 5) + 2;
+                let p1 = Math.floor(Math.random() * 3) + 1;
+                let p2 = Math.floor(Math.random() * 3) + 1;
+                if(Math.random() > 0.5) {
+                    expr = `${b}^${p1} × ${b}^${p2}`;
+                    ans = Math.pow(b, p1 + p2);
+                    hint = `💡 **เลขยกกำลัง (คูณ):** ฐานเหมือนกันคูณกัน นำเลขชี้กำลังมาบวกกัน\n• วิธีทำ: ${b}^(${p1}+${p2}) = ${ans}`;
+                } else {
+                    let a = Math.floor(Math.random() * 8) + 1;
+                    let p = Math.floor(Math.random() * 3) + 1;
+                    expr = `${a} × 10^${p}`;
+                    ans = a * Math.pow(10, p);
+                    hint = `💡 **สัญกรณ์วิทยาศาสตร์:** 10 ยกกำลัง ${p} มีศูนย์ตามหลัง ${p} ตัว\n• วิธีทำ: ${a} × ${Math.pow(10, p)} = ${ans}`;
+                }
+            }
+            else if(chap === 2) {
+                let baseSide = Math.floor(Math.random() * 6) + 3;
+                let scale = Math.floor(Math.random() * 3) + 2;
+                expr = `สามเหลี่ยมเท่ากันทุกประการ ด้านสมนัยยาว ${baseSide} และ ${scale} เท่า จงหาความยาวด้านสมนัยใหม่`;
+                ans = baseSide * scale;
+                hint = `💡 **ความเท่ากันทุกประการ:** ด้านคู่ที่สมนัยกันจะยาวเป็นสัดส่วนเท่ากัน\n• วิธีทำ: ${baseSide} × ${scale} = ${ans}`;
+            }
+            else if(chap === 3) {
+                let angle = Math.floor(Math.random() * 50) + 50;
+                expr = `เส้นขนานมีมุมภายในข้างเดียวกันของเส้นตัดขวางเท่ากับ ${angle}° มุมแย้งคือ`;
+                ans = 180 - angle;
+                hint = `💡 **เส้นขนานและมุมแย้ง:** มุมภายในข้างเดียวกันรวมกันได้ 180°\n• วิธีทำ: 180° - ${angle}° = ${ans}°`;
+            }
+            else if(chap === 4) {
+                let m = Math.floor(Math.random() * 3) + 1;
+                let n = Math.floor(Math.random() * 3) + 1;
+                let sum = m + n, prod = m * n;
+                expr = `x² + ${sum}x + ${prod} = (x + ?)(x + ${n}) ค่าของ ? คือ`;
+                ans = m;
+                hint = `💡 **แยกตัวประกอบพหุนาม:** หาจำนวนที่คูณกันได้ ${prod} และบวกกันได้ ${sum}\n• วิธีทำ: คือ ${m} และ ${n}`;
+            }
+            else if(chap === 5) {
+                let a = Math.floor(Math.random() * 10) + 10;
+                let b = Math.floor(Math.random() * 10) + 20;
+                let c = Math.floor(Math.random() * 10) + 30;
+                expr = `ข้อมูล ${a}, ${b}, ${c} จงหาค่าเฉลี่ยเลขคณิต`;
+                ans = Math.round((a + b + c) / 3);
+                hint = `💡 **ค่าเฉลี่ยเลขคณิต:** ผลรวมข้อมูลทั้งหมดหารด้วยจำนวนข้อมูล (3)\n• วิธีทำ: (${a}+${b}+${c})/3 = ${ans}`;
+            }
+            else {
+                const triples = [[3,4,5], [6,8,10], [5,12,13]];
+                let t = triples[Math.floor(Math.random() * triples.length)];
+                expr = `สามเหลี่ยมมุมฉาก มีด้านประกอบมุมฉาก ${t[0]} และ ${t[1]} ด้านตรงข้ามฉากยาว`;
+                ans = t[2];
+                hint = `💡 **ทฤษฎีบทพีทาโกรัส:** c² = a² + b²\n• วิธีทำ: c = ${ans}`;
+            }
+
+            if (!usedQuestions.has(expr) || attempts > 15) {
+                usedQuestions.add(expr);
+                break;
+            }
+        } while (true);
+
+        return { expr, ans, hint };
+    }
+
+    function nextQuestion() {
+        const prob = generateProblem(currentChapter);
+        document.getElementById('math-problem').innerText = prob.expr + " = ?";
+        currentAns = prob.ans;
+        currentHint = prob.hint;
+        document.getElementById('player-answer').value = '';
+        document.getElementById('hint-msg').style.display = 'none';
+
+        clearInterval(timerInterval);
+        timeLeft = 240;
+        updateTimerUI();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerUI();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeOutPenalty();
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        const pct = (timeLeft / 240) * 100;
+        document.getElementById('timer-bar').style.width = pct + '%';
+    }
+
+    function timeOutPenalty() {
+        playSound('wrong');
+        comboCount = 0;
+        playerHp -= 5;
+        updateHpUI();
+        document.getElementById('log-msg').innerText = '⏰ หมดเวลา! บอสสวนกลับ (-5 HP)!';
+        document.getElementById('log-msg').style.color = '#ff0055';
+        checkGameOver();
+        if(playerHp > 0) nextQuestion();
+    }
+
+    function checkGameOver() {
+        if(playerHp <= 0) {
+            if(playerClass === 'necromancer' && !hasRevived) {
+                hasRevived = true;
+                playerHp = 50;
+                updateHpUI();
+                playSound('crit');
+                document.getElementById('log-msg').innerText = '💀 เนโครแมนเซอร์ชุบชีวิตตัวเอง 50 HP!';
+                document.getElementById('log-msg').style.color = '#B800FF';
+                return;
+            }
+            playerHp = 0;
+            updateHpUI();
+            clearInterval(timerInterval);
+            saveScoreToLeaderboard();
+            setTimeout(() => {
+                alert(`💀 พลังชีวิตหมด! คะแนนของคุณ: ${score} บันทึกลงตารางคะแนนเรียบร้อย`);
+                document.getElementById('screen-battle').style.display = 'none';
+                document.getElementById('screen-diff').style.display = 'block';
+            }, 300);
+        }
+    }
+
+    function useSkillHeal() {
+        if(score >= 50) {
+            score -= 50;
+            playerHp = Math.min(maxPlayerHp, playerHp + 35);
+            playSound('crit');
+            updateHpUI();
+            document.getElementById('log-msg').innerText = '❤️ ใช้สกิลฮีลสำเร็จ! ฟื้นฟู +35 HP';
+            document.getElementById('log-msg').style.color = '#00ffcc';
+        } else {
+            playSound('wrong');
+            alert('❌ คะแนนไม่พอใช้สกิลฮีล (ต้องการ 50 คะแนน)');
+        }
+    }
+
+    function useSkillShield() {
+        shieldActive = true;
+        playSound('click');
+        document.getElementById('log-msg').innerText = '🛡️ เปิดเกราะเวทมนตร์ป้องกันความเสียหาย 1 ครั้ง!';
+        document.getElementById('log-msg').style.color = '#B800FF';
+    }
+
+    function useSkillSkip() {
+        playSound('wrong');
+        if(playerHp <= 10) {
+            alert('❌ พลังชีวิตเหลือน้อยเกินไป ไม่สามารถข้ามข้อได้!');
+            return;
+        }
+        playerHp -= 10;
+        comboCount = 0;
+        updateHpUI();
+        document.getElementById('log-msg').innerText = '⚡ ข้ามข้อสำเร็จ (-10 HP)';
+        document.getElementById('log-msg').style.color = '#ff5000';
+        checkGameOver();
+        if(playerHp > 0) nextQuestion();
+    }
+
+    function attack() {
+        clearInterval(timerInterval);
+        const input = document.getElementById('player-answer').value;
+        const log = document.getElementById('log-msg');
+        const hintBox = document.getElementById('hint-msg');
+        const card = document.getElementById('game-card');
+
+        if(input === '') {
+            log.innerText = '⚠️ กรุณาใส่คำตอบก่อนโจมตี!';
+            log.style.color = '#ff5000';
+            return;
+        }
+
+        if(parseInt(input) === currentAns) {
+            comboCount += (playerClass === 'alchemist' ? 2 : 1);
+            score += 10 + (comboCount * 2);
+            let baseDmg = (Math.floor(Math.random() * 8) + 15) + (comboCount * 3);
+            
+            if(playerClass === 'warrior') baseDmg = Math.floor(baseDmg * 1.35);
+            if(playerClass === 'archer') baseDmg += 15;
+            if(playerClass === 'priest') playerHp = Math.min(maxPlayerHp, playerHp + 10);
+            if(playerClass === 'sorcerer') baseDmg *= 2;
+
+            if(playerClass === 'rogue' && Math.random() < 0.55) {
+                baseDmg = Math.floor(baseDmg * 3);
+                playSound('crit');
+                log.innerText = `🔥 CRITICAL COMBO x${comboCount}! ดาเมจ ${baseDmg}!`;
+            } else {
+                playSound('hit');
+                log.innerText = `💥 ถูกต้อง! โจมตีบอส ${baseDmg} ดาเมจ!`;
+            }
+            log.style.color = '#00ffcc';
+
+            bossHp -= baseDmg;
+            if(bossHp <= 0) {
+                bossHp = 0;
+                updateHpUI();
+                saveScoreToLeaderboard();
+                setTimeout(() => {
+                    alert(`🎉 ยินดีด้วย! คุณเคลียร์บทที่ ${currentChapter} สำเร็จ! คะแนนรวม: ${score}`);
+                    document.getElementById('screen-battle').style.display = 'none';
+                    document.getElementById('screen-diff').style.display = 'block';
+                }, 300);
+                return;
+            }
+            updateHpUI();
+            nextQuestion();
+        } else {
+            playSound('wrong');
+            comboCount = 0;
+            
+            if(shieldActive) {
+                shieldActive = false;
+                updateHpUI();
+                log.innerText = '🛡️ เกราะเวทมนตร์ป้องกันความเสียหายไว้ได้!';
+                log.style.color = '#B800FF';
+                nextQuestion();
+            } else {
+                let damageTaken = (playerClass === 'templar') ? 3 : 5;
+                playerHp -= damageTaken;
+                updateHpUI();
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 300);
+                checkGameOver();
+
+                log.innerText = `❌ ตอบผิด! (-${damageTaken} HP) เฉลยและวิธีทำด้านล่าง`;
+                log.style.color = '#ff0055';
+                hintBox.innerHTML = currentHint;
+                hintBox.style.display = 'block';
+                
+                // แก้บัค: ให้แสดงเฉลยค้างไว้ให้อ่านก่อน แล้วหน่วงเวลา 4 วินาทีจึงเปลี่ยนข้อถัดไปอัตโนมัติ
+                setTimeout(() => { 
+                    if(playerHp > 0) nextQuestion(); 
+                }, 4000);
+            }
+        }
+    }
+</script>
+</body>
+</html>
