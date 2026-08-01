@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math RPG M.2: Ultimate 10 Levels</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; font-family: 'Chakra Petch', 'Kanit', sans-serif; user-select: none; }
+        body {
+            background: #030308; color: #fff; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden;
+        }
+        .shake { animation: shakeEffect 0.3s ease-in-out; }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-8px, 5px); }
+            50% { transform: translate(8px, -5px); }
+            75% { transform: translate(-5px, -5px); }
+        }
+        .game-card {
+            background: linear-gradient(145deg, rgba(15,15,30,0.95), rgba(5,5,15,0.98));
+            border: 2px solid #00ffcc; border-radius: 24px; padding: 20px; width: 100%; max-width: 430px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.25); text-align: center; position: relative;
+        }
+        .sound-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1);
+            border: 1px solid #00ffcc; color: #00ffcc; border-radius: 50%; width: 36px; height: 36px;
+            cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+        }
+        h1, h2 { text-shadow: 0 0 10px #00ffcc; margin: 10px 0; }
+        .btn {
+            background: linear-gradient(90deg, #ff0055, #ff5000); border: none; color: white; padding: 12px;
+            font-size: 15px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; margin: 6px 0;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); text-transform: uppercase;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-class { background: linear-gradient(90deg, #7928CA, #B800FF); }
+        .btn-diff { background: linear-gradient(90deg, #0070F3, #00FFCC); color: #000; font-weight: 700; }
+        
+        .boss-avatar { font-size: 70px; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 0 15px #ff0055); }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        .hp-container { background: #111; border: 2px solid #333; border-radius: 12px; padding: 3px; margin: 10px 0; position: relative; }
+        .hp-bar { background: linear-gradient(90deg, #ff0055, #ff5000); height: 18px; border-radius: 8px; width: 100%; transition: width 0.4s ease; }
+        .hp-text { position: absolute; width: 100%; top: 2px; left: 0; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+
+        /* Timer Bar (3 Minutes) */
+        .timer-container { background: #111; border: 1px solid #00ffcc; border-radius: 8px; height: 10px; width: 100%; overflow: hidden; margin: 8px 0; }
+        .timer-bar { background: #00ffcc; height: 100%; width: 100%; transition: width 1s linear; }
+
+        .math-box { background: rgba(0,0,0,0.6); border: 1px solid #00ffcc; border-radius: 14px; padding: 12px; margin: 10px 0; }
+        .math-expr { font-size: 24px; color: #fff; text-shadow: 0 0 10px #00ffcc; font-weight: bold; }
+
+        input[type="number"] {
+            width: 85%; padding: 10px; font-size: 20px; text-align: center; border-radius: 12px;
+            border: 2px solid #00ffcc; background: #080810; color: #00ffcc; outline: none; margin-bottom: 8px; font-weight: bold;
+        }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; background: rgba(0, 255, 204, 0.15); border: 1px solid #00ffcc; color: #00ffcc; font-size: 12px; }
+        .hint-box { background: rgba(255, 0, 85, 0.15); border: 1px dashed #ff0055; border-radius: 10px; padding: 8px; margin-top: 8px; font-size: 12px; color: #ff99bb; text-align: left; }
+        .stats-panel { display: flex; justify-content: space-between; font-size: 13px; color: #00ffcc; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="game-card" id="game-card">
+    <button class="sound-btn" id="sound-btn" onclick="toggleAudio()">🔊</button>
+
+    <!-- 1. เลือกอาชีพ -->
+    <div id="screen-class">
+        <h2>⚔️ SELECT HERO (M.2)</h2>
+        <p style="color:#aaa; font-size:13px;">เลือกอาชีพเตรียมลุยคณิตศาสตร์ ม.2</p>
+        <button class="btn btn-class" onclick="selectClass('warrior')">🗡️ WARRIOR (ดาเมจแรง +30%)</button>
+        <button class="btn btn-class" onclick="selectClass('mage')">🔮 MAGE (เกราะกันตอบผิด 1 ครั้ง)</button>
+        <button class="btn btn-class" onclick="selectClass('rogue')">🗡️ ROGUE (โอกาสติดคริติคอล x2.5 สูง)</button>
+    </div>
+
+    <!-- 2. เลือกระดับ (10 ระดับ ม.2) -->
+    <div id="screen-diff" style="display:none;">
+        <h2>🎯 SELECT LEVEL (1-10)</h2>
+        <div class="badge" id="class-badge" style="margin-bottom: 10px;"></div>
+        <div id="level-list" style="max-height: 280px; overflow-y: auto; padding-right: 5px;">
+            <!-- สร้างปุ่ม 10 ระดับอัตโนมัติด้วย JS -->
+        </div>
+    </div>
+
+    <!-- 3. หน้าต่อสู้หลัก -->
+    <div id="screen-battle" style="display:none;">
+        <div class="stats-panel">
+            <span id="level-badge" class="badge">LV 1</span>
+            <span id="combo-badge" class="badge">🔥 COMBO: 0</span>
+        </div>
+        
+        <div class="boss-avatar" id="boss-icon">👺</div>
+        <h3 id="boss-name" style="margin: 3px 0; color: #ff0055; font-size: 16px;">BOSS</h3>
+        
+        <div class="hp-container">
+            <div class="hp-bar" id="hp-bar"></div>
+            <div class="hp-text" id="hp-text">HP: 100 / 100</div>
+        </div>
+
+        <div style="font-size:11px; color:#aaa; margin-top:2px;">⏱️ เวลาคิด (3 นาทีต่อข้อ):</div>
+        <div class="timer-container">
+            <div class="timer-bar" id="timer-bar"></div>
+        </div>
+
+        <div class="math-box">
+            <div class="math-expr" id="math-problem">2² = ?</div>
+        </div>
+
+        <input type="number" id="player-answer" placeholder="ใส่คำตอบ" onkeydown="if(event.key==='Enter') attack()">
+        <button class="btn" onclick="attack()">⚡ โจมตี!</button>
+        
+        <div id="log-msg" style="margin-top: 5px; font-weight: bold; font-size: 13px;"></div>
+        <div id="hint-msg" class="hint-box" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+    // --- ระบบเสียง (ปรับปรุงให้ดังและชัดเจนขึ้น) ---
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSound(type) {
+        if (!soundEnabled) return;
+        initAudio();
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(500, now);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'crit') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(900, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.3);
+            }
+        } catch(e){}
+    }
+
+    function toggleAudio() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    // --- ตัวแปรเกม ---
+    let playerClass = '', currentLevel = 1;
+    let bossHp = 100, maxHp = 100;
+    let currentAns = 0, currentHint = "";
+    let shieldActive = false, comboCount = 0;
+    let timerInterval = null, timeLeft = 180; // 3 นาทีต่อข้อ
+
+    // สร้างปุ่ม 10 ระดับ
+    window.onload = function() {
+        const list = document.getElementById('level-list');
+        for(let i=1; i<=10; i++) {
+            let btn = document.createElement('button');
+            btn.className = 'btn btn-diff';
+            btn.innerText = `ระดับที่ ${i}: ${getLevelName(i)}`;
+            btn.onclick = () => startGame(i);
+            list.appendChild(btn);
+        }
+    }
+
+    function getLevelName(lvl) {
+        const names = [
+            "เลขยกกำลังพื้นฐาน ม.2", "สมบัติของเลขยกกำลัง (คูณ/หาร)", "สัญกรณ์วิทยาศาสตร์ (Scientific Notation)",
+            "รากที่สอง (Square Root)", "รากที่สาม (Cube Root)", "การแยกตัวประกอบพหุนาม (พื้นฐาน)",
+            "ทฤษฎีบทพีทาโกรัส", "พื้นที่ผิวและปริมาตร", "สถิติเบื้องต้น (ค่าเฉลี่ย)", "บอสใหญ่: ข้อสอบรวม ม.2 ขั้นเทพ"
+        ];
+        return names[lvl-1];
+    }
+
+    function selectClass(cls) {
+        playSound('click');
+        playerClass = cls;
+        if(cls === 'mage') shieldActive = true;
+        document.getElementById('screen-class').style.display = 'none';
+        document.getElementById('screen-diff').style.display = 'block';
+        
+        const names = { warrior: 'WARRIOR', mage: 'MAGE', rogue: 'ROGUE' };
+        document.getElementById('class-badge').innerText = `HERO: ${names[cls]}`;
+    }
+
+    function startGame(lvl) {
+        playSound('click');
+        currentLevel = lvl;
+        comboCount = 0;
+        document.getElementById('screen-diff').style.display = 'none';
+        document.getElementById('screen-battle').style.display = 'block';
+        
+        maxHp = 80 + (lvl * 35);
+        bossHp = maxHp;
+        
+        const icons = ['👺', '👹', '👻', '👽', '🤖', '🐉', '🦖', '💀', '👾', '🌌'];
+        document.getElementById('boss-icon').innerText = icons[lvl-1];
+        document.getElementById('boss-name').innerText = `BOSS LV.${lvl} (${getLevelName(lvl)})`;
+        document.getElementById('level-badge').innerText = `LV ${lvl}`;
+        
+        updateHpUI();
+        nextQuestion();
+    }
+
+    function updateHpUI() {
+        const pct = Math.max(0, (bossHp / maxHp) * 100);
+        document.getElementById('hp-bar').style.width = pct + '%';
+        document.getElementById('hp-text').innerText = `HP: ${bossHp} / ${maxHp}`;
+        document.getElementById('combo-badge').innerText = `🔥 COMBO: ${comboCount}`;
+    }
+
+    // --- โจทย์คณิตศาสตร์ ม.2 (10 ระดับ เรียงจากง่ายไปยาก) ---
+    function generateProblem(lvl) {
+        let expr = "", ans = 0, hint = "";
+
+        if(lvl === 1) { // เลขยกกำลังพื้นฐาน ม.2
+            let b = Math.floor(Math.random() * 6) + 2; // 2..7
+            let p = Math.floor(Math.random() * 3) + 2; // 2..4
+            expr = `${b}^${p}`;
+            ans = Math.pow(b, p);
+            hint = `💡 วิธีคิด: ${b} ยกกำลัง ${p} หมายถึงคูณกัน ${p} ตัว ➔ ${expr} = ${ans}`;
+        }
+        else if(lvl === 2) { // สมบัติเลขยกกำลัง (เช่น 2^3 * 2^2 = 2^5 หรือคิดตรงๆ)
+            let b = Math.floor(Math.random() * 4) + 2;
+            let p1 = Math.floor(Math.random() * 2) + 1;
+            let p2 = Math.floor(Math.random() * 2) + 1;
+            expr = `${b}^${p1} × ${b}^${p2}`;
+            ans = Math.pow(b, p1 + p2);
+            hint = `💡 วิธีคิด: ฐานเท่ากันคูณกัน นำเลขชี้กำลังมาบวกกัน (${p1} + ${p2} = ${p1+p2}) ➔ ${b}^${p1+p2} = ${ans}`;
+        }
+        else if(lvl === 3) { // สัญกรณ์วิทยาศาสตร์ (เช่น A * 10^n หาค่าจริง หรือบวกลบเลขง่าย)
+            let a = Math.floor(Math.random() * 5) + 1;
+            let p = Math.floor(Math.random() * 3) + 1;
+            expr = `${a} × 10^${p}`;
+            ans = a * Math.pow(10, p);
+            hint = `💡 วิธีคิด: 10 ยกกำลัง ${p} เติมศูนย์ไป ${p} ตัว ➔ ${a} คูณ ${Math.pow(10, p)} = ${ans}`;
+        }
+        else if(lvl === 4) { // รากที่สอง
+            let r = Math.floor(Math.random() * 10) + 2;
+            expr = `√${r*r}`;
+            ans = r;
+            hint = `💡 วิธีคิด: หาจำนวนที่ยกกำลังสองแล้วได้ ${r*r} ➔ คำตอบคือ ${r}`;
+        }
+        else if(lvl === 5) { // รากที่สาม
+            let r = Math.floor(Math.random() * 5) + 2;
+            expr = `∛${r*r*r}`;
+            ans = r;
+            hint = `💡 วิธีคิด: หาจำนวนที่คูณกันสามครั้งได้ ${r*r*r} ➔ คำตอบคือ ${r}`;
+        }
+        else if(lvl === 6) { // การแยกตัวประกอบ (เช่น (x+a)(x+b) หรือพหุนามง่ายๆ เช่น x^2 - y^2)
+            let a = Math.floor(Math.random() * 5) + 2;
+            expr = `${a}² - ${a-1}²`;
+            ans = (a * a) - ((a-1) * (a-1));
+            hint = `💡 วิธีคิด: คำนวณทีละวงเล็บ ${a}² = ${a*a} และ ${a-1}² = ${(a-1)*(a-1)} นำมาลบกัน ➔ ${ans}`;
+        }
+        else if(lvl === 7) { // พีทาโกรัส (หาด้านตรงข้ามมุมฉาก c^2 = a^2 + b^2)
+            const triples = [[3,4,5], [6,8,10], [5,12,13]];
+            let t = triples[Math.floor(Math.random() * triples.length)];
+            expr = `√(${t[0]}² + ${t[1]}²)`;
+            ans = t[2];
+            hint = `💡 วิธีคิดตามพีทาโกรัส: √(${t[0]*t[0]} + ${t[1]*t[1]}) = √${t[2]*t[2]} = ${t[2]}`;
+        }
+        else if(lvl === 8) { // พื้นที่ผิวและปริมาตร (เช่น ปริมาตรทรงสี่เหลี่ยมกว้างxยาวxสูง)
+            let w = Math.floor(Math.random() * 3) + 2;
+            let l = Math.floor(Math.random() * 3) + 2;
+            let h = Math.floor(Math.random() * 3) + 2;
+            expr = `กว้าง${w}×ยาว${l}×สูง${h} (ปริมาตร)`;
+            ans = w * l * h;
+            hint = `💡 วิธีคิด: สูตรปริมาตรทรงสี่เหลี่ยม = กว้าง × ยาว × สูง ➔ ${w} × ${l} × ${h} = ${ans}`;
+        }
+        else if(lvl === 9) { // สถิติเบื้องต้น (ค่าเฉลี่ยของเลข 3 ตัว)
+            let n1 = Math.floor(Math.random() * 105) + 10;
+            let n2 = n1 + 2;
+            let n3 = n2 + 2;
+            expr = `ค่าเฉลี่ยของ (${n1}, ${n2}, ${n3})`;
+            ans = (n1 + n2 + n3) / 3;
+            hint = `💡 วิธีคิด: นำข้อมูลมารวมกันทั้งหมดแล้วหารด้วยจำนวนข้อมูล (3) ➔ ${n1+n2+n3} ÷ 3 = ${ans}`;
+        }
+        else { // ระดับ 10: บอสใหญ่ ข้อสอบรวม ม.2
+            let b = Math.floor(Math.random() * 4) + 2;
+            let r = Math.floor(Math.random() * 5) + 2;
+            expr = `${b}³ + √${r*r} × 2`;
+            ans = Math.pow(b, 3) + (r * 2);
+            hint = `💡 วิธีคิด: ทำคูณและยกกำลังก่อน ➔ ${b}³ = ${Math.pow(b,3)}, √${r*r} = ${r}, ${r}×2 = ${r*2} ➔ รวมกันได้ ${ans}`;
+        }
+
+        return { expr, ans, hint };
+    }
+
+    function nextQuestion() {
+        const prob = generateProblem(currentLevel);
+        document.getElementById('math-problem').innerText = prob.expr + " = ?";
+        currentAns = prob.ans;
+        currentHint = prob.hint;
+        document.getElementById('player-answer').value = '';
+        document.getElementById('hint-msg').style.display = 'none';
+
+        // เริ่มจับเวลา 3 นาที (180 วินาที) ต่อข้อ
+        clearInterval(timerInterval);
+        timeLeft = 180;
+        updateTimerUI();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerUI();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeOutPenalty();
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        const pct = (timeLeft / 180) * 100;
+        document.getElementById('timer-bar').style.width = pct + '%';
+    }
+
+    function timeOutPenalty() {
+        playSound('wrong');
+        comboCount = 0;
+        updateHpUI();
+        document.getElementById('log-msg').innerText = '⏰ หมดเวลา! เสียสมาธิ บอสสวนกลับ!';
+        document.getElementById('log-msg').style.color = '#ff0055';
+        nextQuestion();
+    }
+
+    function attack() {
+        clearInterval(timerInterval);
+        const input = document.getElementById('player-answer').value;
+        const log = document.getElementById('log-msg');
+        const hintBox = document.getElementById('hint-msg');
+        const card = document.getElementById('game-card');
+
+        if(input === '') { nextQuestion(); return; }
+
+        if(parseInt(input) === currentAns) {
+            comboCount++;
+            let dmg = (Math.floor(Math.random() * 10) + 20) + (comboCount * 3);
+            
+            if(playerClass === 'warrior') dmg = Math.floor(dmg * 1.3);
+            if(playerClass === 'rogue' && Math.random() < 0.5) {
+                dmg = Math.floor(dmg * 2.5);
+                playSound('crit');
+                log.innerText = `🔥 CRITICAL COMBO x${comboCount}! ${dmg} DMG!`;
+            } else {
+                playSound('hit');
+                log.innerText = `💥 ถูกต้อง! โจมตีใส่บอส ${dmg} DMG!`;
+            }
+            log.style.color = '#00ffcc';
+
+            bossHp -= dmg;
+            if(bossHp <= 0) {
+                bossHp = 0;
+                updateHpUI();
+                setTimeout(() => {
+                    alert(`🎉 ยินดีด้วย! คุณเคลียร์ "ระดับ ${currentLevel}" สำเร็จแล้ว!`);
+                    document.getElementById('screen-battle').style.display = 'none';
+                    document.getElementById('screen-diff').style.display = 'block';
+                }, 300);
+                return;
+            }
+            updateHpUI();
+            nextQuestion();
+        } else {
+            playSound('wrong');
+            comboCount = 0;
+            updateHpUI();
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 300);
+
+            if(playerClass === 'mage' && shieldActive) {
+                shieldActive = false;
+                log.innerText = '🛡️ เกราะเวทมนตร์ป้องการตอบผิดไว้ได้!';
+                log.style.color = '#B800FF';
+                nextQuestion();
+            } else {
+                log.innerText = '❌ ตอบผิด! ลองดูวิธีคิดด้านล่างแล้วแก้ตัวใหม่';
+                log.style.color = '#ff0055';
+                hintBox.innerText = currentHint;
+                hintBox.style.display = 'block';
+                // ให้เวลาคิดต่ออีกรอบไม่รีเซ็ตเวลาทันทีเพื่อให้ไม่กดดัน
+                setTimeout(() => { nextQuestion(); }, 4000);
+            }
+        }
+    }
+</script>
+</body>
+</html>
