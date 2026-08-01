@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math RPG: Ultimate Boss Battle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; font-family: 'Chakra Petch', 'Kanit', sans-serif; user-select: none; }
+        body {
+            background: #05050a;
+            color: #fff; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 10px; overflow-x: hidden;
+        }
+
+        /* Effect Shake Screen */
+        .shake { animation: shakeEffect 0.3s ease-in-out; }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-8px, 5px); }
+            50% { transform: translate(8px, -5px); }
+            75% { transform: translate(-5px, -5px); }
+        }
+
+        .game-card {
+            background: linear-gradient(145deg, rgba(20,20,35,0.9), rgba(10,10,20,0.95));
+            border: 2px solid #00f0ff;
+            border-radius: 24px; padding: 25px; width: 100%; max-width: 420px;
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.1);
+            text-align: center; position: relative; backdrop-filter: blur(10px);
+        }
+
+        /* Sound Toggle Button */
+        .sound-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1);
+            border: 1px solid #00f0ff; color: #00f0ff; border-radius: 50%; width: 36px; height: 36px;
+            cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+        }
+
+        h1, h2 { text-shadow: 0 0 10px #00f0ff; margin: 10px 0; font-weight: 700; }
+        
+        .btn {
+            background: linear-gradient(90deg, #ff0055, #ff5000);
+            border: none; color: white; padding: 14px; font-size: 16px; font-weight: bold;
+            border-radius: 12px; cursor: pointer; width: 100%; margin: 8px 0;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); transition: all 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-class { background: linear-gradient(90deg, #7928CA, #B800FF); box-shadow: 0 4px 15px rgba(184, 0, 255, 0.4); }
+        .btn-diff { background: linear-gradient(90deg, #0070F3, #00DFD8); box-shadow: 0 4px 15px rgba(0, 223, 216, 0.4); color: #000; }
+
+        /* Boss Display */
+        .boss-avatar { font-size: 80px; filter: drop-shadow(0 0 20px #ff0055); animation: float 3s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* HP Bar */
+        .hp-container { background: #111; border: 2px solid #333; border-radius: 12px; padding: 3px; margin: 12px 0; position: relative; }
+        .hp-bar { background: linear-gradient(90deg, #ff0055, #ff5000); height: 20px; border-radius: 8px; width: 100%; transition: width 0.4s ease; }
+        .hp-text { position: absolute; width: 100%; top: 3px; left: 0; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+
+        /* Math Display */
+        .math-box {
+            background: rgba(0,0,0,0.6); border: 1px solid #ff0055; border-radius: 16px;
+            padding: 15px; margin: 15px 0; box-shadow: inset 0 0 10px rgba(255,0,85,0.2);
+        }
+        .math-expr { font-size: 26px; color: #fff; text-shadow: 0 0 12px #ff0055; font-weight: bold; }
+
+        input[type="number"] {
+            width: 85%; padding: 12px; font-size: 22px; text-align: center; border-radius: 12px;
+            border: 2px solid #00f0ff; background: #080810; color: #00f0ff; outline: none;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); font-weight: bold; margin-bottom: 10px;
+        }
+
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; background: rgba(0, 240, 255, 0.15); border: 1px solid #00f0ff; color: #00f0ff; font-size: 13px; }
+        
+        /* Hint Modal / Box */
+        .hint-box {
+            background: rgba(255, 0, 85, 0.15); border: 1px dashed #ff0055;
+            border-radius: 10px; padding: 10px; margin-top: 10px; font-size: 13px; color: #ff99bb; text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-card" id="game-card">
+    <button class="sound-btn" id="sound-btn" onclick="toggleAudio()">🔊</button>
+
+    <!-- 1. หน้าเลือกอาชีพ -->
+    <div id="screen-class">
+        <h2>⚔️ SELECT HERO</h2>
+        <p style="color:#aaa; font-size:14px;">เลือกอาชีพประจำตัวของคุณ</p>
+        <button class="btn btn-class" onclick="selectClass('warrior')">🗡️ WARRIOR (ATK +30%)</button>
+        <button class="btn btn-class" onclick="selectClass('mage')">🔮 MAGE (เกราะกันพลาด 1 ครั้ง)</button>
+        <button class="btn btn-class" onclick="selectClass('rogue')">🗡️ ROGUE (คริติคอล x2.5 โอกาส 50%)</button>
+    </div>
+
+    <!-- 2. หน้าเลือกระดับความยาก -->
+    <div id="screen-diff" style="display:none;">
+        <h2>🎯 SELECT LEVEL</h2>
+        <div class="badge" id="class-badge" style="margin-bottom: 15px;"></div>
+        <button class="btn btn-diff" onclick="startGame(1)">LV 1: รูท & กำลังเบสิก</button>
+        <button class="btn btn-diff" onclick="startGame(2)">LV 2: ปานกลาง (ผสมบวกลบ)</button>
+        <button class="btn btn-diff" onclick="startGame(3)">LV 3: ยาก (รากที่ 3 & คูณหาร)</button>
+        <button class="btn btn-diff" onclick="startGame(4)" style="background: linear-gradient(90deg, #ff0055, #7928CA); color:#fff;">LV 4: โคตรยาก (รูทซ้อนรูท)</button>
+        <button class="btn btn-diff" onclick="startGame(5)" style="background: linear-gradient(90deg, #ff0000, #000); color:#ff0055; border:1px solid #ff0055;">LV 5: ตำนาน (พหุนาม & Log)</button>
+    </div>
+
+    <!-- 3. หน้าฉากต่อสู้ -->
+    <div id="screen-battle" style="display:none;">
+        <div class="badge" id="level-badge">LV 1</div>
+        <div class="boss-avatar" id="boss-icon">👹</div>
+        <h3 id="boss-name" style="margin: 5px 0; color: #ff0055;">CYBER DEMON</h3>
+        
+        <div class="hp-container">
+            <div class="hp-bar" id="hp-bar"></div>
+            <div class="hp-text" id="hp-text">HP: 100 / 100</div>
+        </div>
+
+        <div class="math-box">
+            <div class="math-expr" id="math-problem">√16 + 2³ = ?</div>
+        </div>
+
+        <input type="number" id="player-answer" placeholder="คำตอบของคุณ" onkeydown="if(event.key==='Enter') attack()">
+        <button class="btn" onclick="attack()">⚡ ATTACK!</button>
+        
+        <div id="log-msg" style="margin-top: 8px; font-weight: bold; font-size: 14px;"></div>
+        <div id="hint-msg" class="hint-box" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+    // --- 🎵 ระบบเสียงด้วย Web Audio API ---
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playTone(freq, type, duration) {
+        if (!soundEnabled) return;
+        initAudio();
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
+    }
+
+    function playSound(type) {
+        if (type === 'click') playTone(600, 'sine', 0.1);
+        if (type === 'hit') { playTone(150, 'sawtooth', 0.2); playTone(100, 'square', 0.3); }
+        if (type === 'crit') { playTone(800, 'triangle', 0.1); playTone(1200, 'sine', 0.3); }
+        if (type === 'wrong') { playTone(120, 'sawtooth', 0.4); }
+        if (type === 'win') { playTone(400, 'sine', 0.2); setTimeout(()=>playTone(600, 'sine', 0.4), 150); }
+    }
+
+    function toggleAudio() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    // --- 🎮 ระบบเกม ---
+    let playerClass = '', difficulty = 1;
+    let bossHp = 100, maxHp = 100;
+    let currentAns = 0, currentHint = "";
+    let shieldActive = false;
+
+    function selectClass(cls) {
+        playSound('click');
+        playerClass = cls;
+        if(cls === 'mage') shieldActive = true;
+        document.getElementById('screen-class').style.display = 'none';
+        document.getElementById('screen-diff').style.display = 'block';
+        
+        const names = { warrior: 'WARRIOR', mage: 'MAGE', rogue: 'ROGUE' };
+        document.getElementById('class-badge').innerText = `HERO: ${names[cls]}`;
+    }
+
+    function startGame(diff) {
+        playSound('click');
+        difficulty = diff;
+        document.getElementById('screen-diff').style.display = 'none';
+        document.getElementById('screen-battle').style.display = 'block';
+        
+        const bossConfigs = {
+            1: { hp: 120, icon: '👺', name: 'CYBER GOBLIN' },
+            2: { hp: 200, icon: '🐉', name: 'MECHA DRAGON' },
+            3: { hp: 300, icon: '💀', name: 'VOID LICH' },
+            4: { hp: 450, icon: '🤖', name: 'TITAN PRIME' },
+            5: { hp: 600, icon: '🌌', name: 'GOD OF MATH' }
+        };
+
+        maxHp = bossConfigs[diff].hp;
+        bossHp = maxHp;
+        document.getElementById('boss-icon').innerText = bossConfigs[diff].icon;
+        document.getElementById('boss-name').innerText = bossConfigs[diff].name;
+        document.getElementById('level-badge').innerText = `LEVEL ${diff}`;
+        
+        updateHpUI();
+        nextQuestion();
+    }
+
+    function updateHpUI() {
+        const pct = Math.max(0, (bossHp / maxHp) * 100);
+        document.getElementById('hp-bar').style.width = pct + '%';
+        document.getElementById('hp-text').innerText = `HP: ${bossHp} / ${maxHp}`;
+    }
+
+    // --- 🧮 อัลกอริทึมสร้างโจทย์ + เฉลยอย่างละเอียด ---
+    function generateProblem(diff) {
+        let expr = '', ans = 0, hint = '';
+
+        if(diff === 1) { // ง่าย
+            let b = Math.floor(Math.random() * 8) + 2;
+            let r = Math.floor(Math.random() * 9) + 2;
+            expr = `${b}² + √${r*r}`;
+            ans = (b*b) + r;
+            hint = `💡 วิธีคิด: ${b}² = ${b*b} และ √${r*r} = ${r} ➔ ${b*b} + ${r} = ${ans}`;
+        }
+        else if(diff === 2) { // กลาง
+            let b = Math.floor(Math.random() * 5) + 2;
+            let r = Math.floor(Math.random() * 6) + 2;
+            expr = `${b}³ - √${r*r}`;
+            ans = Math.pow(b, 3) - r;
+            hint = `💡 วิธีคิด: ${b}³ = ${Math.pow(b, 3)} และ √${r*r} = ${r} ➔ ${Math.pow(b, 3)} - ${r} = ${ans}`;
+        }
+        else if(diff === 3) { // ยาก (รากที่ 3)
+            let c = Math.floor(Math.random() * 5) + 1; // 1..5
+            let r = Math.floor(Math.random() * 8) + 2;
+            expr = `∛${c*c*c} × √${r*r}`;
+            ans = c * r;
+            hint = `💡 วิธีคิด: รากที่สาม ∛${c*c*c} = ${c} และ √${r*r} = ${r} ➔ ${c} × ${r} = ${ans}`;
+        }
+        else if(diff === 4) { // โคตรยาก (รูทซ้อนรูท)
+            let a = Math.floor(Math.random() * 4) + 2; // 2..5
+            let inner = a * a; 
+            let outerMultiplier = Math.floor(Math.random() * 3) + 2;
+            let fullInner = inner * (outerMultiplier * outerMultiplier);
+            
+            expr = `√(${outerMultiplier*outerMultiplier} × √${inner*inner})`;
+            ans = outerMultiplier * a;
+            hint = `💡 วิธีคิด: ทำจากข้างในก่อน √${inner*inner} = ${inner} ➔ ถัดมา √(${outerMultiplier*outerMultiplier} × ${inner}) = √${ans*ans} = ${ans}`;
+        }
+        else { // ระดับตำนาน (Log & พหุนาม)
+            let type = Math.random();
+            if(type < 0.5) {
+                // Log2(2^x) + √y
+                let x = Math.floor(Math.random() * 5) + 2; // 2..6
+                let r = Math.floor(Math.random() * 7) + 3;
+                expr = `log₂(${Math.pow(2, x)}) + √${r*r}`;
+                ans = x + r;
+                hint = `💡 วิธีคิด: log₂(${Math.pow(2, x)}) คือ 2 กำลังอะไรได้ ${Math.pow(2, x)} (คำตอบคือ ${x}) ➔ ${x} + ${r} = ${ans}`;
+            } else {
+                // (a^2 - b^2) / (a - b)
+                let a = Math.floor(Math.random() * 8) + 5;
+                let b = Math.floor(Math.random() * 4) + 1;
+                expr = `(${a}² - ${b}²) ÷ (${a} - ${b})`;
+                ans = a + b;
+                hint = `💡 วิธีคิด: ใช้สูตรผลต่างกำลังสอง (a²-b²) = (a-b)(a+b) ตัดทอนเหลือ (${a}+${b}) = ${ans}`;
+            }
+        }
+
+        return { expr, ans, hint };
+    }
+
+    function nextQuestion() {
+        const prob = generateProblem(difficulty);
+        document.getElementById('math-problem').innerText = prob.expr + " = ?";
+        currentAns = prob.ans;
+        currentHint = prob.hint;
+        document.getElementById('player-answer').value = '';
+        document.getElementById('hint-msg').style.display = 'none';
+    }
+
+    function attack() {
+        const input = document.getElementById('player-answer').value;
+        const log = document.getElementById('log-msg');
+        const hintBox = document.getElementById('hint-msg');
+        const card = document.getElementById('game-card');
+
+        if(input === '') return;
+
+        if(parseInt(input) === currentAns) {
+            let dmg = Math.floor(Math.random() * 15) + 25;
+            
+            if(playerClass === 'warrior') dmg = Math.floor(dmg * 1.3);
+            if(playerClass === 'rogue' && Math.random() < 0.5) {
+                dmg = Math.floor(dmg * 2.5);
+                playSound('crit');
+                log.innerText = `🔥 CRITICAL HIT! ${dmg} DAMAGE!`;
+            } else {
+                playSound('hit');
+                log.innerText = `💥 HIT! โจมตีใส่บอส ${dmg} DAMAGE!`;
+            }
+            log.style.color = '#00f0ff';
+
+            bossHp -= dmg;
+            if(bossHp <= 0) {
+                bossHp = 0;
+                updateHpUI();
+                playSound('win');
+                setTimeout(() => {
+                    alert('🎉 VICTORY! คุณสามารถปราบบอสระดับตำนานลงได้!');
+                    location.reload();
+                }, 300);
+                return;
+            }
+            updateHpUI();
+            nextQuestion();
+        } else {
+            // ตอบผิด
+            playSound('wrong');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 300);
+
+            if(playerClass === 'mage' && shieldActive) {
+                shieldActive = false;
+                log.innerText = '🛡️ MAGE SHIELD! ป้องกันการโจมตีผิดพลาดได้!';
+                log.style.color = '#B800FF';
+            } else {
+                log.innerText = '❌ INCORRECT! คำตอบไม่ถูกต้อง!';
+                log.style.color = '#ff0055';
+            }
+            
+            // แสดงคำแนะนำ (Hint / เฉลย)
+            hintBox.innerText = currentHint;
+            hintBox.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
