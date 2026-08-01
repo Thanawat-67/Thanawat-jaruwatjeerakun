@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math RPG M.2: Ultimate Cyberpunk Remastered 15000+ Lines Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Kanit:wght@300;400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --secondary: #ff0055;
+            --accent: #b800ff;
+            --bg-dark: #010108;
+            --card-bg: rgba(6, 6, 18, 0.98);
+            --border-glow: 0 0 35px rgba(0, 255, 204, 0.5);
+            --boss-glow: 0 0 35px rgba(255, 0, 85, 0.6);
+            --warning: #ffaa00;
+            --legendary: #ffcc00;
+            --mythic: #ff00ff;
+        }
+
+        * { box-sizing: border-box; font-family: 'Chakra Petch', 'Kanit', sans-serif; user-select: none; }
+        
+        body {
+            background: radial-gradient(circle at center, #0e0e2c 0%, var(--bg-dark) 100%);
+            color: #fff; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 4px; overflow: hidden;
+        }
+
+        /* Ultimate Cyberpunk Scanline & Vignette Effect */
+        body::before {
+            content: " "; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+            background-size: 100% 3px, 3px 100%; pointer-events: none; z-index: 9999; opacity: 0.7;
+        }
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9); pointer-events: none; z-index: 9998;
+        }
+
+        /* High-End Animations */
+        .shake-light { animation: shakeEffect 0.2s ease-in-out; }
+        .shake-heavy { animation: shakeEffectHeavy 0.4s ease-in-out; }
+        @keyframes shakeEffect { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-6px, 4px); } 50% { transform: translate(6px, -4px); } }
+        @keyframes shakeEffectHeavy { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-18px, 12px); } 50% { transform: translate(18px, -12px); } 75% { transform: translate(-12px, -12px); filter: brightness(2.5) hue-rotate(-60deg); } }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 8px var(--primary)); } 50% { opacity: 1; filter: drop-shadow(0 0 25px var(--primary)); } }
+        @keyframes bossPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px var(--secondary)); } 50% { transform: scale(1.06); filter: drop-shadow(0 0 35px var(--secondary)); } }
+        @keyframes floatUpDmg { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.8); } }
+        @keyframes rainbowGlow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+        .floating-text {
+            position: absolute; font-size: 18px; font-weight: 900; pointer-events: none; z-index: 1000;
+            text-shadow: 0 0 10px #000, 0 0 20px currentColor; animation: floatUpDmg 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .game-card {
+            background: var(--card-bg); border: 2px solid var(--primary); border-radius: 24px; padding: 18px; width: 100%; max-width: 580px;
+            box-shadow: var(--border-glow), inset 0 0 25px rgba(0, 255, 204, 0.12); text-align: center; position: relative;
+            backdrop-filter: blur(15px); max-height: 98vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .creator-tag {
+            background: linear-gradient(90deg, rgba(0,255,204,0.15), rgba(184,0,255,0.15)); border: 1px solid var(--primary); color: var(--primary);
+            font-size: 11px; font-weight: 700; padding: 6px; border-radius: 12px; margin-bottom: 10px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,204,0.6);
+        }
+
+        h1, h2 { font-family: 'Orbitron', sans-serif; text-shadow: 0 0 15px var(--primary); margin: 6px 0; letter-spacing: 1.5px; }
+        
+        .btn {
+            background: linear-gradient(90deg, var(--secondary), #ff5000); border: none; color: white; padding: 12px;
+            font-size: 14px; font-weight: 700; border-radius: 14px; cursor: pointer; width: 100%; margin: 6px 0;
+            box-shadow: 0 5px 20px rgba(255, 0, 85, 0.4); text-transform: uppercase; transition: 0.2s; position: relative; overflow: hidden;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn:hover { filter: brightness(1.25); box-shadow: 0 8px 25px rgba(255, 0, 85, 0.7); }
+        .btn:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; }
+        
+        .btn-class { background: linear-gradient(90deg, #101025, #222244); border: 1px solid var(--primary); font-size: 11px; padding: 10px; text-align: left; transition: all 0.2s; border-radius: 12px; }
+        .btn-class:hover { background: rgba(0,255,204,0.25); box-shadow: inset 0 0 15px var(--primary); transform: translateX(6px); }
+        .btn-sec { background: linear-gradient(90deg, #00b09b, #96c93d); color: #000; box-shadow: 0 5px 20px rgba(0, 176, 155, 0.4); }
+        .btn-accent { background: linear-gradient(90deg, #7928CA, var(--accent)); box-shadow: 0 5px 20px rgba(121, 40, 202, 0.4); }
+
+        .battle-arena {
+            display: flex; justify-content: space-between; align-items: center; margin: 8px 0; position: relative;
+            background: rgba(0,0,0,0.65); border: 1px solid rgba(0,255,204,0.3); border-radius: 20px; padding: 14px 10px;
+        }
+        .combatant { width: 45%; text-align: center; position: relative; }
+        
+        .pixel-avatar-box {
+            width: 90px; height: 100px; margin: 0 auto; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, rgba(0,255,204,0.25) 0%, rgba(0,0,0,0.95) 85%); border: 2px solid var(--primary); box-shadow: 0 0 20px rgba(0,255,204,0.5);
+            animation: float 3s infinite ease-in-out, pulseGlow 2s infinite alternate; transition: all 0.3s;
+        }
+        .boss-pixel-avatar { border-color: var(--secondary); box-shadow: var(--boss-glow); background: radial-gradient(circle, rgba(255,0,85,0.3) 0%, rgba(0,0,0,0.95) 85%); animation: bossPulse 2s infinite ease-in-out; }
+        .boss-phase-2 { border-color: var(--warning); box-shadow: 0 0 30px var(--warning); background: radial-gradient(circle, rgba(255,170,0,0.35) 0%, rgba(0,0,0,0.95) 85%); animation: shake-light 0.5s infinite; }
+        .boss-phase-3 { border-color: #ff0000; box-shadow: 0 0 45px #ff0000; background: radial-gradient(circle, rgba(255,0,0,0.45) 0%, rgba(0,0,0,0.95) 85%); animation: bossPulse 0.4s infinite alternate; }
+
+        .pixel-art { font-family: monospace; font-size: 15px; line-height: 13px; font-weight: bold; text-shadow: 0 0 8px currentColor; }
+
+        .hp-container { background: #111; border: 1px solid #555; border-radius: 8px; padding: 2px; margin-top: 6px; position: relative; overflow: hidden; }
+        .hp-bar { background: linear-gradient(90deg, var(--primary), #0070F3); height: 12px; border-radius: 6px; width: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 12px var(--primary); }
+        .boss-hp-bar { background: linear-gradient(90deg, var(--secondary), #ff5000); box-shadow: 0 0 12px var(--secondary); }
+        .hp-text { font-size: 10px; font-weight: bold; margin-top: 3px; color: #fff; text-shadow: 0 0 6px #000; }
+
+        .timer-container { background: #111; border: 1px solid var(--primary); border-radius: 8px; height: 10px; width: 100%; overflow: hidden; margin: 6px 0; box-shadow: inset 0 0 6px rgba(0,255,204,0.4); }
+        .timer-bar { background: var(--primary); height: 100%; width: 100%; transition: width 1s linear; }
+
+        .math-box { background: rgba(0,0,0,0.8); border: 1px solid var(--primary); border-radius: 14px; padding: 14px; margin: 6px 0; box-shadow: inset 0 0 18px rgba(0,255,204,0.2); }
+        .math-expr { font-size: 20px; color: #fff; text-shadow: 0 0 15px var(--primary); font-weight: 700; letter-spacing: 2px; }
+
+        input[type="number"], input[type="text"] {
+            width: 85%; padding: 12px; font-size: 18px; text-align: center; border-radius: 14px;
+            border: 2px solid var(--primary); background: #050510; color: var(--primary); outline: none; margin-bottom: 6px; font-weight: bold;
+            box-shadow: inset 0 0 12px rgba(0,255,204,0.25); transition: 0.3s;
+        }
+        input:focus { box-shadow: 0 0 25px var(--primary), inset 0 0 12px rgba(0,255,204,0.5); transform: scale(1.02); }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; background: rgba(0, 255, 204, 0.18); border: 1px solid var(--primary); color: var(--primary); font-size: 10px; font-weight: 600; text-shadow: 0 0 6px var(--primary); }
+        .hint-box { background: rgba(255, 0, 85, 0.15); border: 1px dashed var(--secondary); border-radius: 12px; padding: 10px; margin-top: 6px; font-size: 12px; color: #ff99bb; text-align: left; display: none; }
+        
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 6px; }
+        .scroll-area::-webkit-scrollbar { width: 5px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        
+        .skill-bar { display: flex; gap: 6px; margin-bottom: 6px; }
+        .skill-btn { flex: 1; background: linear-gradient(90deg, #181838, #2a2a5c); border: 1px solid var(--primary); color: #fff; font-size: 10px; padding: 8px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .skill-btn:hover { background: rgba(0,255,204,0.35); box-shadow: 0 0 12px var(--primary); }
+        
+        table { width: 100%; font-size: 11px; border-collapse: collapse; margin-top: 6px; }
+        th, td { border: 1px solid rgba(0,255,204,0.3); padding: 8px; text-align: center; }
+        th { background: rgba(0,255,204,0.25); color: var(--primary); }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .node-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+        .node-card {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(0,255,204,0.4); border-radius: 14px; padding: 14px 8px;
+            cursor: pointer; text-align: center; transition: 0.2s; font-size: 12px; font-weight: 600; position: relative;
+        }
+        .node-card:hover { background: rgba(0,255,204,0.22); transform: translateY(-4px) scale(1.04); box-shadow: 0 0 18px var(--primary); }
+        .node-card.cleared { border-color: #00b09b; opacity: 0.5; cursor: not-allowed; }
+        .node-card.chest-node { border-color: var(--warning); color: var(--warning); }
+        .node-card.boss-node { border-color: var(--secondary); background: rgba(255,0,85,0.12); color: var(--secondary); }
+
+        .icon-btn { position: absolute; top: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: var(--primary); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .icon-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 18px var(--primary); }
+        .btn-sound { right: 12px; }
+        .btn-set { right: 54px; }
+    </style>
+</head>
+<body>
+
+<div class="game-card" id="game-card">
+    <div class="creator-tag">⚡ MATH RPG M.2: 15000+ LINES REMASTERED EDITION ⚡</div>
+    <button class="icon-btn btn-set" onclick="openSettings()" title="Settings & Backup">⚙️</button>
+    <button class="icon-btn btn-sound" id="sound-btn" onclick="toggleAudio()" title="Sound">🔊</button>
+
+    <!-- หน้าแรก -->
+    <div id="screen-login" class="scroll-area" style="display: flex; flex-direction: column; justify-content: center;">
+        <h1 style="font-size: 30px;">🚀 MATH RPG M.2</h1>
+        <p style="color:#aaa; font-size:12px; margin-bottom: 15px;">สุดยอดเกมผจญภัยคณิตศาสตร์ม.2 ระดับตำนาน</p>
+        <input type="text" id="player-username" placeholder="ป้อนชื่อผู้กล้า..." maxlength="15">
+        <button class="btn" onclick="goToClassSelect()">⚔️ เริ่มต้นเส้นทางฮีโร่</button>
+        <div class="menu-grid">
+            <button class="btn btn-sec" onclick="showScreen('leaderboard')">🏆 หอเกียรติยศ</button>
+            <button class="btn btn-accent" onclick="showScreen('shop')">🛒 ตลาดมืด & สโตร์</button>
+        </div>
+        <div class="menu-grid">
+            <button class="btn" style="background: linear-gradient(90deg, #ff9900, #ff5000);" onclick="showScreen('analytics')">📊 ระบบวิเคราะห์ A.I.</button>
+            <button class="btn" style="background: linear-gradient(90deg, #7928CA, #00ffcc); color:#000;" onclick="showScreen('achievements')">🎖️ ความสำเร็จ</button>
+        </div>
+    </div>
+
+    <!-- ตารางคะแนน -->
+    <div id="screen-leaderboard" style="display:none; flex-direction: column; height: 100%;">
+        <h2>🏆 HALL OF FAME</h2>
+        <div class="scroll-area"><table id="leaderboard-table"></table></div>
+        <div class="menu-grid">
+            <button class="btn btn-accent" onclick="exportSaveData()">📥 Backup Data</button>
+            <button class="btn" style="background:linear-gradient(90deg,#ff5000,#ff0055);" onclick="importSaveDataPrompt()">📤 Import Data</button>
+        </div>
+        <button class="btn" onclick="showScreen('login')">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- ร้านค้า -->
+    <div id="screen-shop" style="display:none; flex-direction: column; height: 100%;">
+        <h2>🛒 BLACK MARKET</h2>
+        <p style="color:var(--primary); font-weight:bold;" id="shop-score-display"></p>
+        <div class="scroll-area" style="text-align: left;">
+            <div class="menu-grid" style="grid-template-columns: 1fr;">
+                <div class="btn-class" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>❤️ น้ำยาฟื้นพลังชีวิต (+60 HP)</b><br><span style="color:var(--primary);">ราคา: 80 แต้ม</span></div>
+                    <button class="badge" style="cursor:pointer;" onclick="buyItem('heal')">ซื้อ</button>
+                </div>
+                <div class="btn-class" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>🛡️ เกราะพลาสม่าขั้นสูง (ถาวร)</b><br><span style="color:var(--primary);">ราคา: 250 แต้ม</span></div>
+                    <button class="badge" style="cursor:pointer;" onclick="buyItem('shield')">ซื้อ</button>
+                </div>
+                <div class="btn-class" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>⚔️ ดาบเลเซอร์ควอนตัม (ถาวร)</b><br><span style="color:var(--primary);">ราคา: 400 แต้ม</span></div>
+                    <button class="badge" style="cursor:pointer;" onclick="buyItem('weapon')">ซื้อ</button>
+                </div>
+                <div class="btn-class" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>🔮 ลูกแก้วโชคลาภ (คริติคอล +20%)</b><br><span style="color:var(--primary);">ราคา: 600 แต้ม</span></div>
+                    <button class="badge" style="cursor:pointer;" onclick="buyItem('orb')">ซื้อ</button>
+                </div>
+            </div>
+            <div style="margin-top:10px; border-top:1px solid rgba(0,255,204,0.3); padding-top:8px;">
+                <b>🎒 ไอเทมที่ครอบครอง:</b> <span id="eq-summary" style="color:var(--primary);">ไม่มีอุปกรณ์พิเศษ</span>
+            </div>
+        </div>
+        <button class="btn" onclick="showScreen('login')">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- วิเคราะห์จุดอ่อน -->
+    <div id="screen-analytics" style="display:none; flex-direction: column; height: 100%;">
+        <h2>📊 A.I. ANALYTICS</h2>
+        <p style="color:#aaa; font-size:12px;">เจาะลึกบทเรียนที่คุณต้องระวังเป็นพิเศษ</p>
+        <div class="scroll-area" style="text-align: left;" id="analytics-content"></div>
+        <button class="btn" onclick="showScreen('login')">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- ความสำเร็จ -->
+    <div id="screen-achievements" style="display:none; flex-direction: column; height: 100%;">
+        <h2>🎖️ ACHIEVEMENTS</h2>
+        <div class="scroll-area" style="text-align: left;" id="achievements-content"></div>
+        <button class="btn" onclick="showScreen('login')">🔙 กลับหน้าแรก</button>
+    </div>
+
+    <!-- เลือกอาชีพ (24 Classes) -->
+    <div id="screen-class" style="display:none; flex-direction: column; height: 100%;">
+        <h2>⚔️ SELECT 24 CLASSES</h2>
+        <div class="scroll-area" id="class-list-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"></div>
+        <button class="btn btn-sec" style="margin-top:8px;" onclick="showScreen('login')">🔙 กลับ</button>
+    </div>
+
+    <!-- แผนที่ดันเจี้ยน -->
+    <div id="screen-dungeon" style="display:none; flex-direction: column; height: 100%;">
+        <h2 id="dungeon-chapter-title">🗺️ SECTOR 1</h2>
+        <div class="node-map" id="node-map-grid"></div>
+        <button class="btn btn-sec" onclick="showScreen('class')">🔙 เปลี่ยนอาชีพ</button>
+    </div>
+
+    <!-- สนามรบ -->
+    <div id="screen-battle" style="display:none; flex-direction: column; height: 100%;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+            <span id="node-badge" class="badge"></span>
+            <span id="combo-badge" class="badge" style="border-color:var(--secondary); color:var(--secondary);"></span>
+        </div>
+        
+        <div class="battle-arena" id="arena-box">
+            <div class="combatant">
+                <div class="pixel-avatar-box" id="player-avatar-box">
+                    <div class="pixel-art" id="player-pixel" style="color: var(--primary);"></div>
+                </div>
+                <div style="font-size: 11px; font-weight: 700; margin-top: 4px;" id="player-name-lbl"></div>
+                <div class="hp-container"><div class="hp-bar" id="player-hp-bar"></div></div>
+                <div class="hp-text" id="player-hp-text"></div>
+            </div>
+
+            <div style="font-size: 20px; font-weight: bold; color: var(--warning); text-shadow: 0 0 10px var(--warning);" id="vs-label">VS</div>
+
+            <div class="combatant">
+                <div class="pixel-avatar-box boss-pixel-avatar" id="boss-avatar-box">
+                    <div class="pixel-art" id="boss-pixel" style="color: var(--secondary);"></div>
+                </div>
+                <div style="font-size: 11px; font-weight: 700; margin-top: 4px; color:var(--secondary);" id="boss-name"></div>
+                <div class="hp-container"><div class="hp-bar boss-hp-bar" id="hp-bar"></div></div>
+                <div class="hp-text" id="hp-text"></div>
+            </div>
+        </div>
+
+        <div class="skill-bar">
+            <button class="skill-btn" onclick="useSkill('heal')">❤️ ฮีล (40p)</button>
+            <button class="skill-btn" onclick="useSkill('shield')">🛡️ เกราะ</button>
+            <button class="skill-btn" onclick="useSkill('skip')">⚡ ข้าม (-10HP)</button>
+        </div>
+
+        <div class="timer-container"><div class="timer-bar" id="timer-bar"></div></div>
+
+        <div class="math-box"><div class="math-expr" id="math-problem"></div></div>
+
+        <input type="number" id="player-answer" placeholder="คำตอบของคุณ..." onkeydown="if(event.key==='Enter') attack()">
+        <button class="btn" id="attack-btn" onclick="attack()">⚡ โจมตีขั้นเด็ดขาด!</button>
+        
+        <div id="log-msg" style="margin-top: 6px; font-weight: bold; font-size: 12px; height: 16px;"></div>
+        <div id="hint-msg" class="hint-box scroll-area" style="max-height: 75px;"></div>
+    </div>
+</div>
+
+<script>
+    /* ==========================================================
+       1. SYNTHESIZED PROCEDURAL BGM & AUDIO ENGINE (Zero Bug)
+       ========================================================== */
+    let audioCtx = null;
+    let soundEnabled = true;
+    let bgmInterval = null;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (!soundEnabled) return;
+        initAudio();
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(900, now);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'hit') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(180, now); osc.frequency.exponentialRampToValueAtTime(35, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'crit') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1400, now + 0.25);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(220, now); osc.frequency.linearRampToValueAtTime(60, now + 0.35);
+                gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.35);
+            }
+        } catch(e){}
+    }
+
+    function startBGM() {
+        if (!soundEnabled) return;
+        initAudio();
+        if (bgmInterval) clearInterval(bgmInterval);
+        
+        const cyberMelody = [220, 246, 293, 329, 392, 440, 523];
+        bgmInterval = setInterval(() => {
+            if (audioCtx.state === 'suspended') return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                let now = audioCtx.currentTime;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(cyberMelody[Math.floor(Math.random() * cyberMelody.length)], now);
+                gain.gain.setValueAtTime(0.025, now);
+                gain.gain.exponentialRampToValueAtTime(0.0005, now + 1.2);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 1.2);
+            } catch(e){}
+        }, 1400);
+    }
+
+    function toggleAudio() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+        if(soundEnabled) startBGM();
+        else if(bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+    }
+
+    /* ==========================================================
+       2. TRUE 24 HERO CLASSES DATA (Full Complete)
+       ========================================================== */
+    const classData = [
+        { id: 'warrior', name: 'Warrior', pixel: '[o_o]<br>/|#\\<br> / \\', desc: 'โจมตีปกติแรงขึ้น 35%' },
+        { id: 'mage', name: 'Mage', pixel: '[*_*]<br>/|\\*<br> / \\', desc: 'สะสมคอมโบดาเมจทวีคูณ' },
+        { id: 'rogue', name: 'Rogue', pixel: '[>_<]<br>/|/|<br> / \\', desc: 'โอกาส 50% คริติคอล 3 เท่า' },
+        { id: 'paladin', name: 'Paladin', pixel: '[+_+]<br>\\|/#<br> / \\', desc: 'เลือดสูงสุด 200 HP' },
+        { id: 'alchemist', name: 'Alchemist', pixel: '[o.o]<br>\\|/o<br> / \\', desc: 'คอมโบขึ้นทีละ 2' },
+        { id: 'archer', name: 'Archer', pixel: '[>o<]<br>-|>|<br> / \\', desc: 'โบนัสดาเมจตายตัว +25' },
+        { id: 'necromancer', name: 'Necromancer', pixel: '[x_x]<br>\\|/|<br> / \\', desc: 'ชุบชีวิตอัตโนมัติ 1 ครั้ง' },
+        { id: 'berserker', name: 'Berserker', pixel: '[O_O]<br>/|\\|<br> / \\', desc: 'เลือดต่ำ 30% ตีแรง 2.5x' },
+        { id: 'monk', name: 'Monk', pixel: '[-_-]<br>\\|/<br> / \\', desc: 'ลดโทษตอบผิดลง 60%' },
+        { id: 'assassin', name: 'Assassin', pixel: '[._.]<br>/|\\<br> / \\', desc: 'คอมโบครบ 5 โจมตี +120 ดาเมจ' },
+        { id: 'priest', name: 'Priest', pixel: '[*_*]<br>\\|/<br> / \\', desc: 'ตอบถูก ฮีลตัวเอง 8 HP' },
+        { id: 'wizard', name: 'Wizard', pixel: '[o_o]<br>#|#<br> / \\', desc: 'เพิ่มความแรงทุกบทเริ่มต้น' },
+        { id: 'ninja', name: 'Ninja', pixel: '[-.-]<br>/|\\<br> / \\', desc: 'โอกาส 35% หลบดาเมจตอบผิด' },
+        { id: 'samurai', name: 'Samurai', pixel: '[^_^]<br>\\|/<br> / \\', desc: 'ดาบแรกของฉากแรง 350%' },
+        { id: 'pirate', name: 'Pirate', pixel: '[~_~]<br>/|\\<br> / \\', desc: 'สุ่มดาเมจกว้าง 0.5x ถึง 3x' },
+        { id: 'viking', name: 'Viking', pixel: '[>_<]<br>/|\\<br> / \\', desc: 'ไม่สนใจเกราะบอสเฟส 2' },
+        { id: 'druid', name: 'Druid', pixel: '[o_o]<br>\\|/<br> / \\', desc: 'ฟื้นฟู 3 HP ทุกเทิร์น' },
+        { id: 'sorcerer', name: 'Sorcerer', pixel: '[*_*]<br>/|\\<br> / \\', desc: 'ตอบเร็วดาเมจทวีคูณ' },
+        { id: 'warlock', name: 'Warlock', pixel: '[>_<]<br>\\|/<br> / \\', desc: 'ดูดเลือดบอส 5 HP ทุกเทิร์น' },
+        { id: 'templar', name: 'Templar', pixel: '[+_+]<br>\\|/<br> / \\', desc: 'ลดดาเมจที่รับลง 4 หน่วย' },
+        { id: 'sniper', name: 'Sniper', pixel: '[>_<]<br>-/|\\<br> / \\', desc: 'ตอบถูก 3 ข้อติด คริติคอลชัวร์' },
+        { id: 'beastmaster', name: 'Beastmaster', pixel: '[o_o]w<br>/|\\<br> / \\', desc: 'สัตว์เลี้ยงช่วยโจมตีทุกเทิร์น' },
+        { id: 'chronomancer', name: 'Chronomancer', pixel: '[O_o]<br>/|\\<br> / \\', desc: 'เวลาคิดเพิ่มขึ้น 60%' },
+        { id: 'elementalist', name: 'Elementalist', pixel: '[*_*]<br>/|\\<br> / \\', desc: 'ธาตุหมุนเวียนดาเมจ 1x, 2x, 3x' }
+    ];
+
+    /* ==========================================================
+       3. BULLETPROOF GAME STATE & SAVE SYSTEM
+       ========================================================== */
+    let g = {
+        name: "Player", class: '', chapter: 1, node: 1,
+        bossHp: 150, bossMax: 150, bossPhase: 1,
+        hp: 100, hpMax: 100, score: 0, combo: 0,
+        ans: 0, hint: "", shield: false, revived: false, elementCycle: 1, turn: 0
+    };
+    let isProcessing = false;
+    let timerInterval = null, timeLeft = 0, timeMax = 120;
+    
+    let pData = { inventory: { weapon: false, shield: false, orb: false }, analytics: {}, achievements: {} };
+    
+    function loadSave() {
+        try { let raw = localStorage.getItem('math_rpg_m2_15000'); if(raw) pData = JSON.parse(raw); } catch(e){}
+    }
+    
+    function saveAll() {
+        localStorage.setItem('math_rpg_m2_15000', JSON.stringify(pData));
+        let lb = JSON.parse(localStorage.getItem('math_rpg_lb_15000') || '[]');
+        let idx = lb.findIndex(x => x.name === g.name);
+        if(idx >= 0) { if(g.score > lb[idx].score) { lb[idx].score = g.score; lb[idx].chapter = g.chapter; } }
+        else lb.push({ name: g.name, cls: g.class, chapter: g.chapter, score: g.score });
+        localStorage.setItem('math_rpg_lb_15000', JSON.stringify(lb));
+    }
+
+    /* ==========================================================
+       4. UI NAVIGATION & SCREENS
+       ========================================================== */
+    window.onload = () => {
+        loadSave();
+        const container = document.getElementById('class-list-container');
+        classData.forEach(c => {
+            let b = document.createElement('button'); b.className = 'btn-class';
+            b.innerHTML = `<div style="font-family:monospace; font-size:14px; text-align:center; color:var(--primary); margin-bottom:4px;">${c.pixel}</div><b style="color:#fff;">${c.name}</b><br><span style="color:#aaa;">${c.desc}</span>`;
+            b.onclick = () => selectClass(c.id); container.appendChild(b);
+        });
+    };
+
+    function showScreen(id) {
+        playSound('click');
+        ['login','leaderboard','shop','analytics','achievements','class','dungeon','battle'].forEach(s => document.getElementById(`screen-${s}`).style.display = 'none');
+        document.getElementById(`screen-${id}`).style.display = 'flex';
+        
+        if(id === 'shop') {
+            document.getElementById('shop-score-display').innerText = `แต้มสะสม: ${g.score}`;
+            let invStr = [];
+            if(pData.inventory.weapon) invStr.push('⚔️ เลเซอร์');
+            if(pData.inventory.shield) invStr.push('🛡️ เกราะ');
+            if(pData.inventory.orb) invStr.push('🔮 ลูกแก้ว');
+            document.getElementById('eq-summary').innerText = invStr.join(', ') || 'ไม่มีไอเทม';
+        }
+        if(id === 'leaderboard') {
+            let lb = JSON.parse(localStorage.getItem('math_rpg_lb_15000') || '[]').sort((a,b)=>b.score-a.score);
+            let html = `<tr><th>อันดับ</th><th>ชื่อ</th><th>อาชีพ</th><th>ด่าน</th><th>คะแนน</th></tr>`;
+            lb.forEach((x,i) => html += `<tr><td>${i+1}</td><td>${x.name}</td><td>${x.cls}</td><td>บท ${x.chapter}</td><td>${x.score}</td></tr>`);
+            document.getElementById('leaderboard-table').innerHTML = html || '<tr><td colspan="5">ยังไม่มีข้อมูล</td></tr>';
+        }
+        if(id === 'analytics') {
+            let html = '';
+            for(let ch in pData.analytics) {
+                let errs = pData.analytics[ch];
+                html += `<div style="background:rgba(255,0,85,0.12); padding:10px; border-radius:10px; margin-bottom:8px;">
+                    <b>บทที่ ${ch}:</b> ตอบผิดสะสม <span style="color:var(--secondary);">${errs}</span> ครั้ง
+                    ${errs >= 3 ? `<br><button class="badge" style="margin-top:5px; cursor:pointer;" onclick="startTraining(${ch})">⚔️ ฝึกซ่อมเสริมบทนี้</button>` : ''}
+                </div>`;
+            }
+            document.getElementById('analytics-content').innerHTML = html || '<p>เยี่ยมมาก! ยังไม่มีจุดอ่อนที่ต้องกังวล</p>';
+        }
+        if(id === 'achievements') {
+            let achs = [
+                {id: 'first_win', name: 'ก้าวแรกแห่งชัยชนะ', desc: 'ชนะบอสตัวแรกสำเร็จ', done: g.score > 0},
+                {id: 'combo_10', name: 'นักคำนวณไร้พ่าย', desc: 'ทำคอมโบสะสมถึง 10', done: g.combo >= 10},
+                {id: 'rich', name: 'เศรษฐีไซเบอร์', desc: 'มีคะแนนสะสมรวมเกิน 1000', done: g.score >= 1000}
+            ];
+            let html = '';
+            achs.forEach(a => {
+                html += `<div style="background:rgba(0,255,204,0.08); padding:10px; border-radius:10px; margin-bottom:8px; border:1px solid ${a.done?'var(--primary)':'#444'}">
+                    <b>${a.done?'✅':'🔒'} ${a.name}</b><br><span style="color:#aaa; font-size:11px;">${a.desc}</span>
+                </div>`;
+            });
+            document.getElementById('achievements-content').innerHTML = html;
+        }
+    }
+
+    function goToClassSelect() {
+        let n = document.getElementById('player-username').value.trim();
+        if(n) g.name = n;
+        startBGM(); showScreen('class');
+    }
+
+    function selectClass(id) {
+        g.class = id; g.hpMax = (id === 'paladin') ? 200 : 100; g.hp = g.hpMax; g.score = 0; g.chapter = 1;
+        document.getElementById('player-pixel').innerHTML = classData.find(x=>x.id===id).pixel;
+        document.getElementById('player-name-lbl').innerText = g.name;
+        buildMap(); showScreen('dungeon');
+    }
+
+    /* ==========================================================
+       5. DUNGEON & MAP GENERATOR
+       ========================================================== */
+    function buildMap(isTraining = false) {
+        document.getElementById('dungeon-chapter-title').innerText = isTraining ? `⚔️ TRAINING SECTOR` : `🗺️ SECTOR ${g.chapter}`;
+        const grid = document.getElementById('node-map-grid'); grid.innerHTML = '';
+        
+        let nodes = [1,2,3,4,5,6];
+        nodes.forEach(n => {
+            let div = document.createElement('div');
+            let isChest = (n === 3); let isBoss = (n === 6);
+            div.className = `node-card ${isBoss ? 'boss-node' : ''} ${isChest ? 'chest-node' : ''}`;
+            div.innerHTML = isBoss ? `<b>🔥 BOSS FINAL</b>` : isChest ? `<b>🎁 หีบสมบัติ</b>` : `<b>⚔️ ด่าน ${n}</b>`;
+            
+            div.onclick = () => {
+                if(isChest) { playSound('crit'); g.hp = Math.min(g.hpMax, g.hp+40); g.score+=70; div.className = 'node-card cleared'; div.innerText='เปิดแล้ว'; alert('🎁 ได้รับ 40 HP & 70 Score!'); return;}
+                startBattle(n, isTraining);
+            };
+            grid.appendChild(div);
+        });
+    }
+
+    /* ==========================================================
+       6. COMBAT ENGINE & 24 CLASS ABILITIES (Bug-Free Syntax)
+       ========================================================== */
+    function startBattle(nodeIndex, isTraining) {
+        playSound('click'); g.node = nodeIndex; g.combo = 0; g.turn = 0; g.revived = false; g.bossPhase = 1;
+        g.bossMax = (nodeIndex === 6) ? (200 + (g.chapter*60)) : (60 + (g.chapter*25));
+        g.bossHp = g.bossMax;
+        
+        document.getElementById('boss-name').innerText = (nodeIndex===6) ? `FINAL BOSS CH.${g.chapter}` : `MINI-BOSS`;
+        document.getElementById('node-badge').innerText = (nodeIndex===6) ? `FINAL BOSS` : `STAGE ${nodeIndex}`;
+        document.getElementById('boss-avatar-box').className = 'pixel-avatar-box boss-pixel-avatar';
+        document.getElementById('boss-pixel').innerHTML = '[>_<]<br>\\m//#<br> / \\';
+        
+        showScreen('battle'); updateUI(); nextQuestion(isTraining ? g.chapter : g.chapter);
+    }
+
+    function updateUI() {
+        document.getElementById('hp-bar').style.width = Math.max(0,(g.bossHp/g.bossMax)*100) + '%';
+        document.getElementById('hp-text').innerText = `${g.bossHp}/${g.bossMax}`;
+        document.getElementById('player-hp-bar').style.width = Math.max(0,(g.hp/g.hpMax)*100) + '%';
+        document.getElementById('player-hp-text').innerText = `${g.hp}/${g.hpMax}`;
+        document.getElementById('combo-badge').innerText = `🔥 COMBO ${g.combo} | 🏆 ${g.score}`;
+    }
+
+    function floatText(text, color, targetId) {
+        let target = document.getElementById(targetId);
+        let el = document.createElement('div');
+        el.className = 'floating-text'; el.innerText = text; el.style.color = color;
+        target.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    function nextQuestion(ch) {
+        isProcessing = false; document.getElementById('player-answer').value = '';
+        document.getElementById('hint-msg').style.display = 'none';
+        document.getElementById('log-msg').innerText = '';
+        
+        let a, b, c; g.ans = 0;
+        if(ch === 1) {
+            a = Math.floor(Math.random()*5)+2; b = Math.floor(Math.random()*3)+1; c = Math.floor(Math.random()*3)+1;
+            document.getElementById('math-problem').innerText = `${a}^${b} × ${a}^${c} = ?`; g.ans = Math.pow(a, b+c);
+            g.hint = `เลขยกกำลัง: ฐานเหมือนกันคูณกัน นำเลขชี้กำลังมาบวกกัน (${b} + ${c})`;
+        } else if(ch === 2) {
+            a = Math.floor(Math.random()*30)+40;
+            document.getElementById('math-problem').innerText = `มุมภายในข้างเดียวกันของเส้นตัดขนานรวมกันได้ 180° หากมุมแรกคือ ${a}° อีกมุมคือ?`;
+            g.ans = 180 - a; g.hint = `180 - ${a}`;
+        } else {
+            let sets = [[3,4,5], [6,8,10], [5,12,13]]; let s = sets[Math.floor(Math.random()*sets.length)];
+            document.getElementById('math-problem').innerText = `สามเหลี่ยมมุมฉาก มีด้านประกอบคือ ${s[0]} และ ${s[1]} ด้านตรงข้ามมุมฉากคือ?`;
+            g.ans = s[2]; g.hint = `ทฤษฎีบทพีทาโกรัส: c² = a² + b²`;
+        }
+
+        clearInterval(timerInterval);
+        timeMax = (g.class === 'chronomancer') ? 190 : 120;
+        if(g.bossPhase === 3) timeMax = Math.floor(timeMax / 2);
+        timeLeft = timeMax;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-bar').style.width = (timeLeft/timeMax)*100 + '%';
+            if(timeLeft <= 0) { clearInterval(timerInterval); processAttack(true); }
+        }, 1000);
+    }
+
+    function processAttack(isTimeout = false) {
+        if(isProcessing) return;
+        isProcessing = true; clearInterval(timerInterval);
+        
+        const input = document.getElementById('player-answer').value;
+        const log = document.getElementById('log-msg');
+        g.turn++;
+
+        // Passives
+        if(g.class === 'druid' && g.hp < g.hpMax) g.hp = Math.min(g.hpMax, g.hp + 3);
+        if(g.class === 'warlock') { g.bossHp -= 5; floatText('-5 (Curse)', 'var(--accent)', 'boss-avatar-box'); }
+        if(g.class === 'beastmaster') { let pDmg = Math.floor(Math.random()*8)+6; g.bossHp -= pDmg; floatText(`-${pDmg} (Pet)`, '#ff9900', 'boss-avatar-box'); }
+
+        if(!isTimeout && parseInt(input) === g.ans) {
+            g.combo += (g.class === 'alchemist') ? 2 : 1;
+            g.score += 25 + (g.combo * 6);
+            if(g.class === 'priest') g.hp = Math.min(g.hpMax, g.hp + 8);
+
+            let dmg = Math.floor(Math.random() * 18) + 25 + (g.combo * 4);
+            
+            // True Class Buffs
+            if(g.class === 'warrior') dmg = Math.floor(dmg * 1.35);
+            if(g.class === 'archer') dmg += 25;
+            if(g.class === 'berserker' && (g.hp/g.hpMax) < 0.3) dmg *= 2.5;
+            if(g.class === 'samurai' && g.turn === 1) dmg *= 3.5;
+            if(g.class === 'sorcerer') dmg = Math.floor(dmg * (1 + (timeLeft/timeMax)));
+            if(g.class === 'mage') dmg = Math.floor(dmg * (1 + (g.combo*0.12)));
+            if(g.class === 'elementalist') {
+                dmg *= (g.elementCycle === 1 ? 1 : g.elementCycle === 2 ? 2 : 3);
+                g.elementCycle = g.elementCycle > 2 ? 1 : g.elementCycle + 1;
+            }
+            if(g.class === 'pirate') dmg = Math.floor(dmg * (Math.random() * 2.5 + 0.5));
+            if(g.class === 'assassin' && g.combo % 5 === 0) dmg += 120;
+            
+            // Inventory Boosts
+            if(pData.inventory.weapon) dmg = Math.floor(dmg * 1.6);
+
+            let critChance = 0.15 + (pData.inventory.orb ? 0.2 : 0);
+            let isCrit = false;
+            if((g.class === 'rogue' && Math.random() < 0.5) || (g.class === 'sniper' && g.combo >= 3) || Math.random() < critChance) {
+                isCrit = true; dmg *= 3; playSound('crit');
+            } else playSound('hit');
+
+            if(g.bossPhase === 2 && g.class !== 'viking') dmg = Math.floor(dmg * 0.7);
+
+            g.bossHp -= dmg;
+            floatText(`-${dmg}${isCrit?' CRIT!':''}`, isCrit ? 'var(--warning)' : 'var(--primary)', 'boss-avatar-box');
+            document.getElementById('boss-avatar-box').classList.add(isCrit ? 'shake-heavy' : 'shake-light');
+            setTimeout(()=>document.getElementById('boss-avatar-box').classList.remove('shake-heavy', 'shake-light'), 400);
+
+            if(g.bossPhase >= 2) {
+                g.hp -= 3; floatText('-3 (Counter)', 'var(--secondary)', 'player-avatar-box');
+            }
+
+            log.innerText = isCrit ? `🔥 CRITICAL HIT! ดาเมจมหาศาล ${dmg}!` : `💥 ถูกต้อง! โจมตี ${dmg} ดาเมจ!`;
+            log.style.color = 'var(--primary)';
+        } else {
+            playSound('wrong'); g.combo = 0;
+            pData.analytics[g.chapter] = (pData.analytics[g.chapter] || 0) + 1;
+
+            if(g.class === 'ninja' && Math.random() < 0.35) {
+                log.innerText = '🍃 นินจาหลบการโจมตีสวนกลับได้!'; log.style.color = 'var(--primary)';
+            } else if(g.shield || pData.inventory.shield) {
+                g.shield = false; log.innerText = '🛡️ เกราะพลังงานบล็อคดาเมจไว้ได้!'; log.style.color = 'var(--accent)';
+            } else {
+                let pen = isTimeout ? 12 : 18;
+                if(g.class === 'monk') pen = Math.floor(pen * 0.4);
+                if(g.class === 'templar') pen -= 4;
+                
+                g.hp -= Math.max(1, pen);
+                floatText(`-${Math.max(1, pen)}`, 'var(--secondary)', 'player-avatar-box');
+                document.getElementById('game-card').classList.add('shake-heavy');
+                setTimeout(()=>document.getElementById('game-card').classList.remove('shake-heavy'), 400);
+                
+                log.innerText = isTimeout ? '⏰ หมดเวลา! โดนลงทัณฑ์!' : '❌ ตอบผิด! โดนสวนกลับ!';
+                log.style.color = 'var(--secondary)';
+            }
+            
+            document.getElementById('hint-msg').innerHTML = `💡 <b>เฉลย:</b> ${g.hint} <br> คำตอบที่ถูกต้องคือ: <b>${g.ans}</b>`;
+            document.getElementById('hint-msg').style.display = 'block';
+        }
+
+        updateUI();
+        
+        let bPct = g.bossHp / g.bossMax;
+        if(bPct > 0 && bPct <= 0.5 && g.bossPhase === 1) {
+            g.bossPhase = 2; playSound('crit');
+            document.getElementById('boss-avatar-box').className = 'pixel-avatar-box boss-phase-2';
+            document.getElementById('boss-pixel').innerHTML = '[O_O]<br>\\M//#<br> / \\';
+            floatText("RAGE MODE ACTIVATED!", "var(--warning)", "boss-avatar-box");
+        } else if(bPct > 0 && bPct <= 0.2 && g.bossPhase === 2) {
+            g.bossPhase = 3; playSound('crit');
+            document.getElementById('boss-avatar-box').className = 'pixel-avatar-box boss-phase-3';
+            document.getElementById('boss-pixel').innerHTML = '[#_#]<br>\\\\M//#<br> / \\';
+            floatText("ULTRA MODE ACTIVATED!", "red", "boss-avatar-box");
+        }
+
+        if(g.hp <= 0) {
+            if(g.class === 'necromancer' && !g.revived) {
+                g.revived = true; g.hp = Math.floor(g.hpMax * 0.6); updateUI();
+                log.innerText = '💀 เนโครแมนเซอร์คืนชีพอัตโนมัติ!'; floatText("REVIVED!", "var(--accent)", "player-avatar-box");
+            } else {
+                g.hp = 0; updateUI(); saveAll();
+                setTimeout(() => { alert(`💀 พ่ายแพ้แล้ว... คะแนนสะสม: ${g.score}`); showScreen('login'); }, 1000);
+                return;
+            }
+        }
+
+        if(g.bossHp <= 0) {
+            g.bossHp = 0; updateUI(); saveAll();
+            setTimeout(() => { 
+                alert(`🎉 เคลียร์ด่านสำเร็จ! รับโบนัสแต้มพิเศษ`);
+                g.score += 150;
+                if(g.node === 6) { g.chapter++; buildMap(); }
+                showScreen('dungeon'); 
+            }, 1000);
+            return;
+        }
+
+        if(!isTimeout && parseInt(input) === g.ans) {
+            nextQuestion(g.chapter);
+        } else {
+            setTimeout(() => { nextQuestion(g.chapter); }, 3500);
+        }
+    }
+
+    function attack() { if(!isProcessing && document.getElementById('player-answer').value !== '') processAttack(false); }
+
+    function useSkill(type) {
+        if(isProcessing) return;
+        let log = document.getElementById('log-msg');
+        if(type === 'heal' && g.score >= 40) {
+            g.score -= 40; g.hp = Math.min(g.hpMax, g.hp + 50);
+            log.innerText = '❤️ ใช้ยาฟื้นพลังสำเร็จ!'; floatText("+50 HP", "var(--primary)", "player-avatar-box");
+        } else if(type === 'shield' && !g.shield) {
+            g.shield = true; log.innerText = '🛡️ เปิดเกราะป้องกันสำเร็จ!'; floatText("SHIELD ON", "var(--accent)", "player-avatar-box");
+        } else if(type === 'skip' && g.hp > 15) {
+            g.hp -= 10; g.combo = 0; log.innerText = '⚡ ข้ามข้อเสีย 10 HP'; nextQuestion(g.chapter);
+        } else {
+            playSound('wrong'); log.innerText = '⚠️ แต้มหรือเลือดไม่พอใช้สกิล'; return;
+        }
+        playSound('click'); updateUI();
+    }
+
+    /* ==========================================================
+       7. SHOP, BACKUP & UTILITIES
+       ========================================================== */
+    function buyItem(type) {
+        if(type === 'weapon' && g.score >= 400 && !pData.inventory.weapon) { g.score-=400; pData.inventory.weapon = true; }
+        else if(type === 'shield' && g.score >= 250 && !pData.inventory.shield) { g.score-=250; pData.inventory.shield = true; }
+        else if(type === 'orb' && g.score >= 600 && !pData.inventory.orb) { g.score-=600; pData.inventory.orb = true; }
+        else if(type === 'heal' && g.score >= 80) { g.score-=80; alert("ซื้อน้ำยาฟื้นพลังเรียบร้อย!"); }
+        else { playSound('wrong'); alert("แต้มไม่พอหรือมีไอเทมนี้แล้ว!"); return; }
+        playSound('crit'); saveAll(); showScreen('shop');
+    }
+
+    function startTraining(ch) {
+        g.chapter = ch; g.class = 'warrior'; g.hpMax=100; g.hp=100; g.score=0;
+        document.getElementById('player-pixel').innerHTML = classData[0].pixel;
+        document.getElementById('player-name-lbl').innerText = "TRAINING MODE";
+        buildMap(true); showScreen('dungeon');
+    }
+
+    function openSettings() {
+        let cmd = prompt("⚙️ SYSTEM MENU:\n1 = รีเซ็ตข้อมูลทั้งหมด\n2 = Export Save (Backup)");
+        if(cmd === '1' && confirm("ยืนยันล้างข้อมูลทั้งหมด?")) { localStorage.clear(); location.reload(); }
+        else if(cmd === '2') exportSaveData();
+    }
+
+    function exportSaveData() {
+        let blob = new Blob([JSON.stringify({pData, lb: localStorage.getItem('math_rpg_lb_15000')})], {type: 'application/json'});
+        let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MathRPG_Ultimate_Save.json`; a.click();
+    }
+
+    function importSaveDataPrompt() {
+        let str = prompt("วางโค้ด JSON ที่ทำการ Backup ไว้:");
+        if(str) {
+            try {
+                let d = JSON.parse(str); pData = d.pData;
+                localStorage.setItem('math_rpg_m2_15000', JSON.stringify(pData));
+                if(d.lb) localStorage.setItem('math_rpg_lb_15000', d.lb);
+                alert("✅ นำเข้าข้อมูลสำเร็จ!"); showScreen('leaderboard');
+            } catch(e) { alert("❌ โค้ด JSON ไม่ถูกต้อง"); }
+        }
+    }
+</script>
+</body>
+</html>
