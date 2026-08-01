@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมสู้บอสคณิตศาสตร์</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f9; padding: 20px; }
+        .card { background: white; max-width: 350px; margin: 0 auto; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .boss-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px; }
+        .boss-emoji { font-size: 80px; margin: 10px 0; }
+        .hp-text { font-size: 20px; color: red; font-weight: bold; }
+        .question { font-size: 28px; margin: 15px 0; font-weight: bold; }
+        input { font-size: 20px; padding: 8px; width: 120px; text-align: center; margin-bottom: 15px; }
+        button { font-size: 18px; padding: 10px 20px; background-color: #ff4d4d; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        button:hover { background-color: #e60000; }
+        .result { font-size: 16px; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- แสดงรูป boss.png ถ้าไม่มีจะแสดงอิโมจิแทนอัตโนมัติ -->
+        <div id="boss-container">
+            <img src="boss.png" alt="Boss" class="boss-img" onerror="this.style.display='none'; document.getElementById('emoji-boss').style.display='block';">
+            <div id="emoji-boss" class="boss-emoji" style="display:none;">👹</div>
+        </div>
+
+        <div class="hp-text" id="hp-display">HP บอส: 100 / 100</div>
+        <div class="question" id="question">?</div>
+        
+        <input type="number" id="answer-input" placeholder="คำตอบ" onkeydown="if(event.key==='Enter') checkAnswer()">
+        <br>
+        <button onclick="checkAnswer()">⚔️ โจมตี!</button>
+
+        <div class="result" id="result-msg"></div>
+    </div>
+
+    <script>
+        let bossHp = 100;
+        let currentAnswer = 0;
+
+        function generateQuestion() {
+            let n1 = Math.floor(Math.random() * 12) + 1;
+            let n2 = Math.floor(Math.random() * 12) + 1;
+            const ops = ['+', '-', '*'];
+            const op = ops[Math.floor(Math.random() * ops.length)];
+
+            if (op === '-' && n1 < n2) [n1, n2] = [n2, n1];
+
+            if (op === '+') currentAnswer = n1 + n2;
+            else if (op === '-') currentAnswer = n1 - n2;
+            else currentAnswer = n1 * n2;
+
+            document.getElementById('question').innerText = `${n1} ${op} ${n2} = ?`;
+            document.getElementById('answer-input').value = '';
+        }
+
+        function checkAnswer() {
+            const userInput = document.getElementById('answer-input').value;
+            const resultMsg = document.getElementById('result-msg');
+
+            if (userInput === '') {
+                resultMsg.innerText = "⚠️ กรุณากรอกตัวเลข!";
+                resultMsg.style.color = "orange";
+                return;
+            }
+
+            if (parseInt(userInput) === currentAnswer) {
+                const dmg = Math.floor(Math.random() * 11) + 15;
+                bossHp -= dmg;
+                if (bossHp < 0) bossHp = 0;
+
+                document.getElementById('hp-display').innerText = `HP บอส: ${bossHp} / 100`;
+                resultMsg.innerText = `✨ ถูกต้อง! โจมตีใส่บอส ${dmg} หน่วย!`;
+                resultMsg.style.color = "green";
+
+                if (bossHp === 0) {
+                    alert("🎉 ยินดีด้วย! คุณสามารถปราบบอสลงได้สำเร็จ!");
+                    location.reload();
+                } else {
+                    generateQuestion();
+                }
+            } else {
+                resultMsg.innerText = "❌ ตอบผิด! บอสหลบได้!";
+                resultMsg.style.color = "red";
+            }
+        }
+
+        generateQuestion();
+    </script>
+</body>
+</html>
