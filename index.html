@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quest: ตะวันสุดหล่อ พิชิตจักรวาลคณิตศาสตร์ ม.2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff006e;
+            --neon-purple: #b537f2;
+            --neon-green: #39ff14;
+            --neon-yellow: #ffe600;
+            --dark-bg: #0a0a1a;
+            --card-bg: rgba(15, 15, 35, 0.95);
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-bright: #ffffff;
+            --text-dim: #b0b0d0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: var(--dark-bg);
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.06) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 0, 110, 0.06) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(181, 55, 242, 0.06) 0%, transparent 55%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.15;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.8);
+            }
+        }
+        .main-container {
+            width: 100%;
+            max-width: 780px;
+            position: relative;
+            z-index: 1;
+        }
+        .game-wrapper {
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 2px solid var(--glass-border);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.25), 0 20px 60px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+        .game-header {
+            padding: 14px 20px;
+            text-align: center;
+            background: rgba(0, 240, 255, 0.04);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .creator-badge {
+            display: inline-block;
+            background: rgba(255, 0, 110, 0.18);
+            border: 1px solid var(--neon-pink);
+            padding: 5px 14px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--neon-pink);
+            letter-spacing: 2px;
+        }
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.7em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+        .game-content {
+            padding: 14px;
+            max-height: 76vh;
+            overflow-y: auto;
+        }
+        .game-content::-webkit-scrollbar {
+            width: 5px;
+        }
+        .game-content::-webkit-scrollbar-thumb {
+            background: var(--neon-purple);
+            border-radius: 3px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 18px;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.5px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
+            margin: 3px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 114, 255, 0.5);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-green {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+        }
+        .btn-red {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        }
+        .btn-yellow {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a2e;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: none;
+        }
+        .btn-outline:hover {
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: none;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+        .btn-pink {
+            background: linear-gradient(135deg, #ff006e, #ff4b8b);
+        }
+        .btn-sm {
+            padding: 6px 11px;
+            font-size: 10px;
+            border-radius: 7px;
+        }
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: 9px;
+            border-radius: 5px;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            margin-bottom: 7px;
+            font-size: 11px;
+            color: #e0e0f0;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .stat-value {
+            font-weight: 700;
+            color: var(--neon-blue);
+        }
+        .stat-gold {
+            font-weight: 700;
+            color: var(--neon-yellow);
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .badge-gold {
+            background: rgba(255, 230, 0, 0.15);
+            color: var(--neon-yellow);
+            border: 1px solid var(--neon-yellow);
+        }
+        .badge-green {
+            background: rgba(57, 255, 20, 0.15);
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+        }
+        .badge-blue {
+            background: rgba(0, 240, 255, 0.15);
+            color: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+        }
+        .badge-red {
+            background: rgba(255, 0, 110, 0.15);
+            color: var(--neon-pink);
+            border: 1px solid var(--neon-pink);
+        }
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 9px;
+        }
+        .class-card {
+            background: var(--glass);
+            border: 2px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 13px;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            position: relative;
+        }
+        .class-card:hover {
+            border-color: var(--neon-yellow);
+            transform: translateY(-3px);
+            box-shadow: 0 0 18px rgba(255, 230, 0, 0.25);
+        }
+        .class-card.selected {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 18px rgba(57, 255, 20, 0.35);
+            background: rgba(57, 255, 20, 0.08);
+        }
+        .class-emoji {
+            font-size: 44px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .class-name {
+            font-weight: 700;
+            color: var(--text-bright);
+            font-size: 14px;
+        }
+        .class-desc {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+        .chapter-container {
+            margin-bottom: 7px;
+        }
+        .chapter-header {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 13px;
+            padding: 9px 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            transition: all 0.25s;
+        }
+        .chapter-header:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
+        }
+        .chapter-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+        .chapter-info {
+            flex: 1;
+        }
+        .chapter-name {
+            font-weight: 600;
+            color: var(--text-bright);
+            font-size: 12px;
+        }
+        .chapter-progress {
+            font-size: 9px;
+            color: var(--text-dim);
+        }
+        .level-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            padding: 4px 0 0 45px;
+        }
+        .level-btn {
+            padding: 7px 4px;
+            border-radius: 7px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-bright);
+            cursor: pointer;
+            font-size: 9px;
+            transition: all 0.25s;
+            text-align: center;
+            font-family: 'Kanit', sans-serif;
+        }
+        .level-btn:hover {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.25);
+        }
+        .level-btn.completed {
+            border-color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.12);
+        }
+        .level-btn.current {
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 10px rgba(255, 230, 0, 0.3);
+        }
+        .battle-scene {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 14px;
+            padding: 15px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 9px;
+            text-align: center;
+            position: relative;
+        }
+        .emoji-display {
+            font-size: 58px;
+            display: inline-block;
+            transition: transform 0.3s, opacity 0.3s;
+            line-height: 1;
+            user-select: none;
+        }
+        .emoji-display.shake {
+            animation: emojiShake 0.4s ease-in-out;
+        }
+        .emoji-display.crit {
+            animation: emojiCrit 0.5s ease-out;
+        }
+        @keyframes emojiShake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-7px);
+            }
+            75% {
+                transform: translateX(7px);
+            }
+        }
+        @keyframes emojiCrit {
+            0% {
+                transform: scale(1);
+            }
+            30% {
+                transform: scale(1.7) rotate(-8deg);
+            }
+            60% {
+                transform: scale(1.1) rotate(4deg);
+            }
+            100% {
+                transform: scale(1) rotate(0);
+            }
+        }
+        .combatants-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .combatant {
+            text-align: center;
+            min-width: 85px;
+        }
+        .combatant-name {
+            color: var(--text-bright);
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+        .combatant-name.boss {
+            color: var(--neon-pink);
+        }
+        .hp-bar-outer {
+            background: #1a1a2e;
+            border-radius: 7px;
+            height: 9px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin-top: 3px;
+            width: 100%;
+            max-width: 120px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hp-bar-inner {
+            height: 100%;
+            border-radius: 7px;
+            transition: width 0.4s;
+            background: linear-gradient(90deg, #00f0ff, #00c6ff);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+        .hp-bar-inner.boss-hp {
+            background: linear-gradient(90deg, #ff006e, #ff4b2b);
+            box-shadow: 0 0 8px rgba(255, 0, 110, 0.4);
+        }
+        .hp-text {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 1px;
+        }
+        .vs-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 22px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 12px rgba(255, 230, 0, 0.6);
+        }
+        .timer-bar-outer {
+            background: #1a1a2e;
+            border-radius: 5px;
+            height: 9px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin-top: 7px;
+        }
+        .timer-bar-inner {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.1s linear;
+            background: var(--neon-yellow);
+        }
+        .timer-text {
+            font-size: 10px;
+            color: var(--neon-yellow);
+            font-weight: 700;
+            text-align: center;
+            margin-top: 1px;
+        }
+        .question-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 13px;
+            padding: 14px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 9px;
+        }
+        .question-display {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-bright);
+            text-align: center;
+            margin-bottom: 9px;
+            line-height: 1.5;
+        }
+        .answer-input-row {
+            display: flex;
+            gap: 7px;
+        }
+        .answer-input {
+            flex: 1;
+            padding: 11px 14px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 9px;
+            border: 2px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-bright);
+            outline: none;
+            transition: all 0.25s;
+            font-family: 'Kanit', sans-serif;
+        }
+        .answer-input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+        }
+        .answer-input:disabled {
+            opacity: 0.5;
+        }
+        .answer-input.correct-flash {
+            border-color: var(--neon-green) !important;
+            box-shadow: 0 0 18px rgba(57, 255, 20, 0.45) !important;
+            background: rgba(57, 255, 20, 0.08) !important;
+        }
+        .answer-input.wrong-flash {
+            border-color: var(--neon-pink) !important;
+            box-shadow: 0 0 18px rgba(255, 0, 110, 0.45) !important;
+            background: rgba(255, 0, 110, 0.08) !important;
+        }
+        .combo-display {
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+            margin-top: 5px;
+            min-height: 18px;
+            color: var(--neon-yellow);
+        }
+        .feedback-msg {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 3px;
+            min-height: 14px;
+            color: var(--text-dim);
+        }
+        .shop-item {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 11px;
+            padding: 11px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.25s;
+        }
+        .shop-item:hover {
+            border-color: var(--neon-purple);
+        }
+        .gacha-card {
+            background: var(--glass);
+            border: 2px solid var(--neon-yellow);
+            border-radius: 15px;
+            padding: 18px;
+            text-align: center;
+        }
+        .gacha-result {
+            font-size: 52px;
+            animation: gachaReveal 0.6s ease-out;
+        }
+        @keyframes gachaReveal {
+            0% {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.3) rotate(-8deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.82);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 17px;
+            padding: 24px;
+            max-width: 420px;
+            width: 90%;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
+            text-align: center;
+        }
+        .flex-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-sm {
+            font-size: 9px;
+        }
+        .mt-1 {
+            margin-top: 2px;
+        }
+        .mt-2 {
+            margin-top: 5px;
+        }
+        .mt-4 {
+            margin-top: 11px;
+        }
+        .mb-2 {
+            margin-bottom: 5px;
+        }
+        .w-full {
+            width: 100%;
+        }
+        .progress-bar {
+            background: #1a1a2e;
+            border-radius: 5px;
+            height: 5px;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            transition: width 0.4s;
+        }
+        .pet-card {
+            background: var(--glass);
+            border: 2px solid var(--glass-border);
+            border-radius: 13px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            width: 100%;
+        }
+        .pet-card:hover {
+            border-color: var(--neon-purple);
+            transform: translateY(-2px);
+        }
+        .pet-card.equipped {
+            border-color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.06);
+        }
+        .pet-emoji {
+            font-size: 40px;
+            display: block;
+        }
+        @media (max-width: 600px) {
+            .class-grid {
+                grid-template-columns: 1fr;
+            }
+            .level-list {
+                grid-template-columns: repeat(3, 1fr);
+                padding-left: 0;
+            }
+            .emoji-display {
+                font-size: 42px;
+            }
+            .game-title {
+                font-size: 1.2em;
+            }
+            .combatants-row {
+                gap: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars-container" id="starsContainer"></div>
+    <div class="main-container">
+        <div class="game-wrapper" id="gameWrapper">
+            <div class="game-header">
+                <div class="creator-badge">⚡ ตะวันสุดหล่อ ⚡</div>
+                <div class="game-title">MATH QUEST</div>
+                <div class="subtitle">พิชิตจักรวาลคณิตศาสตร์ ม.2 | Ultimate Edition</div>
+            </div>
+            <div class="game-content" id="gameContent"></div>
+        </div>
+    </div>
+    <div id="modalContainer"></div>
+    <script>
+        // ==================== GAME ENGINE ====================
+        let audioCtx = null,
+            bgGain = null,
+            bgOsc = null,
+            musicOn = false;
+
+        function initAudio() { if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)(); }
+
+        function playSound(f, t = 'sine', d = 0.12, v = 0.04) {
+            try {
+                initAudio();
+                const o = audioCtx.createOscillator(),
+                    g = audioCtx.createGain();
+                o.type = t;
+                o.frequency.setValueAtTime(f, audioCtx.currentTime);
+                g.gain.setValueAtTime(v, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.start();
+                o.stop(audioCtx.currentTime + d);
+            } catch (e) {}
+        }
+
+        function sfxClick() { playSound(600, 'sine', 0.06); }
+
+        function sfxCorrect() { playSound(700, 'triangle', 0.12);
+            setTimeout(() => playSound(1100, 'triangle', 0.12), 80); }
+
+        function sfxWrong() { playSound(140, 'sawtooth', 0.18); }
+
+        function sfxCrit() { playSound(350, 'square', 0.18);
+            setTimeout(() => playSound(800, 'square', 0.18), 80); }
+
+        function sfxWin() { [500, 700, 900, 1100].forEach((f, i) => setTimeout(() => playSound(f, 'triangle', 0.16), i *
+                100)); }
+
+        function startMusic() {
+            if (musicOn) return;
+            initAudio();
+            bgGain = audioCtx.createGain();
+            bgGain.gain.value = 0.02;
+            bgGain.connect(audioCtx.destination);
+            bgOsc = audioCtx.createOscillator();
+            bgOsc.type = 'triangle';
+            bgOsc.frequency.value = 220;
+            bgOsc.connect(bgGain);
+            bgOsc.start();
+            musicOn = true;
+        }
+
+        function stopMusic() { if (bgOsc) { bgOsc.stop();
+                bgOsc = null; } if (bgGain) { bgGain.disconnect();
+                bgGain = null; }
+            musicOn = false; }
+
+        function createStars() { const c = document.getElementById('starsContainer'); for (let i = 0; i < 120; i++) { const
+                s = document.createElement('div');
+                s.className = 'star';
+                s.style.width = (Math.random() * 3 + 1) + 'px';
+                s.style.height = s.style.width;
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+                s.style.setProperty('--delay', (Math.random() * 5) + 's');
+                c.appendChild(s); } }
+
+        function spawnParticle(x, y, t, col) { const p = document.createElement('div');
+            p.style.cssText =
+                `position:fixed;pointer-events:none;z-index:200;left:${x}px;top:${y}px;font-size:22px;animation:sparkle 1s ease-out forwards;color:${col}`;
+            p.textContent = t;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1000); }
+        const sparkleStyle = document.createElement('style');
+        sparkleStyle.textContent =
+            '@keyframes sparkle{0%{transform:translateY(0) scale(0.3);opacity:1}100%{transform:translateY(-120px) scale(1.4);opacity:0}}';
+        document.head.appendChild(sparkleStyle);
+
+        // DATA
+        const chapters = [{ id: 1, n: 'จำนวนเต็ม', icon: '🔢', boss: '🐢' }, { id: 2, n: 'เศษส่วน', icon: '🍕', boss: '🐉' },
+            { id: 3, n: 'เลขยกกำลัง', icon: '⚡', boss: '🐲' }, { id: 4, n: 'พหุนาม', icon: '📐', boss: '🧙‍♂️' }, { id: 5,
+                n: 'แยกตัวประกอบ', icon: '🧩', boss: '🤖' }, { id: 6, n: 'สมการ', icon: '⚖️', boss: '👾' }, { id: 7,
+                n: 'อัตราส่วน', icon: '📊', boss: '🦊' }, { id: 8, n: 'ความเท่ากัน', icon: '🔷', boss: '💀' }, { id: 9,
+                n: 'พีทาโกรัส', icon: '📏', boss: '🐺' }, { id: 10, n: 'สถิติ/ความน่าจะเป็น', icon: '🎲', boss: '👑' }
+        ];
+        const classes = { warrior: { n: 'นักรบ', e: '🦸', d: 'DMG+35% HP+20\n⚔️ฟันดาบ\n🛡️ตั้งรับ', hp: 20, dmg: 1.35,
+                s1: { n: '⚔️ฟันดาบ', cd: 3, t: 'dmg', mul: 2, cost: 12 }, s2: { n: '🛡️ตั้งรับ', cd: 4, t: 'shield',
+                    cost: 10 } }, mage: { n: 'จอมเวทย์', e: '🧙', d: 'คริ+25%\n🔥ลูกไฟ\n💚ฮีล', hp: 0, dmg: 1,
+                crit: 0.25, cmul: 4, s1: { n: '🔥ลูกไฟ', cd: 4, t: 'gcrit', mul: 2.5, cost: 14 }, s2: { n: '💚ฮีล', cd: 3,
+                    t: 'heal', heal: 45, cost: 12 } }, rogue: { n: 'โจร', e: '🥷', d: 'คริ+15% คอมโบ1.5x\n🗡️ลอบ\n💨หลบ',
+                hp: -8, dmg: 1, crit: 0.15, combo: 1.5, s1: { n: '🗡️ลอบ', cd: 3, t: 'cboost', mul: 3, cost: 13 },
+                s2: { n: '💨หลบ', cd: 5, t: 'dodge', cost: 15 } } };
+        const gachaClasses = { paladin: { n: 'พาลาดิน', e: '🛡️', d: 'HP+60 DMG+25%\n✨แสง\n🛡️โล่เทพ', hp: 60, dmg: 1.25,
+                s1: { n: '✨แสง', cd: 3, t: 'dmgheal', mul: 2, heal: 30, cost: 18 }, s2: { n: '🛡️โล่เทพ', cd: 4,
+                    t: 'shieldheal', heal: 25, cost: 16 } }, necromancer: { n: 'เนโคร', e: '🧟', d: 'คริ+40%\n👻วิญญาณ\n💀ดูด',
+                hp: -15, dmg: 1, crit: 0.4, cmul: 6, s1: { n: '👻วิญญาณ', cd: 4, t: 'gcrit', mul: 3.5, cost: 20 },
+                s2: { n: '💀ดูด', cd: 3, t: 'drain', mul: 2, healPct: 0.5, cost: 18 } }, berserker: { n: 'เบอร์เซิร์ก',
+                e: '💢', d: 'DMG+70%\n💢คลั่ง\n⚡สู้ตาย', hp: -20, dmg: 1.7, s1: { n: '💢คลั่ง', cd: 3, t: 'dmg', mul: 4,
+                    cost: 16 }, s2: { n: '⚡สู้ตาย', cd: 4, t: 'berserk', mul: 2, cost: 12 } } };
+        const pets = { dog: { n: 'สุนัข', e: '🐕', cost: 100, bonus: 'dmg', amt: 0.1, desc: 'ดาเมจ+10%', shop: 1 },
+            cat: { n: 'แมว', e: '🐱', cost: 100, bonus: 'crit', amt: 0.08, desc: 'คริ+8%', shop: 1 }, fox: { n: 'จิ้งจอก',
+                e: '🦊', cost: 180, bonus: 'combo', amt: 0.5, desc: 'คอมโบ+50%', shop: 1 }, phoenix: { n: 'ฟีนิกซ์',
+                e: '🦅', cost: 300, bonus: 'both', amt: 0.12, desc: 'DMG+12% คริ+12%', shop: 1 }, dragon: { n: 'มังกรน้อย',
+                e: '🐉', cost: 500, bonus: 'all', amt: 0.18, desc: '+18%/+18%/+80%', shop: 1 }, unicorn: { n: 'ยูนิคอร์น',
+                e: '🦄', bonus: 'both', amt: 0.2, desc: 'DMG+20% คริ+20%' }, phking: { n: 'ราชาฟีนิกซ์', e: '🔥',
+                bonus: 'all', amt: 0.25, desc: '+25%/+25%/+120%' }, wolf: { n: 'หมาป่า', e: '🐺', bonus: 'dmg',
+                amt: 0.3, desc: 'ดาเมจ+30%' }, angel: { n: 'แมวเทวา', e: '😇', bonus: 'crit', amt: 0.22,
+            desc: 'คริ+22%' }, demon: { n: 'จิ้งจอกปีศาจ', e: '👹', bonus: 'combo', amt: 1.2, desc: 'คอมโบ+120%' },
+            cosmic: { n: 'มังกรจักรวาล', e: '🌌', bonus: 'all', amt: 0.35, desc: '+35%/+35%/+200%' } };
+        const gachaPetPool = ['unicorn', 'phking', 'wolf', 'angel', 'demon', 'cosmic'];
+        const gachaClassPool = ['paladin', 'necromancer', 'berserker'];
+
+        // PLAYER STATE
+        let player = { name: 'ผู้กล้า', hp: 100, maxHp: 100, score: 0, gold: 80, combo: 0, maxCombo: 0, tc: 0, tw: 0,
+            shield: false, ch: 1, lv: 1, bossHp: 200, bossMaxHp: 200, exp: 0, plv: 1, rebirth: 0, rbonus: 0 };
+        let pclass = 'warrior',
+            epet = null,
+            inv = { w: 0, s: 0, h: 0, a: 0, p: 0, sh: 0, orb: false, potion: 0, sp: 0 };
+        let myPets = [],
+            myGClasses = [],
+            completed = {},
+            bossKills = [],
+            scd = { s1: 0, s2: 0 },
+            act = {},
+            ucnt = { s1: 0, s2: 0 },
+            timer = null,
+            tLeft = 0,
+            quest = null;
+
+        function getClass() { return { ...classes, ...gachaClasses } [pclass] || classes.warrior; }
+
+        function getMaxHp() { return 100 + (getClass().hp || 0) + (player.plv - 1) * 5 + inv.s * 12 + inv.h * 5 + inv.a * 8 +
+                inv.p * 6 + player.rbonus * 25; }
+
+        function getPetBonus() { if (!epet || !pets[epet]) return { dmg: 0, crit: 0, combo: 0 }; let p = pets[epet],
+                b = { dmg: 0, crit: 0, combo: 0 }; if (p.bonus == 'dmg') b.dmg = p.amt; if (p.bonus == 'crit') b.crit =
+                p.amt; if (p.bonus == 'combo') b.combo = p.amt; if (p.bonus == 'both') { b.dmg = p.amt;
+                b.crit = p.amt; } if (p.bonus == 'all') { b.dmg = p.amt;
+                b.crit = p.amt;
+                b.combo = p.amt; } return b; }
+
+        function wpMul() { return 1 + inv.w * 0.2; }
+
+        function loadGame() { try { let s = JSON.parse(localStorage.getItem('mq_final')); if (s) { player = s.player;
+                    pclass = s.pclass;
+                    epet = s.epet;
+                    inv = s.inv;
+                    myPets = s.myPets || [];
+                    myGClasses = s.myGClasses || [];
+                    completed = s.completed || {};
+                    bossKills = s.bossKills || [];
+                    player.maxHp = getMaxHp(); if (player.hp > player.maxHp) player.hp = player.maxHp; } } catch (e) {} }
+
+        function saveGame() { localStorage.setItem('mq_final', JSON.stringify({ player, pclass, epet, inv, myPets,
+                myGClasses, completed, bossKills })); }
+
+        function addExp(a) { player.exp += a; let need = player.plv * 80 + player.rebirth * 40; if (player.exp >= need) {
+                player.exp -= need;
+                player.plv++;
+                player.maxHp = getMaxHp();
+                player.hp = player.maxHp; } }
+
+        function addGold(a) { player.gold += a; }
+
+        function useGold(a) { if (player.gold >= a) { player.gold -= a; return true; } return false; }
+
+        function isCompleted(ch, l) { return completed[ch]?.includes(l); }
+
+        function unlockNext(ch, l) { if (!completed[ch]) completed[ch] = []; if (!completed[ch].includes(l)) completed[ch]
+                .push(l); if (l == 5 && !bossKills.includes(ch)) bossKills.push(ch);
+            addExp(l == 5 ? 60 : 15);
+            saveGame(); }
+
+        // SCREENS
+        function scr(n) { if (timer) clearInterval(timer);
+            stopMusic(); let c = document.getElementById('gameContent'); switch (n) { case 'menu':
+                c.innerHTML = menu(); break; case 'chap':
+                c.innerHTML = chapterScreen(); break; case 'battle':
+                c.innerHTML = battleHTML();
+                setupBattle();
+                startMusic(); break; case 'inv':
+                c.innerHTML = inventory(); break; case 'shop':
+                c.innerHTML = shop(); break; case 'pet':
+                c.innerHTML = petShop(); break; case 'gpet':
+                c.innerHTML = gacha('pet'); break; case 'gclass':
+                c.innerHTML = gacha('class'); break; case 'equip':
+                c.innerHTML = equip(); break; case 'class':
+                c.innerHTML = classSelect(); break; case 'rebirth':
+                c.innerHTML = rebirth(); break; case 'lead':
+                c.innerHTML = leaderboard(); break;
+            default:
+                c.innerHTML = menu(); } }
+
+        function menu() { let cd = getClass(); let pi = epet && pets[epet] ? pets[epet].e + ' ' + pets[epet].n : 'ไม่มี'; return `
+        <div class="flex-col" style="gap:6px">
+          <div style="text-align:center;color:var(--text-bright);font-size:14px">🎮 ${player.name} | ${cd.e} ${cd.n} <span class="badge badge-blue">เกิดใหม่:${player.rebirth}</span></div>
+          <div class="stats-bar"><span>⭐${player.score}</span><span>🪙<span class="stat-gold">${player.gold}</span></span><span>Lv.<span class="stat-value">${player.plv}</span></span><span>🐾${pi}</span></div>
+          <div class="stats-bar"><span>⚔️${inv.w}</span><span>🛡️${inv.s}</span><span>⛑️${inv.h}</span><span>👕${inv.a}</span><span>👖${inv.p}</span><span>👟${inv.sh}</span></div>
+          <button class="btn w-full" onclick="scr('chap')">⚔️ การผจญภัย</button>
+          <button class="btn btn-outline w-full" onclick="scr('inv')">🎒 กระเป๋า</button>
+          <button class="btn btn-outline w-full" onclick="scr('shop')">🛒 ร้านค้า</button>
+          <button class="btn btn-outline w-full" onclick="scr('pet')">🐾 ร้านสัตว์เลี้ยง</button>
+          <button class="btn btn-gold w-full" onclick="scr('gpet')">🎰 กาชาสัตว์เลี้ยง 200🪙</button>
+          <button class="btn btn-pink w-full" onclick="scr('gclass')">💎 กาชาคลาส 500🪙</button>
+          <button class="btn btn-outline w-full" onclick="scr('equip')">🔧 อัพเกรดอุปกรณ์</button>
+          <button class="btn btn-outline w-full" onclick="scr('class')">🔄 เปลี่ยนคลาส</button>
+          <button class="btn btn-outline w-full" onclick="scr('lead')">🏆 ลีดเดอร์บอร์ด</button>
+          <button class="btn btn-red w-full" onclick="scr('rebirth')">💀 เกิดใหม่</button>
+        </div>`; }
+
+        function chapterScreen() { let h = '<div class="flex-col" style="gap:6px">';
+            chapters.forEach(ch => { let prog = (completed[ch.id] || []).length;
+                h +=
+                    `<div class="chapter-container"><div class="chapter-header" onclick="toggleChapter(${ch.id})"><div class="chapter-icon">${ch.icon}</div><div class="chapter-info"><div class="chapter-name">${ch.n}</div><div class="chapter-progress">${prog}/5</div><div class="progress-bar"><div class="progress-fill" style="width:${prog/5*100}%"></div></div></div></div><div class="level-list" id="ch-${ch.id}" style="display:none">${[1,2,3,4,5].map(l=>`<button class="level-btn ${isCompleted(ch.id,l)?'completed':'current'}" onclick="startBattle(${ch.id},${l})">ด.${l}${l==5?'👑':''}</button>`).join('')}</div></div>`; });
+            h += '<button class="btn btn-outline w-full mt-4" onclick="scr(\'menu\')">🔙 กลับ</button></div>';
+            return h; }
+
+        function toggleChapter(id) { let el = document.getElementById('ch-' + id);
+            el.style.display = el.style.display == 'none' ? 'grid' : 'none'; }
+
+        function classSelect() { let h = '<h3 style="color:var(--text-bright)">เลือกคลาส</h3><div class="class-grid">'; let
+        all = { ...classes };
+            myGClasses.forEach(k => { if (gachaClasses[k]) all[k] = gachaClasses[k]; }); for (let [k, d] of Object.entries(
+                all)) { let unl = !d.unlock || bossKills.includes(d.unlock);
+                h +=
+                    `<div class="class-card ${pclass==k?'selected':''}" onclick="${unl?`selectClass('${k}')`:'showLocked()'}"><span class="class-emoji">${d.e}</span><div class="class-name">${d.n}</div><div class="class-desc">${d.d.replace(/\n/g,'<br>')}</div></div>`; }
+            h += '</div><button class="btn btn-outline w-full mt-4" onclick="scr(\'menu\')">🔙</button>';
+        return h; }
+
+        function selectClass(k) { let all = { ...classes, ...gachaClasses }; if (!all[k]) return;
+            pclass = k;
+            player.maxHp = getMaxHp();
+            player.hp = player.maxHp;
+            saveGame();
+            scr('class'); }
+
+        function inventory() { let cd = getClass(); let pi = epet && pets[epet] ? pets[epet].e + ' ' + pets[epet].n : 'ไม่มี'; return `
+        <h3 style="color:var(--text-bright)">🎒 กระเป๋า</h3>
+        <div class="shop-item"><b>🦸 ${cd.e} ${cd.n}</b></div>
+        <div class="shop-item"><b>🐾 ${pi}</b></div>
+        <div class="shop-item">⚔️ดาบ Lv.${inv.w} (DMG+${inv.w*20}%)</div>
+        <div class="shop-item">🛡️โล่ Lv.${inv.s} (HP+${inv.s*12})</div>
+        <div class="shop-item">⛑️หมวก Lv.${inv.h} (HP+${inv.h*5})</div>
+        <div class="shop-item">👕เกราะ Lv.${inv.a} (HP+${inv.a*8})</div>
+        <div class="shop-item">👖กางเกง Lv.${inv.p} (HP+${inv.p*6})</div>
+        <div class="shop-item">👟รองเท้า Lv.${inv.sh} (หลบ ${(inv.sh*2.5).toFixed(1)}%)</div>
+        <div class="shop-item">🔮ลูกแก้ว: ${inv.orb?'✅': '❌'} | 🧪${inv.potion} 💜${inv.sp}</div>
+        <button class="btn btn-outline w-full mt-4" onclick="scr('menu')">🔙</button>`; }
+
+        function shop() { return `
+        <h3 style="color:var(--text-bright)">🛒 ร้านค้า</h3>
+        <div class="shop-item"><div><b>🧪 โพชั่น</b><br><span class="text-sm">ฟื้น HP เต็ม</span></div><button class="btn btn-sm" onclick="buyItem('potion')">80🪙 (${inv.potion})</button></div>
+        <div class="shop-item"><div><b>💜 ซุปเปอร์โพชั่น</b><br><span class="text-sm">ฟื้นเต็ม+DMG50</span></div><button class="btn btn-sm" onclick="buyItem('sp')">300🪙 (${inv.sp})</button></div>
+        <div class="shop-item"><div><b>🔮 ลูกแก้วคริ</b><br><span class="text-sm">คริ+20%</span></div><button class="btn btn-sm" onclick="buyItem('orb')" ${inv.orb?'disabled':''}>${inv.orb?'✅':'700🪙'}</button></div>
+        <button class="btn btn-outline w-full mt-4" onclick="scr('menu')">🔙</button>`; }
+
+        function buyItem(t) { let pr = { potion: 80, sp: 300, orb: 700 }; if (useGold(pr[t])) { if (t == 'potion') inv
+                .potion++; else if (t == 'sp') inv.sp++; else inv.orb = true;
+            sfxClick();
+            saveGame();
+            scr('shop'); } else alert('เหรียญไม่พอ'); }
+
+        function equip() { let costs = { w: [0, 300, 700, 1400, 2500, 4500], s: [0, 250, 600, 1200, 2200, 4000], h: [0,
+                200, 500, 1000, 1800, 3200
+            ], a: [0, 300, 700, 1400, 2500, 4500], p: [0, 250, 600, 1200, 2200, 4000], sh: [0, 350, 800, 1600, 3000,
+                5000
+            ] }; let names = { w: '⚔️ดาบ', s: '🛡️โล่', h: '⛑️หมวก', a: '👕เกราะ', p: '👖กางเกง',
+            sh: '👟รองเท้า' }; let eff = { w: l => `DMG+${l*20}%`, s: l => `HP+${l*12}`, h: l => `HP+${l*5}`, a: l =>
+                    `HP+${l*8}`, p: l => `HP+${l*6}`, sh: l => `หลบ ${(l*2.5).toFixed(1)}%` }; let h =
+                '<h3 style="color:var(--text-bright)">🔧 อัพเกรด</h3>'; for (let [k, n] of Object.entries(names)) { let lv =
+                    inv[k];
+                h +=
+                    `<div class="shop-item"><div><b>${n} Lv.${lv}</b><br><span class="text-sm">${eff[k](lv)} → ${lv<5?eff[k](lv+1):'MAX'}</span></div>${lv<5?`<button class="btn btn-sm" onclick="upgradeEquip('${k}')">${costs[k][lv+1]}🪙</button>`:'<span class="badge badge-gold">MAX</span>'}</div>`; }
+            h += '<button class="btn btn-outline w-full mt-4" onclick="scr(\'menu\')">🔙</button>';
+        return h; }
+
+        function upgradeEquip(t) { let costs = { w: [0, 300, 700, 1400, 2500, 4500], s: [0, 250, 600, 1200, 2200, 4000],
+                h: [0, 200, 500, 1000, 1800, 3200], a: [0, 300, 700, 1400, 2500, 4500], p: [0, 250, 600, 1200, 2200,
+                    4000
+                ], sh: [0, 350, 800, 1600, 3000, 5000] }; let lv = inv[t]; if (lv < 5 && useGold(costs[t][lv + 1])) {
+                inv[t]++;
+                player.maxHp = getMaxHp();
+                player.hp = player.maxHp;
+                saveGame();
+                scr('equip'); } else alert('เหรียญไม่พอหรือ MAX'); }
+
+        function petShop() { let h =
+                '<h3 style="color:var(--text-bright)">🐾 ร้านสัตว์เลี้ยง</h3><div class="class-grid">'; for (let [k, d] of Object
+                    .entries(pets)) { if (!d.shop) continue; let own = myPets.includes(k),
+                    eq = epet == k;
+                h +=
+                    `<div class="pet-card ${eq?'equipped':''}"><span class="pet-emoji">${d.e}</span><div style="font-weight:700;color:var(--text-bright)">${d.n}</div><div class="text-sm" style="color:var(--text-dim)">${d.desc}</div>${own?`<button class="btn btn-sm ${eq?'btn-green':'btn-outline'}" onclick="equipPet('${k}')">${eq?'✅':'🎯'}</button>`:`<button class="btn btn-sm" onclick="buyPet('${k}')">${d.cost}🪙</button>`}</div>`; }
+            h += '</div><button class="btn btn-outline w-full mt-4" onclick="scr(\'menu\')">🔙</button>';
+        return h; }
+
+        function buyPet(k) { let d = pets[k]; if (!d || myPets.includes(k)) return; if (useGold(d.cost)) { myPets.push(k); if (
+                !epet) epet = k;
+            saveGame();
+            scr('pet'); } else alert('เหรียญไม่พอ'); }
+
+        function equipPet(k) { if (!myPets.includes(k)) return;
+            epet = epet == k ? null : k;
+            saveGame();
+            scr('pet'); }
+
+        function gacha(t) { let isPet = t == 'pet',
+                cost = isPet ? 200 : 500; return `
+        <h3 style="color:var(--text-bright)">${isPet?'🎰 กาชาสัตว์เลี้ยง':'💎 กาชาคลาส'}</h3>
+        <div class="gacha-card"><div style="font-size:50px" id="gd">${isPet?'🐾':'💎'}</div><p id="gr" style="color:var(--text-bright)">สุ่มของหายาก!</p><button class="btn ${isPet?'btn-gold':'btn-pink'} w-full" onclick="doGacha('${t}')">🎰 ${cost}🪙</button></div>
+        <button class="btn btn-outline w-full mt-4" onclick="scr('menu')">🔙</button>`; }
+
+        function doGacha(t) { let isPet = t == 'pet',
+                cost = isPet ? 200 : 500; if (!useGold(cost)) { alert('เหรียญไม่พอ'); return;
+            sfxClick(); } if (isPet) { let pool = Object.keys(pets).filter(p => !pets[p].shop && !myPets.includes(p)); if (
+                    !pool.length) { player.gold += cost;
+                    alert('มีครบแล้ว'); return; } let r = pool[Math.floor(Math.random() * pool.length)];
+                myPets.push(r); if (!epet) epet = r;
+                document.getElementById('gd').textContent = pets[r].e;
+                document.getElementById('gr').textContent = pets[r].n; } else { let pool = gachaClassPool.filter(c => !
+                    myGClasses.includes(c)); if (!pool.length) { player.gold += cost;
+                    alert('มีครบแล้ว'); return; } let r = pool[Math.floor(Math.random() * pool.length)];
+                myGClasses.push(r);
+                document.getElementById('gd').textContent = gachaClasses[r].e;
+                document.getElementById('gr').textContent = gachaClasses[r].n; }
+            saveGame(); }
+
+        function rebirth() { let all = bossKills.length >= 10,
+                reqG = 15000 + player.rebirth * 10000,
+                reqL = 25 + player.rebirth * 10,
+                can = all && player.gold >= reqG && player.plv >= reqL; return `
+        <h3 style="color:var(--text-bright)">💀 เกิดใหม่</h3>
+        <div class="shop-item">🏆ปราบบอส 10+ ${all?'✅':'❌'} (${bossKills.length})</div>
+        <div class="shop-item">🪙มี ${reqG} ${player.gold>=reqG?'✅':'❌'}</div>
+        <div class="shop-item">📊Lv.${reqL}+ ${player.plv>=reqL?'✅':'❌'}</div>
+        ${can?`<button class="btn btn-red w-full mt-4" onclick="doRebirth()">💀เกิดใหม่!</button>`:'<p style="color:var(--neon-pink)">ยังไม่พร้อม</p>'}
+        <button class="btn btn-outline w-full mt-4" onclick="scr('menu')">🔙</button>`; }
+
+        function doRebirth() { if (!(bossKills.length >= 10 && player.gold >= 15000 + player.rebirth * 10000 && player
+                .plv >= 25 + player.rebirth * 10)) return; if (!confirm('รีเซ็ตความคืบหน้า ยืนยัน?')) return;
+            player.rebirth++;
+            player.rbonus = player.rebirth;
+            player.gold -= 15000 + player.rebirth * 10000;
+            player.plv = 1;
+            player.exp = 0;
+            player.ch = 1;
+            player.lv = 1;
+            player.score *= 0.3;
+            completed = {};
+            bossKills = [];
+            player.maxHp = getMaxHp();
+            player.hp = player.maxHp;
+            saveGame();
+            alert('เกิดใหม่สำเร็จ');
+            scr('menu'); }
+
+        function leaderboard() { let scores = JSON.parse(localStorage.getItem('mq_lead') || '[]');
+            scores.push({ name: player.name, score: player.score });
+            scores.sort((a, b) => b.score - a.score);
+            scores = scores.slice(0, 10);
+            localStorage.setItem('mq_lead', JSON.stringify(scores)); let h =
+                '<h3 style="color:var(--text-bright)">🏆 ลีดเดอร์บอร์ด</h3>';
+            scores.forEach((e, i) => { h +=
+                    `<div class="shop-item"><span>${i+1}. ${e.name}</span><span>⭐${e.score}</span></div>`; });
+            h += '<button class="btn btn-outline w-full mt-4" onclick="scr(\'menu\')">🔙</button>';
+        return h; }
+
+        // BATTLE SYSTEM
+        function battleHTML() { let cd = getClass(),
+                ch = chapters.find(c => c.id == player.ch) || chapters[0],
+                bossE = player.lv == 5 ? ch.boss : '👾'; let limit = player.lv == 5 ? 25 : player.lv == 4 ? 28 : 30; return `
+        <div class="battle-scene">
+          <div class="stats-bar mb-2"><span class="badge badge-blue">${ch.icon} ${ch.n} ด.${player.lv}</span><span class="badge badge-gold" id="comboBadge">🔥0</span></div>
+          <div class="combatants-row">
+            <div class="combatant"><div class="emoji-display" id="pEmoji">${cd.e}</div><div class="combatant-name">${player.name}${epet&&pets[epet]?'🐾'+pets[epet].e:''}</div><div class="hp-bar-outer"><div class="hp-bar-inner" id="pHp" style="width:100%"></div></div><div class="hp-text">❤️<span id="pHpTxt">${player.hp}/${player.maxHp}</span></div></div>
+            <div class="vs-badge">VS</div>
+            <div class="combatant"><div class="emoji-display" id="bEmoji">${bossE}</div><div class="combatant-name boss">บอส</div><div class="hp-bar-outer"><div class="hp-bar-inner boss-hp" id="bHp" style="width:100%"></div></div><div class="hp-text">❤️<span id="bHpTxt">${player.bossHp}/${player.bossMaxHp}</span></div></div>
+          </div>
+          <div class="timer-bar-outer mt-2"><div class="timer-bar-inner" id="tBar" style="width:100%"></div></div>
+          <div class="timer-text" id="tTxt">⏱ ${limit}s</div>
+        </div>
+        <div class="question-panel">
+          <div class="question-display" id="qTxt">...</div>
+          <div class="answer-input-row"><input class="answer-input" id="ansInp" placeholder="พิมพ์คำตอบ..." autocomplete="off"><button class="btn" id="subBtn" onclick="submitAnswer()">⚡</button></div>
+          <div class="combo-display" id="comboDisp"></div>
+          <div class="feedback-msg" id="fbMsg"></div>
+        </div>
+        <div class="flex-row" style="gap:5px">
+          <button class="btn btn-sm btn-yellow" id="btnS1" onclick="useSkill('s1')">${cd.s1.n} (${cd.s1.cost}🪙) <span id="s1cnt">3</span></button>
+          <button class="btn btn-sm btn-green" id="btnS2" onclick="useSkill('s2')">${cd.s2.n} (${cd.s2.cost}🪙) <span id="s2cnt">3</span></button>
+          <button class="btn btn-sm btn-red" onclick="skipQuestion()">⏩ข้าม</button>
+        </div>
+        ${inv.potion>0?`<button class="btn btn-sm btn-outline w-full mt-2" onclick="usePotion()">🧪โพชั่น (${inv.potion})</button>`:''}
+        ${inv.sp>0?`<button class="btn btn-sm btn-yellow w-full mt-1" onclick="useSuperPotion()">💜ซุปเปอร์ (${inv.sp})</button>`:''}
+        <button class="btn btn-outline w-full mt-2" onclick="fleeBattle()">🏃หนี</button>`; }
+
+        function setupBattle() { player.hp = player.maxHp;
+            player.combo = 0;
+            player.shield = false;
+            scd = { s1: 0, s2: 0 };
+            act = {};
+            ucnt = { s1: 0, s2: 0 };
+            player.bossMaxHp = 150 + player.ch * 20 + player.lv * 50 + player.rebirth * 40;
+            player.bossHp = player.bossMaxHp;
+            updateBattleUI();
+            updateCooldowns();
+            nextQuestion();
+            document.getElementById('ansInp')?.focus(); }
+
+        function updateBattleUI() { document.getElementById('pHp').style.width = Math.max(0, (player.hp / player.maxHp) *
+                100) + '%';
+            document.getElementById('bHp').style.width = Math.max(0, (player.bossHp / player.bossMaxHp) * 100) + '%';
+            document.getElementById('pHpTxt').textContent = `${player.hp}/${player.maxHp}`;
+            document.getElementById('bHpTxt').textContent = `${player.bossHp}/${player.bossMaxHp}`;
+            document.getElementById('comboBadge').textContent = `🔥${player.combo}`; }
+
+        function updateCooldowns() { let cd = getClass();
+            document.getElementById('btnS1').disabled = scd.s1 > 0 || player.gold < cd.s1.cost || ucnt.s1 >= 3;
+            document.getElementById('btnS2').disabled = scd.s2 > 0 || player.gold < cd.s2.cost || ucnt.s2 >= 3;
+            document.getElementById('s1cnt').textContent = 3 - ucnt.s1;
+            document.getElementById('s2cnt').textContent = 3 - ucnt.s2; }
+
+        function startTimer() { let limit = player.lv == 5 ? 25 : player.lv == 4 ? 28 : 30;
+            tLeft = limit;
+            document.getElementById('tBar').style.width = '100%';
+            document.getElementById('tTxt').textContent = `⏱ ${limit}s`;
+            timer = setInterval(() => { tLeft--;
+                document.getElementById('tBar').style.width = Math.max(0, (tLeft / limit) * 100) + '%';
+                document.getElementById('tTxt').textContent = `⏱ ${tLeft}s`; if (tLeft <= 0) { clearInterval(timer);
+                    timeUp(); } }, 1000); }
+
+        function timeUp() { document.getElementById('ansInp').disabled = true;
+            document.getElementById('subBtn').disabled = true;
+            handleWrong(null, true); }
+
+        // QUESTION DATABASE
+        const QDB = {
+            1: [() => { let a = Math.floor(Math.random() * 30) - 15,
+                    b = Math.floor(Math.random() * 20) - 10; return { q: `${a} + (${b}) = ?`, a: a + b }; }, () => { let a =
+                    Math.floor(Math.random() * 10) + 1,
+                    b = Math.floor(Math.random() * 5) + 1; return { q: `(${a} × ${b}) + ${a*2} = ?`, a: a * b + a * 2 }; },
+                () => { let a = Math.floor(Math.random() * 20) + 5; return { q: `${a} ÷ 4 = ? (2 ตำแหน่ง)`, a: (a / 4)
+                        .toFixed(2) }; }
+            ],
+            2: [() => { let n = Math.floor(Math.random() * 5) + 2,
+                    d = Math.floor(Math.random() * 5) + 3; return { q: `${n}/${d} + ${n*2}/${d} = ? (a/b)`,
+                    a: `${n+n*2}/${d}` }; }, () => { let n = Math.floor(Math.random() * 5) + 1,
+                    d = Math.floor(Math.random() * 4) + 5; return { q: `ทศนิยมของ ${n}/${d} = ? (2 ตำแหน่ง)`, a: (n / d)
+                        .toFixed(2) }; }],
+            3: [() => { let b = Math.floor(Math.random() * 3) + 2,
+                    e = Math.floor(Math.random() * 2) + 2; return { q: `${b}^${e} = ?`, a: Math.pow(b, e) }; }, () => { let
+                    b = Math.floor(Math.random() * 2) + 2; return { q: `${b}^3 × ${b}^2 = ${b}^?`, a: 5 }; }],
+            4: [() => { let a = Math.floor(Math.random() * 4) + 2; return { q: `2x + ${a}x เมื่อ x=1 = ?`, a: 2 + a }; }],
+            5: [() => { let n = Math.floor(Math.random() * 5) + 2; return { q: `x² + ${2*n}x + ${n*n} = (x + ?)²`,
+                    a: n }; }],
+            6: [() => { let x = Math.floor(Math.random() * 8) + 2,
+                    b = Math.floor(Math.random() * 10) + 5; return { q: `x + ${b} = ${x+b} จงหา x`, a: x }; }],
+            7: [() => { let p = Math.floor(Math.random() * 30) + 10; return { q: `${p}% ของ 200 = ?`, a: p * 2 }; }],
+            8: [() => { let s = Math.floor(Math.random() * 8) + 4; return { q: `สามเหลี่ยมด้านเท่า ด้าน=${s} ซม. ด้านอื่น?`,
+                    a: s }; }],
+            9: [() => { return { q: 'สามเหลี่ยมด้าน 3,4 ด้านตรงข้ามฉาก?', a: 5 }; }],
+            10: [() => { let nums = [Math.floor(Math.random() * 20) + 10, Math.floor(Math.random() * 20) + 20, Math.floor(
+                    Math.random() * 20) + 30]; return { q: `ค่าเฉลี่ย ${nums.join(',')} = ?`, a: Math.round((nums[0] +
+                        nums[1] + nums[2]) / 3) }; }]
+        };
+
+        function genQ(ch, lv) { let pool = QDB[ch] || QDB[1]; if (!pool || !pool.length) return { q: '5+3=?', a: 8 }; let f =
+                pool[Math.floor(Math.random() * pool.length)]; let r = f();
+            r.h = r.h || ''; return r; }
+
+        function nextQuestion() { if (player.bossHp <= 0 || player.hp <= 0) { endBattle(); return; } let cd = getClass(); if (
+                cd.regen && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + cd.regen);
+                updateBattleUI(); }
+            quest = genQ(player.ch, player.lv);
+            document.getElementById('qTxt').innerHTML = quest.q; let inp = document.getElementById('ansInp');
+            inp.value = '';
+            inp.disabled = false;
+            inp.className = 'answer-input';
+            inp.focus();
+            document.getElementById('subBtn').disabled = false;
+            document.getElementById('fbMsg').textContent = '';
+            document.getElementById('comboDisp').textContent = '';
+            updateCooldowns();
+            startTimer(); }
+
+        function submitAnswer() { clearInterval(timer); let inp = document.getElementById('ansInp'),
+                ua = inp.value.trim(); if (!ua || !quest) return;
+            inp.disabled = true;
+            document.getElementById('subBtn').disabled = true; let ca = String(quest.a),
+                correct = ua == ca || (!isNaN(ua) && !isNaN(ca) && Math.abs(parseFloat(ua) - parseFloat(ca)) < 0.09); if (
+                correct) { inp.classList.add('correct-flash');
+                setTimeout(() => inp.classList.remove('correct-flash'), 500);
+                handleCorrect(inp); } else { inp.classList.add('wrong-flash');
+                setTimeout(() => inp.classList.remove('wrong-flash'), 500);
+                handleWrong(inp, false); } }
+
+        function handleCorrect(inp) { sfxCorrect();
+            player.combo++;
+            player.tc++; if (player.combo > player.maxCombo) player.maxCombo = player.combo; let cd = getClass(),
+                pb = getPetBonus(); let dmg = 20 + player.combo * 5;
+            dmg = Math.round(dmg * cd.dmg * wpMul() * (1 + pb.dmg)); if (player.combo >= 5 && cd.combo) dmg = Math.round(
+                dmg * cd.combo); if (player.combo >= 5 && pb.combo) dmg = Math.round(dmg * (1 + pb.combo)); let critC = 0.06 +
+                (cd.crit || 0) + pb.crit + (inv.orb ? 0.2 : 0); let isCrit = Math.random() < critC; if (act.gcrit) { isCrit =
+                    true;
+                act.gcrit = false; } if (act.berserk) dmg = Math.round(dmg * 2); if (isCrit) { dmg = Math.round(dmg * (cd
+                    .cmul || 3));
+                sfxCrit();
+                document.getElementById('bEmoji').classList.add('crit');
+                setTimeout(() => document.getElementById('bEmoji').classList.remove('crit'), 500); }
+            player.bossHp = Math.max(0, player.bossHp - dmg); let gold = Math.round(12 + player.combo * 3 + player.lv * 3);
+            addGold(gold);
+            player.score += Math.round(30 + player.combo * 5);
+            document.getElementById('fbMsg').textContent =
+                `✅ถูก! DMG:${dmg}${isCrit?'💥คริ!':''} +${gold}🪙`;
+            document.getElementById('fbMsg').style.color = 'var(--neon-green)'; if (player.combo >= 3) { document
+                .getElementById('comboDisp').textContent = `🔥 COMBO x${player.combo}!`;
+                document.getElementById('comboBadge').textContent = `🔥${player.combo}`; }
+            updateBattleUI();
+            reduceCD();
+            saveGame();
+            setTimeout(nextQuestion, 900); }
+
+        function handleWrong(inp, timeUp) { sfxWrong();
+            player.combo = 0;
+            player.tw++; let dmg = 8 + player.lv * 2 + (timeUp ? 6 : 0); if (act.dodge) { act.dodge = false;
+                dmg = 0;
+                document.getElementById('fbMsg').textContent = '💨หลบ!'; } else if (player.shield) { player.shield = false; if (
+                    act.reflect) { act.reflect = false;
+                    player.bossHp = Math.max(0, player.bossHp - 20);
+                    document.getElementById('fbMsg').textContent = '🛡️สะท้อน20'; } else { dmg = 0;
+                    document.getElementById('fbMsg').textContent = '🛡️ป้องกัน'; } } else if (inv.sh * 0.025 > 0 && Math
+                .random() < inv.sh * 0.025) { dmg = 0;
+                document.getElementById('fbMsg').textContent = '👟หลบด้วยรองเท้า'; } else { player.hp = Math.max(0, player
+                    .hp - dmg);
+                document.getElementById('fbMsg').textContent =
+                    `❌ผิด!${timeUp?'⏱หมดเวลา!':''} ตอบ:${quest?.a} (-${dmg}HP)`;
+                document.getElementById('fbMsg').style.color = 'var(--neon-pink)'; }
+            document.getElementById('comboBadge').textContent = '🔥0';
+            document.getElementById('comboDisp').textContent = '';
+            updateBattleUI();
+            reduceCD();
+            saveGame();
+            setTimeout(nextQuestion, 1400); }
+
+        function reduceCD() { if (scd.s1 > 0) scd.s1--; if (scd.s2 > 0) scd.s2--;
+            updateCooldowns(); }
+
+        function useSkill(t) { let cd = getClass(); if (t == 's1') { if (scd.s1 > 0 || ucnt.s1 >= 3 || !useGold(cd.s1
+                .cost)) return;
+                ucnt.s1++;
+                scd.s1 = cd.s1.cd;
+                sfxClick(); if (cd.s1.t == 'gcrit') act.gcrit = true; if (cd.s1.t == 'cboost') act.cboost = true; if (cd.s1
+                    .t == 'dmg') { let d = Math.round(30 * (cd.s1.mul || 2));
+                    player.bossHp = Math.max(0, player.bossHp - d);
+                    updateBattleUI(); } if (cd.s1.t == 'dmgheal') { let d = Math.round(30 * (cd.s1.mul || 2));
+                    player.bossHp = Math.max(0, player.bossHp - d);
+                    player.hp = Math.min(player.maxHp, player.hp + (cd.s1.heal || 30));
+                    updateBattleUI(); } } else { if (scd.s2 > 0 || ucnt.s2 >= 3 || !useGold(cd.s2.cost)) return;
+                ucnt.s2++;
+                scd.s2 = cd.s2.cd;
+                sfxClick(); if (cd.s2.t == 'shield') player.shield = true; if (cd.s2.t == 'reflect') { player.shield = true;
+                    act.reflect = true; } if (cd.s2.t == 'heal') { player.hp = Math.min(player.maxHp, player.hp + cd.s2
+                    .heal);
+                    updateBattleUI(); } if (cd.s2.t == 'dodge') act.dodge = true; if (cd.s2.t == 'stealth') { act.dodge =
+                        true;
+                    act.stealth = true; } if (cd.s2.t == 'drain') act.drain = true; if (cd.s2.t == 'berserk') act
+                    .berserk = true; if (cd.s2.t == 'shieldheal') { player.shield = true;
+                    player.hp = Math.min(player.maxHp, player.hp + (cd.s2.heal || 25));
+                    updateBattleUI(); } }
+            updateCooldowns();
+            saveGame(); }
+
+        function skipQuestion() { clearInterval(timer);
+            player.hp = Math.max(0, player.hp - 8);
+            player.combo = 0;
+            updateBattleUI();
+            reduceCD();
+            document.getElementById('comboBadge').textContent = '🔥0'; if (player.hp <= 0) endBattle();
+            else nextQuestion(); }
+
+        function usePotion() { if (inv.potion > 0) { inv.potion--;
+                player.hp = player.maxHp;
+                updateBattleUI();
+                saveGame(); } }
+
+        function useSuperPotion() { if (inv.sp > 0) { inv.sp--;
+                player.hp = player.maxHp;
+                player.bossHp = Math.max(0, player.bossHp - 50);
+                updateBattleUI();
+                saveGame(); } }
+
+        function endBattle() { clearInterval(timer);
+            stopMusic(); if (player.bossHp <= 0) { sfxWin(); let g = Math.round(35 + player.lv * 25);
+                addGold(g);
+                player.score += Math.round(100 + player.lv * 50);
+                unlockNext(player.ch, player.lv);
+                saveGame();
+                setTimeout(() => alert(`🎉 ชนะ! +${g}🪙`), 500);
+                scr('chap'); } else { player.gold = Math.max(0, player.gold - 10);
+                saveGame();
+                alert('💀 พ่ายแพ้');
+                scr('chap'); } }
+
+        function startBattle(ch, lv) { player.ch = ch;
+            player.lv = lv;
+            player.maxHp = getMaxHp();
+            player.hp = player.maxHp;
+            scr('battle'); }
+
+        function fleeBattle() { clearInterval(timer);
+            stopMusic();
+            player.gold = Math.max(0, player.gold - 10);
+            saveGame();
+            scr('chap'); }
+
+        function showLocked() { alert('🔒 ยังปลดล็อคไม่ได้'); }
+        document.addEventListener('keydown', e => { if (e.key == 'Enter') { let inp = document.getElementById('ansInp'); if (
+                    inp && document.activeElement == inp) submitAnswer(); } });
+        createStars();
+        loadGame();
+        player.maxHp = getMaxHp();
+        scr('menu');
+    </script>
+</body>
+  </html>
