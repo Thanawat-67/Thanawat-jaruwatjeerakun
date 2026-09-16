@@ -2753,462 +2753,200 @@ else install();
 </div>
   <script>
 (function(){
-"use strict";
-
-/* ============================================================
-   HELPERS — เข้าถึง state/Audio แบบปลอดภัย
-   ============================================================ */
-function getState(){try{return (typeof state!=='undefined')?state:(window.state||null);}catch(e){return null;}}
-function writeState(){try{var s=getState();if(s&&typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}}
-function playSfx(name){try{if(typeof Audio!=='undefined'&&Audio.sfx&&Audio.sfx[name])Audio.sfx[name]();}catch(e){}}
-function floatTextSafe(x,y,t,c){try{if(typeof floatText==='function')floatText(x,y,t,c);}catch(e){}}
-function showModalSafe(title,body,buttons){try{if(typeof showModal==='function'){showModal(title,body,buttons);return true;}}catch(e){}return false;}
-
-/* ============================================================
-   PART 1: KNOWLEDGE BASE (ละเอียด)
-   ============================================================ */
-var KB = {
-1:{t:'จำนวนจริงและรากที่ n',i:'√',grade:'ม.2',
-   def:'จำนวนจริงคือจำนวนทุกชนิดบนเส้นจำนวน แบ่งเป็นตรรกยะและอตรรกยะ',
-   points:[
-     'ตรรกยะ = เขียนเป็น p/q ได้ (q≠0) เช่น 1/2, 0.75, -3',
-     'อตรรกยะ = เขียนเป็นเศษส่วนไม่ได้ เช่น √2, π, e',
-     'รากที่ n ของ a คือ x ที่ x^n = a',
-     '√(a²) = |a| เสมอ (ระวังค่าลบ!)',
-     '√a × √b = √(ab) เมื่อ a,b ≥ 0',
-     '√a / √b = √(a/b) เมื่อ a ≥ 0, b > 0',
-     '√(a²·b) = a√b เมื่อ a ≥ 0',
-     'การบวก/ลบ √ ต้องมี √ เหมือนกันเท่านั้น'
-   ],
-   formulas:['√(a²)=|a|','√a·√b=√(ab)','√(a²b)=a√b','(√a)²=a'],
-   examples:[
-     '√18 = √(9·2) = 3√2',
-     '√50 + √18 = 5√2 + 3√2 = 8√2',
-     '√12 - √3 = 2√3 - √3 = √3',
-     '√(3²) = 3 (ไม่ใช่ -3)'
-   ],
-   mistakes:['เขียน √(a²) = a (ผิด ต้องเป็น |a|)','บวก √2 + √3 = √5 (ผิด)']},
-2:{t:'เศษส่วนและทศนิยมซ้ำ',i:'➗',grade:'ม.1-2',
-   def:'เศษส่วน a/b คือการหาร a ด้วย b ทศนิยมซ้ำแปลงเป็นเศษส่วนได้',
-   points:[
-     'ทศนิยมซ้ำแบบ 1 หลัก: 0.a̅ = a/9',
-     'ทศนิยมซ้ำแบบ 2 หลัก: 0.ab̅ = (ab-a)/90',
-     'บวก/ลบเศษส่วน → ทำส่วนให้เท่ากันก่อน (ค.ร.น.)',
-     'คูณเศษส่วน → เศษ×เศษ ส่วน×ส่วน',
-     'หารเศษส่วน → คูณกับส่วนกลับ',
-     'ทศนิยมไม่ซ้ำ = ตรรกยะ (เศษส่วน)'
-   ],
-   formulas:['a/b + c/d = (ad+bc)/bd','a/b × c/d = ac/bd','a/b ÷ c/d = a/b × d/c','0.a̅=a/9'],
-   examples:['0.333... = 3/9 = 1/3','0.2727... = 27/99 = 3/11','1/2 + 1/3 = 5/6','2/3 ÷ 4/5 = 5/6'],
-   mistakes:['บวกเศษส่วนโดยบวกเศษ+เศษ ส่วน+ส่วน (ผิด)']},
-3:{t:'เลขยกกำลัง',i:'ⁿ',grade:'ม.1',
-   def:'a^n หมายถึง a คูณกัน n ตัว (a = ฐาน, n = เลขชี้กำลัง)',
-   points:[
-     'a^m × a^n = a^(m+n) — คูณ = บวกกำลัง',
-     'a^m ÷ a^n = a^(m-n) — หาร = ลบกำลัง',
-     '(a^m)^n = a^(mn) — ซ้อน = คูณกำลัง',
-     'a^0 = 1 (สำหรับ a ≠ 0)',
-     'a^(-n) = 1/a^n',
-     '(ab)^n = a^n × b^n',
-     '(a/b)^n = a^n / b^n',
-     '0^0 = ไม่นิยาม'
-   ],
-   formulas:['a^m·a^n=a^(m+n)','(a^m)^n=a^(mn)','a^(-n)=1/a^n','a^0=1'],
-   examples:['2³ × 2⁴ = 2⁷ = 128','(3²)³ = 3⁶ = 729','5^(-2) = 1/25','(-2)³ = -8'],
-   mistakes:['2³ × 2⁴ = 4⁷ (ผิด)','(2³)² = 2⁵ (ผิด ต้องเป็น 2⁶)']},
-4:{t:'พหุนาม',i:'📐',grade:'ม.2',
-   def:'พหุนาม = ผลบวกของเอกนาม (monomial) ดีกรี = กำลังสูงสุดของตัวแปร',
-   points:[
-     'เอกนาม: 5x², -3xy, 7 (ค่าคงตัว)',
-     'ดีกรีของพหุนาม = กำลังสูงสุด',
-     'บวก/ลบ → รวมพจน์ที่เหมือนกัน',
-     'คูณ → แจกแจง (FOIL สำหรับ 2×2)',
-     '(a+b)(c+d) = ac + ad + bc + bd',
-     'ดีกรีของผลคูณ = ผลบวกดีกรี',
-     'พหุนามดีกรี 1 = เชิงเส้น',
-     'พหุนามดีกรี 2 = กำลังสอง'
-   ],
-   formulas:['(a+b)(c+d)=ac+ad+bc+bd','(a+b)²=a²+2ab+b²','(a-b)²=a²-2ab+b²','(a+b)(a-b)=a²-b²'],
-   examples:['(x+2)(x+3) = x²+5x+6','(2x+1)² = 4x²+4x+1','(x+5)(x-5) = x²-25'],
-   mistakes:['(a+b)² = a²+b² (ผิด ต้องมี 2ab)']},
-5:{t:'แยกตัวประกอบดีกรีสอง',i:'🧩',grade:'ม.2-3',
-   def:'เขียน ax²+bx+c ให้เป็นผลคูณของพหุนามดีกรี 1',
-   points:[
-     'x² + bx + c = (x+p)(x+q) โดย p+q=b, pq=c',
-     'x² - b² = (x+b)(x-b) — ผลต่างกำลังสอง',
-     'x² + 2ax + a² = (x+a)² — กำลังสองสมบูรณ์',
-     'x² - 2ax + a² = (x-a)²',
-     'ax² + bx + c → หา p,q ที่ pq=ac, p+q=b',
-     'จัดกลุ่ม (factoring by grouping)'
-   ],
-   formulas:['x²+(p+q)x+pq=(x+p)(x+q)','a²-b²=(a+b)(a-b)','a²+2ab+b²=(a+b)²'],
-   examples:['x²+7x+12 = (x+3)(x+4)','x²-25 = (x+5)(x-5)','x²+6x+9 = (x+3)²','2x²+7x+3 = (2x+1)(x+3)'],
-   mistakes:['แยก x²+5x+6 = (x+5)(x+6) (ผิด ต้องเป็น (x+2)(x+3))']},
-6:{t:'สมการเชิงเส้นตัวแปรเดียว',i:'⚖️',grade:'ม.1-2',
-   def:'สมการที่ตัวแปรมีกำลัง 1 เช่น ax + b = 0',
-   points:[
-     'ย้ายข้าง → เครื่องหมายกลับ (+ ↔ -)',
-     'คูณ/หารทั้ง 2 ข้างด้วยค่าเดียวกันได้ (≠ 0)',
-     'ตรวจคำตอบโดยแทนกลับ',
-     'สมการ = สัญลักษณ์ = ต้องเท่ากัน 2 ข้าง',
-     'จัดรูป: ตัวแปรซ้าย, ตัวเลขขวา'
-   ],
-   formulas:['ax+b=0 → x=-b/a','ax+b=cx+d → x=(d-b)/(a-c)'],
-   examples:['2x+3=7 → 2x=4 → x=2','3(x-1)=9 → x-1=3 → x=4','2x+5 = x-3 → x = -8'],
-   mistakes:['ย้ายข้างไม่กลับเครื่องหมาย']},
-7:{t:'อัตราส่วนและร้อยละ',i:'📊',grade:'ม.2',
-   def:'อัตราส่วน a:b = การเปรียบเทียบ 2 ปริมาณ ร้อยละ = ต่อ 100',
-   points:[
-     'อัตราส่วน a:b = ka:kb (คูณทั้งคู่เท่ากัน)',
-     'สัดส่วน a:b = c:d → ad = bc (คูณไขว้)',
-     '% = (ส่วน/ทั้งหมด) × 100',
-     'ลด x% → จ่าย (100-x)% ของราคา',
-     'กำไร% = (ขาย-ทุน)/ทุน × 100',
-     'ดอกเบี้ย = เงินต้น × อัตรา × เวลา'
-   ],
-   formulas:['a:b=ka:kb','%=(ส่วน/ทั้งหมด)×100','กำไร%=(ขาย-ทุน)/ทุน×100'],
-   examples:['3:5 = 6:10 = 9:15','20% ของ 250 = 50','สินค้า 500 ลด 20% → จ่าย 400','กำไรจากทุน 100 ขาย 150 = 50%'],
-   mistakes:['สลับ a:b กับ b:a']},
-8:{t:'ความเท่ากันทุกประการ',i:'🔷',grade:'ม.2',
-   def:'สามเหลี่ยม 2 รูปเท่ากันทุกประการเมื่อ ด้าน/มุม เท่ากัน 3 คู่',
-   points:[
-     'SSS: ด้าน 3 คู่เท่ากัน',
-     'SAS: ด้าน-มุม-ด้าน',
-     'ASA: มุม-ด้าน-มุม',
-     'RHS: ฉาก-ด้านตรงข้ามมุมฉาก-ด้าน',
-     'มุมภายในสามเหลี่ยมรวม 180°',
-     'มุมภายนอก = ผลบวกของมุมภายในตรงข้าม',
-     'สามเหลี่ยมด้านเท่า: มุมละ 60°',
-     'สามเหลี่ยมหน้าจั่ว: มุมฐานเท่ากัน 2 มุม'
-   ],
-   formulas:['มุม A+B+C=180°','ด้านเท่า: มุมละ 60°'],
-   examples:['มุม A=50°,B=60° → C=70°','หน้าจั่ว มุมยอด 40° → มุมฐาน 70°'],
-   mistakes:['ใช้ AAA เป็นข้อพิสูจน์เท่ากันทุกประการ (ผิด)']},
-9:{t:'ทฤษฎีบทพีทาโกรัส',i:'📏',grade:'ม.2',
-   def:'ในสามเหลี่ยมมุมฉาก c² = a² + b² (c = ด้านตรงข้ามมุมฉาก)',
-   points:[
-     'ใช้เฉพาะสามเหลี่ยมที่มีมุมฉาก 90°',
-     'ตรวจสอบมุมฉาก: ถ้า a²+b² = c² → มุมฉาก',
-     'ถ้า a²+b² < c² → มุมป้าน',
-     'ถ้า a²+b² > c² → มุมแหลม',
-     ' Pythagoras triples: 3-4-5, 5-12-13, 8-15-17, 7-24-25',
-     'ระยะทาง 2 จุด: d = √((x₂-x₁)² + (y₂-y₁)²)'
-   ],
-   formulas:['c²=a²+b²','a=√(c²-b²)','c=√(a²+b²)'],
-   examples:['3,4 → c=√(9+16)=5','6,8 → c=√100=10','c=13,a=5 → b=√(169-25)=12'],
-   mistakes:['ใช้ a²+b²=c² กับสามเหลี่ยมไม่ฉาก']},
-10:{t:'สถิติและความน่าจะเป็น',i:'🎲',grade:'ม.2-3',
-    def:'สถิติสรุปข้อมูล ความน่าจะเป็นบอกโอกาสเกิด',
-    points:[
-      'ค่าเฉลี่ย (mean) = ผลรวม/จำนวน',
-      'มัธยฐาน (median) = ค่ากลางเมื่อเรียง',
-      'ฐานนิยม (mode) = ค่าที่ซ้ำบ่อยสุด',
-      'พิสัย (range) = max - min',
-      'P(E) = n(E)/n(S) — จำนวนผลที่ต้องการ / ทั้งหมด',
-      '0 ≤ P(E) ≤ 1',
-      'P(ไม่เกิด) = 1 - P(เกิด)'
-    ],
-    formulas:['mean=Σx/n','median=ค่ากลาง','mode=ซ้ำสุด','P(E)=n(E)/n(S)'],
-    examples:['ค่าเฉลี่ย 2,4,6,8 = 5','P(ทอยคู่) = 3/6 = 1/2','P(ทอย ≥ 5) = 2/6 = 1/3'],
-    mistakes:['ลืมเรียงข้อมูลก่อนหามัธยฐาน']}
-};
-
-window.showKB = function(n){
-  var k = KB[n];if(!k)return;
-  var h = '<div style="text-align:left;font-size:12px;line-height:1.6">'+
-    '<div class="tc" style="margin-bottom:8px">'+
-    '<div style="font-size:32px">'+k.i+'</div>'+
-    '<div class="bdg bdg-b">'+k.grade+'</div></div>'+
-    '<div style="font-weight:700;color:#00f0ff;margin-bottom:4px">📖 บทที่ '+n+': '+k.t+'</div>'+
-    '<div style="color:#b0b0d0;margin-bottom:10px">'+k.def+'</div>'+
-    '<div style="font-weight:700;color:#ffe600;margin:8px 0 4px">🔑 จุดสำคัญ</div>'+
-    '<ul style="padding-left:18px;margin-bottom:10px">'+k.points.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'+
-    '<div style="font-weight:700;color:#b537f2;margin:8px 0 4px">📐 สูตร</div>'+
-    '<div style="padding:8px;background:rgba(181,55,242,0.1);border-radius:8px;font-family:monospace">'+k.formulas.map(function(f){return '<div>'+f+'</div>';}).join('')+'</div>'+
-    '<div style="font-weight:700;color:#39ff14;margin:8px 0 4px">📝 ตัวอย่าง</div>'+
-    '<ul style="padding-left:18px;margin-bottom:10px">'+k.examples.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul>'+
-    '<div style="font-weight:700;color:#ff006e;margin:8px 0 4px">⚠️ ข้อผิดพลาดที่พบบ่อย</div>'+
-    '<ul style="padding-left:18px">'+k.mistakes.map(function(m){return '<li>'+m+'</li>';}).join('')+'</ul>'+
-    '</div>';
-  showModalSafe('📚 สรุปบทที่ '+n, h, [{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-};
-
-window.openKB = function(){
+var K='afk1',on=false,pend=0,last=0,tm=null,btn=null;
+function gs(){try{return (typeof state!=='undefined')?state:null;}catch(e){return null;}}
+function ld(){try{var d=JSON.parse(localStorage.getItem(K)||'{}');on=!!d.on;pend=d.pend||0;last=d.last||Date.now();}catch(e){last=Date.now();}}
+function sv(){try{localStorage.setItem(K,JSON.stringify({on:on,pend:pend,last:last}));}catch(e){}}
+function mins(){return on?Math.floor((Date.now()-last)/60000):0;}
+function tot(){return on?Math.min(12000,pend+mins()*100):pend;}
+function ui(){
+  if(!btn)return;var t=tot(),x;
+  if(t>=12000){x='⚠️ เต็ม<br>'+t+' 🪙';btn.style.background='linear-gradient(135deg,#ff006e,#ff8c00)';btn.style.color='#fff';}
+  else if(on){x='💤 เก็บ<br>'+t+' 🪙';btn.style.background='linear-gradient(135deg,#00b09b,#96c93d)';btn.style.color='#0a1a0a';}
+  else if(t>0){x='💰 ค้าง<br>'+t+' 🪙';btn.style.background='linear-gradient(135deg,#ffd700,#ffaa00)';btn.style.color='#1a1a2e';}
+  else{x='💤 AFK<br>100/นาที';btn.style.background='linear-gradient(135deg,#00b09b,#96c93d)';btn.style.color='#0a1a0a';}
+  btn.innerHTML=x;
+}
+function tick(){if(!on)return;var t=tot();if(t!==pend){pend=t;sv();ui();}}
+function start(){if(on)return;on=true;last=Date.now();sv();ui();if(tm)clearInterval(tm);tm=setInterval(tick,5000);}
+function stop(){tick();on=false;if(tm){clearInterval(tm);tm=null;}sv();ui();}
+function collect(){tick();var g=pend;if(g<=0)return 0;var s=gs();if(!s||!s.player)return 0;s.player.gold+=g;try{if(typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}pend=0;if(on)last=Date.now();sv();ui();return g;}
+function modal(){
+  tick();var t=tot();var s=gs();var g=(s&&s.player)?s.player.gold:0;
+  var h='<div style="text-align:center">'+
+    '<div style="font-size:32px">'+(on?'💤':'⏸')+'</div>'+
+    '<div style="margin:10px 0;padding:12px;background:rgba(0,240,255,0.15);border-radius:12px">'+
+    '<div style="font-size:10px;color:#b0b0d0">เงินค้าง</div>'+
+    '<div style="font-size:28px;font-weight:900;color:#ffe600">'+t.toLocaleString()+'</div></div>'+
+    '<div style="font-size:12px;text-align:left;padding:8px;background:rgba(0,0,0,0.3);border-radius:8px">'+
+    '<div>💰 ทอง: <b style="color:#ffe600">'+g.toLocaleString()+'</b></div>'+
+    '<div>⚡ 100/นาที · 🎯 12,000</div></div></div>';
+  if(typeof showModal==='function'){
+    showModal('💤 AFK',h,[
+      {label:on?'⏸ หยุด':'▶ เริ่ม',cls:on?'btn-r':'btn-g',action:'window.__afk.'+(on?'stop':'start')+'();closeModal()'},
+      {label:'💰 รับ '+t,cls:t>0?'btn-gold':'btn-o',action:t>0?'var g=window.__afk.collect();closeModal();alert("+"+g+"🪙")':'alert("ไม่มีเงิน")'},
+      {label:'🔄',cls:'btn-y',action:'window.__afk.pend=0;window.__afk.last=Date.now();window.__afk.sv();window.__afk.ui();closeModal()'}
+    ]);
+  }else{alert('AFK: '+t+' 🪙');}
+}
+window.__afk={on:function(){return on;},start:start,stop:stop,collect:collect,modal:modal,sv:sv,ui:ui,
+  get pend(){return pend;},set pend(v){pend=v;},get last(){return last;},set last(v){last=v;}};
+ld();
+setTimeout(function(){
+  btn=document.createElement('div');
+  btn.style.cssText='position:fixed;bottom:20px;left:10px;z-index:9998;border-radius:14px;padding:10px 14px;font-family:Kanit,sans-serif;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 4px 15px rgba(0,176,155,0.6);border:2px solid rgba(255,255,255,0.3);text-align:center;line-height:1.3';
+  btn.onclick=modal;document.body.appendChild(btn);
+  if(on){tick();tm=setInterval(tick,5000);}
+  ui();
+},800);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&on)tick();});
+window.addEventListener('beforeunload',sv);
+console.log('✅ AFK loaded');
+})();
+  </script>
+    <script>
+(function(){
+var P='tawan',unlocked=false,god=false,infG=false,tm=null;
+function gs(){try{return (typeof state!=='undefined')?state:null;}catch(e){return null;}}
+function ws(){try{var s=gs();if(s&&typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}}
+function unlocked_(){try{return localStorage.getItem('adm_u')==='1';}catch(e){return unlocked;}}
+function pnl(){
+  if(!unlocked_()){login();return;}
   var el=document.getElementById('gameContent');if(!el)return;
-  var h='<h3>📚 สรุป ม.2 (10 บท)</h3><div class="ts mb2" style="color:#b0b0d0">แตะบทเพื่อดูสรุปละเอียด</div>';
-  for(var i=1;i<=10;i++){var k=KB[i];
+  var s=gs();var h='<h3>🔐 Admin</h3>';
+  if(s&&s.player)h+='<div class="sbar"><span>💰'+s.player.gold.toLocaleString()+'</span><span>⭐Lv.'+s.player.plv+'</span><span>💀'+s.player.rebirth+'</span></div>';
+  h+='<div class="si col"><b>💰 ทอง</b><div class="fr mt2" style="gap:5px">'+
+    '<button class="btn btn-xs btn-gold" onclick="__adm.addG(10000)">+10K</button>'+
+    '<button class="btn btn-xs btn-gold" onclick="__adm.addG(100000)">+100K</button>'+
+    '<button class="btn btn-xs btn-gold" onclick="__adm.addG(1000000)">+1M</button>'+
+    '<button class="btn btn-xs btn-r" onclick="__adm.setG(0)">=0</button></div>'+
+    '<div class="mt2"><button class="btn btn-xs '+(infG?'btn-g':'btn-o')+' wf" onclick="__adm.tgInf()">'+(infG?'✅ ไม่จำกัด':'💰 ไม่จำกัด')+'</button></div></div>';
+  h+='<div class="si col"><b>⭐ Level</b><div class="fr mt2" style="gap:5px">'+
+    '<button class="btn btn-xs btn-g" onclick="__adm.addLv(1)">+1</button>'+
+    '<button class="btn btn-xs btn-g" onclick="__adm.addLv(5)">+5</button>'+
+    '<button class="btn btn-xs btn-g" onclick="__adm.addLv(10)">+10</button>'+
+    '<button class="btn btn-xs btn-p" onclick="__adm.addRB(1)">+1RB</button></div>'+
+    '<div class="fr mt2" style="gap:5px">'+
+    '<button class="btn btn-xs btn-o" onclick="__adm.addExp(10000)">+10K EXP</button>'+
+    '<button class="btn btn-xs btn-pur" onclick="__adm.addSP(20)">+20SP</button></div></div>';
+  h+='<div class="si col"><b>🎁 ปลดล็อก</b><div class="fc mt2">'+
+    '<button class="btn btn-xs btn-pur" onclick="__adm.unlockAll()">🎁 คลาส+สัตว์</button>'+
+    '<button class="btn btn-xs btn-o" onclick="__adm.maxItems()">📦 item+passive MAX</button>'+
+    '<button class="btn btn-xs btn-o" onclick="__adm.maxEquip()">⚔️ อุปกรณ์ MAX</button>'+
+    '<button class="btn btn-xs btn-o" onclick="__adm.completeAll()">🏆 ผ่านทุกด่าน</button></div></div>';
+  h+='<div class="si col"><b>🛡️ God</b><div class="fr mt2" style="gap:5px">'+
+    '<button class="btn btn-xs '+(god?'btn-g':'btn-o')+'" onclick="__adm.tgGod()">'+(god?'✅ ON':'🛡️ God')+'</button>'+
+    '<button class="btn btn-xs btn-g" onclick="__adm.heal()">❤️ ฟื้นเต็ม</button></div></div>';
+  h+='<div class="si col"><b>🎮</b><div class="fc mt2">'+
+    '<button class="btn btn-xs btn-y" onclick="__adm.exp()">📤 Export</button>'+
+    '<button class="btn btn-xs btn-r" onclick="__adm.wipe()">🗑️ ลบ save</button></div></div>';
+  h+='<button class="btn btn-r wf mt3" onclick="__adm.lock();go(\'menu\')">🔒 ออก</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
+  el.innerHTML=h;el.scrollTop=0;
+}
+function login(){
+  var h='<div class="tc"><div style="font-size:32px">🔐</div>'+
+    '<div style="margin:8px 0;color:#b0b0d0">ใส่รหัส Admin</div>'+
+    '<input id="ap" type="password" placeholder="รหัส" style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #b537f2;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit" autocomplete="off"></div>';
+  if(typeof showModal==='function')showModal('🔐 Admin',h,[
+    {label:'🔓 เข้า',cls:'btn-pur',action:'window.__adm.doLogin()'},
+    {label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+  setTimeout(function(){var e=document.getElementById('ap');if(e){e.focus();e.addEventListener('keydown',function(ev){if(ev.key==='Enter')window.__adm.doLogin();});}},200);
+}
+function doLogin(){
+  var e=document.getElementById('ap');if(!e)return;
+  if(e.value===P){unlocked=true;try{localStorage.setItem('adm_u','1');}catch(x){}closeModal();setTimeout(pnl,200);}
+  else{e.value='';e.placeholder='❌ ผิด';}
+}
+window.__adm={
+  addG:function(n){var s=gs();if(!s||!s.player)return;s.player.gold+=n;ws();pnl();},
+  setG:function(n){var s=gs();if(!s||!s.player)return;s.player.gold=n;ws();pnl();},
+  addLv:function(n){var s=gs();if(!s||!s.player)return;s.player.plv+=n;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;ws();pnl();},
+  addRB:function(n){var s=gs();if(!s||!s.player)return;s.player.rebirth=(s.player.rebirth||0)+n;s.player.rbonus=s.player.rebirth;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}ws();pnl();},
+  addExp:function(n){try{if(typeof addExp==='function')addExp(n);}catch(e){}pnl();},
+  addSP:function(n){var s=gs();if(!s||!s.player)return;s.player.skillPoints=(s.player.skillPoints||0)+n;ws();pnl();},
+  unlockAll:function(){var s=gs();if(!s)return;
+    try{if(typeof BaseClasses!=='undefined')for(var k in BaseClasses)if(s.myGClasses.indexOf(k)<0)s.myGClasses.push(k);}catch(e){}
+    try{if(typeof AdvanceClasses!=='undefined')for(var k2 in AdvanceClasses)if(s.myGClasses.indexOf(k2)<0)s.myGClasses.push(k2);}catch(e){}
+    try{if(typeof Pets!=='undefined')for(var k3 in Pets)if(s.myPets.indexOf(k3)<0)s.myPets.push(k3);}catch(e){}
+    ws();pnl();},
+  maxItems:function(){var s=gs();if(!s)return;
+    try{if(typeof SHOP_ITEMS!=='undefined'){if(!s.consumables)s.consumables={};if(!s.rareItems)s.rareItems=[];
+      for(var id in SHOP_ITEMS){if(SHOP_ITEMS[id].cat==='consumable')s.consumables[id]=99;
+        if(SHOP_ITEMS[id].cat==='rare'&&s.rareItems.indexOf(id)<0)s.rareItems.push(id);}}}catch(e){}
+    try{if(typeof PASSIVES!=='undefined'){if(!s.skillTree)s.skillTree={};for(var k in PASSIVES)s.skillTree[k]=5;}}catch(e){}
+    try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;ws();pnl();},
+  maxEquip:function(){var s=gs();if(!s||!s.inv)return;for(var k in s.inv)s.inv[k]=15;
+    try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;ws();pnl();},
+  completeAll:function(){var s=gs();if(!s)return;
+    try{if(typeof Chapters!=='undefined')for(var i=0;i<Chapters.length;i++){var c=Chapters[i];s.completed[c.id]=[1,2,3,4,5];if(s.bossKills.indexOf(c.id)<0)s.bossKills.push(c.id);}}catch(e){}
+    ws();pnl();},
+  tgGod:function(){god=!god;
+    if(god&&!tm)tm=setInterval(function(){if(god){var s=gs();if(s&&s.player)s.player.hp=s.player.maxHp;}},500);
+    else if(!god&&tm){clearInterval(tm);tm=null;}pnl();},
+  tgInf:function(){infG=!infG;pnl();},
+  heal:function(){var s=gs();if(!s||!s.player)return;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;ws();pnl();},
+  exp:function(){try{var s=gs();var str=JSON.stringify(s,null,2);
+    if(navigator.clipboard)navigator.clipboard.writeText(str).then(function(){alert('Copy แล้ว');});
+    else prompt('Copy:',str);}catch(e){}},
+  wipe:function(){if(!confirm('ลบทั้งหมด?'))return;try{localStorage.clear();}catch(e){}location.reload();},
+  lock:function(){unlocked=false;god=false;infG=false;if(tm)clearInterval(tm);try{localStorage.removeItem('adm_u');}catch(e){}},
+  doLogin:doLogin,panel:pnl,login:login
+};
+var taps=0,tmr=null;
+document.addEventListener('click',function(e){
+  var hd=document.querySelector('.gh');if(!hd||!hd.contains(e.target))return;
+  taps++;if(tmr)clearTimeout(tmr);tmr=setTimeout(function(){taps=0;},1500);
+  if(taps>=5){taps=0;clearTimeout(tmr);if(unlocked_())pnl();else login();}
+},true);
+setInterval(function(){if(infG){var s=gs();if(s&&s.player&&s.player.gold<999999)s.player.gold=999999;}},1000);
+console.log('✅ Admin loaded · password: tawan · tap header 5x');
+})();
+    </script>
+    <script>
+(function(){
+var K={
+1:{t:'จำนวนจริง',i:'√',p:['√(a²)=|a|','√a·√b=√(ab)','ตรรกยะ=p/q','อตรรกยะ=√2,π'],e:['√18=3√2','√50+√18=8√2']},
+2:{t:'เศษส่วน',i:'➗',p:['0.a̅=a/9','0.ab̅=(ab-a)/90','บวกต้องทำส่วนเท่า'],e:['0.333=1/3','0.27=3/11']},
+3:{t:'เลขยกกำลัง',i:'ⁿ',p:['a^m·a^n=a^(m+n)','(a^m)^n=a^mn','a^0=1','a^-n=1/a^n'],e:['2³×2⁴=2⁷','(3²)³=3⁶']},
+4:{t:'พหุนาม',i:'📐',p:['บวก=รวมพจน์เหมือน','คูณ=แจกแจง','(a+b)²=a²+2ab+b²'],e:['(x+2)(x+3)=x²+5x+6']},
+5:{t:'แยกตัวประกอบ',i:'🧩',p:['x²+bx+c=(x+p)(x+q),p+q=b,pq=c','a²-b²=(a+b)(a-b)'],e:['x²+7x+12=(x+3)(x+4)','x²-25=(x+5)(x-5)']},
+6:{t:'สมการเชิงเส้น',i:'⚖️',p:['ย้ายข้างกลับเครื่องหมาย','ตรวจคำตอบโดยแทน'],e:['2x+3=7→x=2','3(x-1)=9→x=4']},
+7:{t:'อัตราส่วนร้อยละ',i:'📊',p:['a:b=ka:kb','%=(ส่วน/ทั้งหมด)×100'],e:['20% ของ 250=50','3:5=6:10']},
+8:{t:'เท่ากันทุกประการ',i:'🔷',p:['SSS,SAS,ASA,RHS','มุมในสามเหลี่ยม=180°'],e:['หน้าจั่ว 2 มุมฐานเท่า','ด้านเท่า มุมละ 60°']},
+9:{t:'พีทาโกรัส',i:'📏',p:['c²=a²+b²','ใช้เฉพาะมุมฉาก','3-4-5, 5-12-13'],e:['3,4→c=5','8,15→c=17']},
+10:{t:'สถิติ/ความน่าจะเป็น',i:'🎲',p:['ค่าเฉลี่ย=รวม/จำนวน','มัธยฐาน=ค่ากลาง','P(E)=n(E)/n(S)'],e:['เฉลี่ย 2,4,6,8=5','P(คู่)=1/2']}
+};
+window.showKB=function(n){
+  var k=K[n];if(!k)return;
+  var h='<div style="text-align:left;font-size:13px;line-height:1.6">'+
+    '<div style="font-size:28px;text-align:center">'+k.i+'</div>'+
+    '<div style="font-weight:700;color:#00f0ff;margin:8px 0">บท '+n+': '+k.t+'</div>'+
+    '<div style="font-weight:700;color:#ffe600;margin:8px 0 4px">🔑 จุดสำคัญ</div>'+
+    '<ul style="padding-left:20px">'+k.p.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>'+
+    '<div style="font-weight:700;color:#39ff14;margin:8px 0 4px">📝 ตัวอย่าง</div>'+
+    '<ul style="padding-left:20px">'+k.e.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></div>';
+  if(typeof showModal==='function')showModal('📚 บท '+n,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.openKB=function(){
+  var el=document.getElementById('gameContent');if(!el)return;
+  var h='<h3>📚 สรุป ม.2 (10 บท)</h3>';
+  for(var i=1;i<=10;i++){var k=K[i];
     h+='<div class="si" onclick="showKB('+i+')" style="cursor:pointer">'+
-      '<div style="flex:1"><b>'+k.i+' บท '+i+': '+k.t+'</b>'+
-      '<div class="ts" style="color:#b0b0d0">'+k.grade+' · '+k.points.length+' จุด</div></div>'+
-      '<span style="color:#00f0ff">▶</span></div>';}
+       '<div style="flex:1"><b>'+k.i+' บท '+i+'</b><div class="ts" style="color:#b0b0d0">'+k.t+'</div></div>'+
+       '<span style="color:#00f0ff">▶</span></div>';}
   h+='<button class="btn btn-o wf mt3" onclick="go(\'menu\')">🔙 กลับ</button>';
   el.innerHTML=h;el.scrollTop=0;
 };
-
-/* ============================================================
-   PART 2: AFK MODE v6 (standalone)
-   ============================================================ */
-var AFK={
-  KEY:'mq_afk_v7',on:false,pending:0,last:0,timer:null,btn:null,
-  RATE:100,MAX:12000,
-  save:function(){try{localStorage.setItem(AFK.KEY,JSON.stringify({on:AFK.on,pending:AFK.pending,last:AFK.last}));}catch(e){}},
-  load:function(){try{var d=JSON.parse(localStorage.getItem(AFK.KEY)||'{}');AFK.on=!!d.on;AFK.pending=d.pending||0;AFK.last=d.last||Date.now();}catch(e){AFK.last=Date.now();}},
-  mins:function(){if(!AFK.on)return 0;return Math.floor((Date.now()-AFK.last)/60000);},
-  total:function(){if(!AFK.on)return AFK.pending;return Math.min(AFK.MAX,AFK.pending+AFK.mins()*AFK.RATE);},
-  tick:function(){if(!AFK.on)return;var t=AFK.total();if(t!==AFK.pending){AFK.pending=t;AFK.save();AFK.ui();}},
-  start:function(){if(AFK.on)return;AFK.on=true;AFK.last=Date.now();AFK.save();AFK.ui();if(AFK.timer)clearInterval(AFK.timer);AFK.timer=setInterval(AFK.tick,5000);playSfx('passive');},
-  stop:function(){AFK.tick();AFK.on=false;if(AFK.timer){clearInterval(AFK.timer);AFK.timer=null;}AFK.save();AFK.ui();},
-  collect:function(){AFK.tick();var g=AFK.pending;if(g<=0)return 0;var s=getState();if(!s||!s.player)return 0;s.player.gold+=g;writeState();AFK.pending=0;if(AFK.on)AFK.last=Date.now();AFK.save();AFK.ui();return g;},
-  makeBtn:function(){
-    if(AFK.btn)return;
-    var b=document.createElement('div');b.id='__afkBtn';
-    b.style.cssText='position:fixed;bottom:20px;left:10px;z-index:9998;border-radius:14px;padding:10px 14px;font-family:Kanit,sans-serif;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 4px 15px rgba(0,176,155,0.6);user-select:none;border:2px solid rgba(255,255,255,0.3);max-width:180px;line-height:1.3;text-align:center';
-    b.onclick=AFK.modal;document.body.appendChild(b);AFK.btn=b;AFK.ui();
-  },
-  ui:function(){
-    if(!AFK.btn)return;var t=AFK.total(),txt;
-    if(t>=AFK.MAX){txt='⚠️ เต็ม<br>'+t.toLocaleString()+' 🪙';AFK.btn.style.background='linear-gradient(135deg,#ff006e,#ff8c00)';AFK.btn.style.color='#fff';}
-    else if(AFK.on){txt='💤 เก็บอยู่<br>'+t.toLocaleString()+' 🪙 · '+AFK.mins()+' นาที';AFK.btn.style.background='linear-gradient(135deg,#00b09b,#96c93d)';AFK.btn.style.color='#0a1a0a';}
-    else if(t>0){txt='💰 เงินค้าง<br>'+t.toLocaleString()+' 🪙 · แตะ';AFK.btn.style.background='linear-gradient(135deg,#ffd700,#ffaa00)';AFK.btn.style.color='#1a1a2e';}
-    else{txt='💤 เปิด AFK<br>100 🪙/นาที';AFK.btn.style.background='linear-gradient(135deg,#00b09b,#96c93d)';AFK.btn.style.color='#0a1a0a';}
-    AFK.btn.innerHTML=txt;
-  },
-  modal:function(){
-    AFK.tick();var t=AFK.total();var s=getState();var gold=(s&&s.player)?s.player.gold:0;
-    var h='<div style="text-align:center;font-size:13px;line-height:1.6">'+
-      '<div style="font-size:38px">'+(AFK.on?'💤':'⏸')+'</div>'+
-      '<div style="margin-top:8px;padding:14px;background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border-radius:14px">'+
-      '<div style="font-size:11px;color:#b0b0d0">💰 เงินค้างใน AFK</div>'+
-      '<div style="font-size:30px;font-weight:900;font-family:Orbitron;color:#ffe600">'+t.toLocaleString()+'</div>'+
-      '<div style="font-size:11px;color:#b0b0d0;margin-top:4px">'+(AFK.on?AFK.mins()+' นาที · เหลือ '+Math.max(0,AFK.MAX-t):'กด ▶ เพื่อเริ่ม')+'</div></div>'+
-      '<div style="margin-top:10px;padding:10px;background:rgba(0,0,0,0.4);border-radius:10px;text-align:left;font-size:12px">'+
-      '<div style="display:flex;justify-content:space-between"><span>💰 ทอง</span><b style="color:#ffe600">'+gold.toLocaleString()+'</b></div>'+
-      '<div style="display:flex;justify-content:space-between;margin-top:4px"><span>⚡ อัตรา</span><b style="color:#39ff14">'+AFK.RATE+'/นาที</b></div>'+
-      '<div style="display:flex;justify-content:space-between;margin-top:4px"><span>🎯 เพดาน</span><b style="color:#ff006e">'+AFK.MAX.toLocaleString()+'</b></div>'+
-      '</div></div>';
-    showModalSafe('💤 AFK Mode',h,[
-      {label:AFK.on?'⏸ หยุด':'▶ เริ่มเก็บ',cls:AFK.on?'btn-r':'btn-g',
-       action:'(function(){window.__afk.'+(AFK.on?'stop':'start')+'();try{closeModal();}catch(e){}})()'},
-      {label:'💰 รับ '+t.toLocaleString()+' 🪙',cls:t>0?'btn-gold':'btn-o',
-       action:t>0?'(function(){var g=window.__afk.collect();if(typeof Audio!=="undefined"&&Audio.sfx)Audio.sfx.gold();if(typeof floatText==="function")floatText(innerWidth/2,innerHeight*0.4,"+"+g+"🪙","gold");try{closeModal();}catch(e){}})()':'alert("ไม่มีเงินให้รับ")'},
-      {label:'🔄 รีเซ็ต',cls:'btn-y',
-       action:'(function(){window.__afk.pending=0;window.__afk.last=Date.now();window.__afk.save();window.__afk.ui();try{closeModal();}catch(e){}})()'}
-    ]);
-  }
-};
-window.__afk=AFK;
-
-/* ============================================================
-   PART 3: ADMIN PANEL v7 — password: tawan (เต็มรูปแบบ)
-   ============================================================ */
-var ADM={
-  KEY:'mq_adm_v7',PASSWORD:'tawan',unlocked:false,god:false,infGold:false,
-  timer:null,statTimer:null,
-  isUnlocked:function(){try{return localStorage.getItem(ADM.KEY+'_u')==='1';}catch(e){return ADM.unlocked;}},
-  unlock:function(p){if(p===ADM.PASSWORD){ADM.unlocked=true;try{localStorage.setItem(ADM.KEY+'_u','1');}catch(e){}return true;}return false;},
-  lockAll:function(){ADM.unlocked=false;ADM.god=false;ADM.infGold=false;if(ADM.timer)clearInterval(ADM.timer);if(ADM.statTimer)clearInterval(ADM.statTimer);try{localStorage.removeItem(ADM.KEY+'_u');}catch(e){}},
-  login:function(){
-    var h='<div class="tc"><div style="font-size:36px">🔐</div>'+
-      '<div style="margin:8px 0;color:#b0b0d0">ใส่รหัส Admin</div>'+
-      '<input id="admPwd" type="password" placeholder="รหัส" style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #b537f2;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit;margin-top:8px" autocomplete="off"></div>';
-    showModalSafe('🔐 Admin Login',h,[
-      {label:'🔓 เข้า',cls:'btn-pur',action:'window.__adm.doLogin()'},
-      {label:'ปิด',cls:'btn-o',action:'closeModal()'}
-    ]);
-    setTimeout(function(){var e=document.getElementById('admPwd');if(e){e.focus();e.addEventListener('keydown',function(ev){if(ev.key==='Enter')ADM.doLogin();});}},200);
-  },
-  doLogin:function(){
-    var e=document.getElementById('admPwd');if(!e)return;
-    if(ADM.unlock(e.value)){try{closeModal();}catch(x){}playSfx('win');setTimeout(function(){ADM.panel();},200);}
-    else{playSfx('wrong');e.value='';e.placeholder='❌ รหัสผิด';}
-  },
-  /* ---- helper functions ---- */
-  addGold:function(n){var s=getState();if(!s||!s.player)return;s.player.gold+=n;playSfx('gold');writeState();ADM.panel();},
-  setGold:function(n){var s=getState();if(!s||!s.player)return;s.player.gold=n;writeState();ADM.panel();},
-  addExp:function(n){try{if(typeof addExp==='function')addExp(n);}catch(e){}ADM.panel();},
-  addSP:function(n){var s=getState();if(!s||!s.player)return;s.player.skillPoints=(s.player.skillPoints||0)+n;writeState();ADM.panel();},
-  addLevel:function(n){var s=getState();if(!s||!s.player)return;s.player.plv+=n;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;writeState();ADM.panel();},
-  setLevel:function(n){var s=getState();if(!s||!s.player)return;s.player.plv=Math.max(1,n);try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;writeState();ADM.panel();},
-  addRebirth:function(n){var s=getState();if(!s||!s.player)return;s.player.rebirth=(s.player.rebirth||0)+n;s.player.rbonus=s.player.rebirth;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}writeState();ADM.panel();},
-  healFull:function(){var s=getState();if(!s||!s.player)return;try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}s.player.hp=s.player.maxHp;writeState();ADM.panel();},
-  unlockAll:function(){
-    var s=getState();if(!s)return;
-    try{if(typeof BaseClasses!=='undefined')for(var k in BaseClasses)if(s.myGClasses.indexOf(k)===-1)s.myGClasses.push(k);}catch(e){}
-    try{if(typeof AdvanceClasses!=='undefined')for(var k2 in AdvanceClasses)if(s.myGClasses.indexOf(k2)===-1)s.myGClasses.push(k2);}catch(e){}
-    try{if(typeof Pets!=='undefined')for(var k3 in Pets)if(s.myPets.indexOf(k3)===-1)s.myPets.push(k3);}catch(e){}
-    writeState();ADM.panel();
-  },
-  addAllItems:function(){
-    var s=getState();if(!s)return;
-    try{
-      if(typeof SHOP_ITEMS!=='undefined'){
-        if(!s.rareItems)s.rareItems=[];
-        for(var id in SHOP_ITEMS)if(SHOP_ITEMS[id].cat==='rare'&&s.rareItems.indexOf(id)===-1)s.rareItems.push(id);
-        if(!s.permanentBoosts)s.permanentBoosts={crit:0,cmul:0,gold:0,exp:0,hp:0,time:0};
-        for(var id2 in SHOP_ITEMS){var it=SHOP_ITEMS[id2];
-          if(it.cat==='boost'&&!s.permanentBoosts[id2]){s.permanentBoosts[id2]=1;
-            if(it.boost)for(var k in it.boost)s.permanentBoosts[k]=(s.permanentBoosts[k]||0)+it.boost[k];}}
-      }
-    }catch(e){}
-    try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}
-    s.player.hp=s.player.maxHp;writeState();ADM.panel();
-  },
-  fillConsumables:function(){
-    var s=getState();if(!s)return;
-    try{if(typeof SHOP_ITEMS!=='undefined'){if(!s.consumables)s.consumables={};
-      for(var id in SHOP_ITEMS)if(SHOP_ITEMS[id].cat==='consumable')s.consumables[id]=99;}}catch(e){}
-    writeState();ADM.panel();
-  },
-  maxPassives:function(){
-    var s=getState();if(!s)return;
-    try{if(typeof PASSIVES!=='undefined'){if(!s.skillTree)s.skillTree={};
-      for(var k in PASSIVES)s.skillTree[k]=5;}}catch(e){}
-    try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}
-    s.player.hp=s.player.maxHp;writeState();ADM.panel();
-  },
-  completeAll:function(){
-    var s=getState();if(!s)return;
-    try{if(typeof Chapters!=='undefined'){for(var i=0;i<Chapters.length;i++){var ch=Chapters[i];
-      s.completed[ch.id]=[1,2,3,4,5];
-      if(s.bossKills.indexOf(ch.id)===-1)s.bossKills.push(ch.id);}}}catch(e){}
-    writeState();ADM.panel();
-  },
-  maxEquip:function(){
-    var s=getState();if(!s||!s.inv)return;
-    for(var k in s.inv)s.inv[k]=15;
-    try{if(typeof getMaxHp==='function')s.player.maxHp=getMaxHp();}catch(e){}
-    s.player.hp=s.player.maxHp;writeState();ADM.panel();
-  },
-  toggleGod:function(){
-    ADM.god=!ADM.god;
-    if(ADM.god&&!ADM.timer){ADM.timer=setInterval(function(){if(ADM.god){var s=getState();if(s&&s.player)s.player.hp=s.player.maxHp;}},500);}
-    else if(!ADM.god&&ADM.timer){clearInterval(ADM.timer);ADM.timer=null;}
-    ADM.panel();
-  },
-  toggleInfGold:function(){ADM.infGold=!ADM.infGold;ADM.panel();},
-  clearWrongLog:function(){var s=getState();if(s){s.wrongLog=[];writeState();}ADM.panel();},
-  resetState:function(){if(!confirm('รีเซ็ต state?'))return;
-    try{if(typeof Save!=='undefined'&&Save.defaultState){window.state=Save.defaultState();
-      if(typeof getMaxHp==='function')window.state.player.maxHp=getMaxHp();
-      window.state.player.hp=window.state.player.maxHp;if(Save.write)Save.write(window.state);}}catch(e){}
-    ADM.panel();},
-  wipeAll:function(){if(!confirm('⚠️ ลบทุกอย่าง?'))return;try{localStorage.clear();}catch(e){}location.reload();},
-  exportState:function(){try{var s=getState();var str=JSON.stringify(s,null,2);
-    if(navigator.clipboard)navigator.clipboard.writeText(str).then(function(){alert('Copy แล้ว');});
-    else prompt('Copy:',str);}catch(e){alert('ไม่ได้');}},
-  showStats:function(){
-    var s=getState();if(!s)return;
-    var s2=s.stats2||{};
-    var h='<div style="text-align:left;font-size:12px">'+
-      '<div class="detail-row"><span>💰 ทอง</span><b>'+(s.player.gold||0).toLocaleString()+'</b></div>'+
-      '<div class="detail-row"><span>⭐ Level</span><b>'+(s.player.plv||1)+'</b></div>'+
-      '<div class="detail-row"><span>💀 Rebirth</span><b>'+(s.player.rebirth||0)+'</b></div>'+
-      '<div class="detail-row"><span>💯 Score</span><b>'+(s.player.score||0).toLocaleString()+'</b></div>'+
-      '<div class="detail-row"><span>🔥 Max Combo</span><b>'+(s.player.maxCombo||0)+'</b></div>'+
-      '<div class="detail-row"><span>✅ ถูก</span><b>'+(s.player.tc||0)+'</b></div>'+
-      '<div class="detail-row"><span>❌ ผิด</span><b>'+(s.player.tw||0)+'</b></div>'+
-      '<div class="detail-row"><span>🎯 Pattern</span><b>'+(s2.patternsSolved||0)+'</b></div>'+
-      '<div class="detail-row"><span>⚖️ Balance</span><b>'+(s2.balanceSolved||0)+'</b></div>'+
-      '<div class="detail-row"><span>🎲 24</span><b>'+(s2.twentyFourSolved||0)+'</b></div>'+
-      '</div>';
-    showModalSafe('📊 Stats',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-  },
-  panel:function(){
-    if(!ADM.isUnlocked()){ADM.login();return;}
-    var el=document.getElementById('gameContent');if(!el)return;
-    var s=getState();
-    var h='<h3>🔐 Admin Panel v7</h3>';
-    if(s&&s.player){
-      h+='<div class="sbar"><span>💰 <span class="sg">'+(s.player.gold||0).toLocaleString()+'</span></span>'+
-         '<span>⭐ <span class="sv">Lv.'+s.player.plv+'</span></span>'+
-         '<span>💀 RB<span class="sv">'+s.player.rebirth+'</span></span></div>';
-    }
-    h+='<div class="si col"><b>💰 ทอง</b><div class="fr mt2" style="gap:5px">'+
-       '<button class="btn btn-xs btn-gold" onclick="__adm.addGold(1000)">+1K</button>'+
-       '<button class="btn btn-xs btn-gold" onclick="__adm.addGold(10000)">+10K</button>'+
-       '<button class="btn btn-xs btn-gold" onclick="__adm.addGold(100000)">+100K</button>'+
-       '<button class="btn btn-xs btn-gold" onclick="__adm.addGold(1000000)">+1M</button>'+
-       '<button class="btn btn-xs btn-r" onclick="__adm.setGold(0)">=0</button></div>'+
-       '<div class="mt2"><button class="btn btn-xs '+(ADM.infGold?'btn-g':'btn-o')+' wf" onclick="__adm.toggleInfGold()">'+
-       (ADM.infGold?'✅ ทองไม่จำกัด':'💰 เปิดทองไม่จำกัด')+'</button></div></div>';
-    h+='<div class="si col"><b>⭐ Level</b><div class="fr mt2" style="gap:5px">'+
-       '<button class="btn btn-xs btn-g" onclick="__adm.addLevel(1)">+1 Lv</button>'+
-       '<button class="btn btn-xs btn-g" onclick="__adm.addLevel(5)">+5 Lv</button>'+
-       '<button class="btn btn-xs btn-g" onclick="__adm.addLevel(10)">+10 Lv</button>'+
-       '<button class="btn btn-xs btn-p" onclick="__adm.addRebirth(1)">+1 RB</button></div>'+
-       '<div class="fr mt2" style="gap:5px">'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.addExp(1000)">+1K EXP</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.addExp(10000)">+10K</button>'+
-       '<button class="btn btn-xs btn-pur" onclick="__adm.addSP(10)">+10 SP</button></div></div>';
-    h+='<div class="si col"><b>🎁 ปลดล็อก</b><div class="fc mt2">'+
-       '<button class="btn btn-xs btn-pur" onclick="__adm.unlockAll()">🎁 คลาส+สัตว์ทั้งหมด</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.addAllItems()">📦 item ทุกอย่าง</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.fillConsumables()">🧪 consumable 99</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.maxPassives()">🌟 passive MAX</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.maxEquip()">⚔️ อุปกรณ์ MAX</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.completeAll()">🏆 ผ่านทุกด่าน</button></div></div>';
-    h+='<div class="si col"><b>🛡️ God / HP</b><div class="fr mt2" style="gap:5px">'+
-       '<button class="btn btn-xs '+(ADM.god?'btn-g':'btn-o')+'" onclick="__adm.toggleGod()">'+
-       (ADM.god?'✅ God ON':'🛡️ God')+'</button>'+
-       '<button class="btn btn-xs btn-g" onclick="__adm.healFull()">❤️ ฟื้นเต็ม</button></div></div>';
-    h+='<div class="si col"><b>🎮 ระบบ</b><div class="fc mt2">'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.showStats()">📊 ดูสถิติ</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.clearWrongLog()">🗑️ ล้าง wrongLog</button>'+
-       '<button class="btn btn-xs btn-y" onclick="__adm.exportState()">📤 Export state</button>'+
-       '<button class="btn btn-xs btn-o" onclick="__adm.resetState()">🔄 รีเซ็ต state</button>'+
-       '<button class="btn btn-xs btn-r" onclick="__adm.wipeAll()">🗑️ ลบ save ทั้งหมด</button></div></div>';
-    h+='<button class="btn btn-r wf mt3" onclick="__adm.lockAll();go(\'menu\')">🔒 ออกจาก Admin</button>';
-    h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
-    el.innerHTML=h;el.scrollTop=0;
-  }
-};
-window.__adm=ADM;
-
-/* Tap header 5x */
-(function(){var taps=0,tmr=null;
-  document.addEventListener('click',function(e){
-    var hd=document.querySelector('.gh');if(!hd||!hd.contains(e.target))return;
-    taps++;if(tmr)clearTimeout(tmr);tmr=setTimeout(function(){taps=0;},1500);
-    if(taps>=5){taps=0;clearTimeout(tmr);playSfx('level');
-      if(ADM.isUnlocked())ADM.panel();else ADM.login();}
-  },true);
+try{if(typeof renderMenu==='function'){var o=renderMenu;
+  window.renderMenu=function(){o.apply(this,arguments);
+    setTimeout(function(){var el=document.getElementById('gameContent');if(!el)return;
+      var b=el.querySelector('button:last-of-type');
+      var kb=document.createElement('button');kb.className='btn btn-o wf mt2';kb.textContent='📚 สรุป ม.2 (10 บท)';
+      kb.onclick=window.openKB;
+      if(b&&b.parentNode===el)el.insertBefore(kb,b);else el.appendChild(kb);},20);};}}catch(e){}
+console.log('✅ Knowledge loaded');
 })();
-
-/* Infinity gold enforcement */
-setInterval(function(){
-  if(ADM.infGold){var s=getState();if(s&&s.player&&s.player.gold<999999)s.player.gold=999999;}
-},1000);
-
-/* ============================================================
-   MENU INJECT
-   ============================================================ */
-function inject(){
-  var el=document.getElementById('gameContent');if(!el)return;
-  var back=el.querySelector('button:last-of-type');
-  var kb=document.createElement('button');
-  kb.className='btn btn-o wf mt2';kb.textContent='📚 สรุป ม.2 (10 บท)';
-  kb.onclick=window.openKB;
-  if(back&&back.parentNode===el)el.insertBefore(kb,back);else el.appendChild(kb);
-}
-try{
-  if(typeof renderMenu==='function'){var o=renderMenu;
-    window.renderMenu=function(){o.apply(this,arguments);setTimeout(inject,20);};}
-}catch(e){}
-
-/* ============================================================
-   BOOT
-   ============================================================ */
-AFK.load();
-setTimeout(function(){
-  AFK.makeBtn();
-  if(AFK.on){AFK.tick();AFK.timer=setInterval(AFK.tick,5000);}
-  AFK.ui();
-},800);
-document.addEventListener('visibilitychange',function(){if(!document.hidden&&AFK.on)AFK.tick();});
-window.addEventListener('beforeunload',function(){AFK.save();});
-
-try{console.info('✅ EXTRA v7 · KB + AFK + Admin');}catch(e){}
-})();
-  </script>
+    </script>
 </body>
   </html>
