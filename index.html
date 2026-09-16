@@ -2751,48 +2751,94 @@ else install();
     </div>
   </div>
 </div>
-  <script>
+    <script>
 "use strict";
 /* ============================================================
-   EXTRA-A FIXED: KNOWLEDGE BASE (uses direct scope, not window.X)
+   MATH QUEST — EXTRA PACK v3
+   - Knowledge Base (สรุป ม.2)
+   - AFK Mode (สมดุล)
+   - Admin Panel (password: tawan)
+   วางต่อจาก script สุดท้ายของเกม ก่อน </body>
+   ============================================================ */
+(function(){
+'use strict';
+
+/* ========== SAFE ACCESSORS ========== */
+function safeState(){ try { return (typeof state !== 'undefined') ? state : null; } catch(e){ return null; } }
+function safeSave(){ try { return (typeof Save !== 'undefined') ? Save : null; } catch(e){ return null; } }
+function safeAudio(){ try { return (typeof Audio !== 'undefined') ? Audio : null; } catch(e){ return null; } }
+function safeFloat(){ try { return (typeof floatText === 'function') ? floatText : null; } catch(e){ return null; } }
+function safeModal(){ try { return (typeof showModal === 'function') ? showModal : null; } catch(e){ return null; } }
+
+/* ============================================================
+   1. KNOWLEDGE BASE
    ============================================================ */
 var MQ_KNOWLEDGE = {
-1:{title:'จำนวนจริงและรากที่ n',icon:'√',summary:'จำนวนจริงคือจำนวนทุกชนิดบนเส้นจำนวน',keyPoints:['√(a²) = |a|','√a × √b = √(ab)','ตรรกยะ = p/q','อตรรกยะ = √2, π'],examples:['√18 = 3√2','√50+√18 = 8√2']},
-2:{title:'เศษส่วนและทศนิยมซ้ำ',icon:'➗',summary:'ทศนิยมซ้ำแปลงเป็นเศษส่วนได้',keyPoints:['0.a̅ = a/9','0.ab̅ = (ab-a)/90'],examples:['0.333... = 1/3']},
-3:{title:'เลขยกกำลัง',icon:'ⁿ',summary:'a^n = a คูณกัน n ตัว',keyPoints:['a^m × a^n = a^(m+n)','a^0 = 1','a^(-n) = 1/a^n'],examples:['2³ × 2⁴ = 2⁷']},
-4:{title:'พหุนาม',icon:'📐',summary:'ผลบวกของเอกนาม',keyPoints:['บวก/ลบ = รวมพจน์เหมือน','คูณ = แจกแจง'],examples:['(x+2)(x+3)=x²+5x+6']},
-5:{title:'แยกตัวประกอบดีกรีสอง',icon:'🧩',summary:'x²+bx+c = (x+p)(x+q), p+q=b, pq=c',keyPoints:['x²-b²=(x+b)(x-b)','x²+2ax+a²=(x+a)²'],examples:['x²+7x+12=(x+3)(x+4)']},
-6:{title:'สมการเชิงเส้นตัวแปรเดียว',icon:'⚖️',summary:'ตัวแปรดีกรี 1',keyPoints:['ย้ายข้างกลับเครื่องหมาย','ตรวจคำตอบ'],examples:['2x+3=7 → x=2']},
-7:{title:'อัตราส่วนและร้อยละ',icon:'📊',summary:'เปรียบเทียบปริมาณ',keyPoints:['a:b = ka:kb','% = (ส่วน/ทั้งหมด)×100'],examples:['20% ของ 250 = 50']},
-8:{title:'ความเท่ากันทุกประการ',icon:'🔷',summary:'สามเหลี่ยมเท่ากัน',keyPoints:['SSS, SAS, ASA, RHS','มุมในสามเหลี่ยม = 180°'],examples:['หน้าจั่ว 2 มุมฐานเท่า']},
-9:{title:'ทฤษฎีบทพีทาโกรัส',icon:'📏',summary:'c² = a² + b²',keyPoints:['ใช้เฉพาะมุมฉาก','3-4-5, 5-12-13'],examples:['3,4→c=5']},
-10:{title:'สถิติและความน่าจะเป็น',icon:'🎲',summary:'สรุปข้อมูล + ความน่าจะเป็น',keyPoints:['ค่าเฉลี่ย = รวม/จำนวน','P(E) = n(E)/n(S)'],examples:['P(คู่) = 1/2']}
+1:{title:'จำนวนจริงและรากที่ n',icon:'√',
+   summary:'จำนวนจริง = ตรรกยะ + อตรรกยะ รากที่ n ของ a คือจำนวนที่ยกกำลัง n แล้วได้ a',
+   keyPoints:['√(a²) = |a|','√a × √b = √(ab)','√(a²b) = a√b เมื่อ a ≥ 0','ตรรกยะ = p/q, q ≠ 0','อตรรกยะ = √2, π, e'],
+   examples:['√18 = 3√2','√50 + √18 = 8√2']},
+2:{title:'เศษส่วนและทศนิยมซ้ำ',icon:'➗',
+   summary:'ทศนิยมซ้ำแปลงเป็นเศษส่วนได้ด้วยสูตร',
+   keyPoints:['0.a̅ = a/9','0.ab̅ = (ab-a)/90','บวกเศษส่วนต้องทำส่วนเท่าก่อน'],
+   examples:['0.333... = 1/3','0.2727... = 3/11']},
+3:{title:'เลขยกกำลัง',icon:'ⁿ',
+   summary:'a^n = a คูณกัน n ตัว',
+   keyPoints:['a^m × a^n = a^(m+n)','a^m ÷ a^n = a^(m-n)','(a^m)^n = a^(mn)','a^0 = 1','a^(-n) = 1/a^n'],
+   examples:['2³ × 2⁴ = 2⁷ = 128','(3²)³ = 3⁶ = 729']},
+4:{title:'พหุนาม',icon:'📐',
+   summary:'ผลบวกของเอกนาม ดีกรี = กำลังสูงสุด',
+   keyPoints:['บวก/ลบ = รวมพจน์ที่เหมือนกัน','คูณ = แจกแจง','ดีกรีผลคูณ = ผลบวกดีกรี'],
+   examples:['(x+2)(x+3) = x²+5x+6','(2x)(3x²) = 6x³']},
+5:{title:'แยกตัวประกอบดีกรีสอง',icon:'🧩',
+   summary:'x²+bx+c = (x+p)(x+q), p+q=b, pq=c',
+   keyPoints:['x²-b² = (x+b)(x-b)','x²+2ax+a² = (x+a)²','x²-2ax+a² = (x-a)²'],
+   examples:['x²+7x+12 = (x+3)(x+4)','x²-25 = (x+5)(x-5)']},
+6:{title:'สมการเชิงเส้นตัวแปรเดียว',icon:'⚖️',
+   summary:'ตัวแปรดีกรี 1 แก้โดยย้ายข้างและหาร สปส.',
+   keyPoints:['ย้ายข้างกลับเครื่องหมาย','คูณ/หารทั้งสองข้างได้','ตรวจคำตอบโดยแทนกลับ'],
+   examples:['2x+3=7 → x=2','3(x-1)=9 → x=4']},
+7:{title:'อัตราส่วนและร้อยละ',icon:'📊',
+   summary:'อัตราส่วน a:b เทียบปริมาณ ร้อยละ = ต่อ 100',
+   keyPoints:['a:b = ka:kb','% = (ส่วน/ทั้งหมด)×100','ลด x% → จ่าย (100-x)%'],
+   examples:['3:5 = 6:10','20% ของ 250 = 50']},
+8:{title:'ความเท่ากันทุกประการ',icon:'🔷',
+   summary:'สามเหลี่ยมเท่ากันเมื่อมี ด/ม ครบ 3 คู่',
+   keyPoints:['SSS, SAS, ASA, RHS','มุมในสามเหลี่ยมรวม 180°','สามเหลี่ยมด้านเท่า มุมละ 60°'],
+   examples:['หน้าจั่ว 2 มุมฐานเท่ากัน','มุมฉาก = 90°']},
+9:{title:'ทฤษฎีบทพีทาโกรัส',icon:'📏',
+   summary:'c² = a² + b² (c = ด้านตรงข้ามมุมฉาก)',
+   keyPoints:['ใช้เฉพาะมุมฉาก','3-4-5, 5-12-13, 8-15-17','ตรวจมุมฉาก: a²+b² = c²'],
+   examples:['3,4 → c=5','8,15 → c=17']},
+10:{title:'สถิติและความน่าจะเป็น',icon:'🎲',
+   summary:'ค่าเฉลี่ย/มัธยฐาน/ฐานนิยม + ความน่าจะเป็น',
+   keyPoints:['ค่าเฉลี่ย = รวม/จำนวน','มัธยฐาน = ค่ากลางเมื่อเรียง','ฐานนิยม = ซ้ำบ่อยสุด','P(E) = n(E)/n(S)'],
+   examples:['ค่าเฉลี่ย 2,4,6,8 = 5','P(ทอยคู่) = 1/2']}
 };
 
-/* เพิ่มโจทย์เข้าสู่ระบบเดิม — เข้าถึง Generators โดยตรง */
-if (typeof Generators !== 'undefined' && Generators) {
-  var extra = {
-    1:[function(){return{q:'√(16×5) = a√b → a = ?',a:'4',h:'= 4√5'};}],
-    2:[function(){return{q:'0.666... = ?',a:'2/3',h:'= 6/9'};}],
-    3:[function(){return{q:'(3²)³ = ?',a:'729',h:'= 3⁶'};}],
-    4:[function(){return{q:'(x+1)(x+2) = x²+?x+2',a:'3',h:'= 3x'};}],
-    5:[function(){return{q:'x²-16 = (x+4)(x-?)',a:'4',h:'= 4'};}],
-    6:[function(){return{q:'3x=15 → x = ?',a:'5',h:'x=5'};}],
-    7:[function(){return{q:'40% ของ 150 = ?',a:'60',h:'= 60'};}],
-    8:[function(){return{q:'สามเหลี่ยมหน้าจั่ว มุมยอด 40° → มุมฐาน = ?',a:'70',h:'= 70'};}],
-    9:[function(){return{q:'5,12 → c = ?',a:'13',h:'c=13'};}],
-    10:[function(){return{q:'P(ทอยเต๋าได้ 3) = ?',a:'1/6',h:'= 1/6'};}]
-  };
-  for (var _k in extra) {
-    var _n = parseInt(_k);
-    if (!Generators[_n]) Generators[_n] = [];
-    for (var _i = 0; _i < extra[_n].length; _i++) Generators[_n].push(extra[_n][_i]);
+try {
+  if (typeof Generators !== 'undefined' && Generators) {
+    var ep = {
+      1:[function(){return{q:'√(16×5) = a√b → a = ?',a:'4',h:'= 4√5'};}],
+      2:[function(){return{q:'0.666... = ?',a:'2/3',h:'= 6/9 = 2/3'};}],
+      3:[function(){return{q:'(3²)³ = ?',a:'729',h:'= 3⁶'};}],
+      4:[function(){return{q:'(x+1)(x+2) = x²+?x+2',a:'3',h:'ผลบวก = 3'};}],
+      5:[function(){return{q:'x²-16 = (x+4)(x-?)',a:'4',h:'= 4'};}],
+      6:[function(){return{q:'3x=15 → x = ?',a:'5',h:'x=5'};}],
+      7:[function(){return{q:'40% ของ 150 = ?',a:'60',h:'= 60'};}],
+      8:[function(){return{q:'หน้าจั่ว มุมยอด 40° → มุมฐาน = ?',a:'70',h:'= 70°'};}],
+      9:[function(){return{q:'5,12 → c = ?',a:'13',h:'c=13'};}],
+      10:[function(){return{q:'P(ทอยเต๋าได้ 3) = ?',a:'1/6',h:'= 1/6'};}]
+    };
+    for (var ck in ep) {
+      var cn = parseInt(ck);
+      if (!Generators[cn]) Generators[cn] = [];
+      for (var ei = 0; ei < ep[ck].length; ei++) Generators[cn].push(ep[ck][ei]);
+    }
   }
-  if (console && console.info) console.info('✅ Extra problems loaded');
-}
+} catch(e) { console.warn('Extra problems:', e.message); }
 
-/* เข้าถึง showModal โดยตรง (function declaration บน window) */
-window.showKnowledge = function(chNum){
+window.showKnowledge = function(chNum) {
   var k = MQ_KNOWLEDGE[chNum];
   if (!k) return;
   var html = '<div style="text-align:left;font-size:13px;line-height:1.6">' +
@@ -2803,423 +2849,402 @@ window.showKnowledge = function(chNum){
     '<ul style="padding-left:20px;margin-bottom:10px">' + k.keyPoints.map(function(p){return '<li>'+p+'</li>';}).join('') + '</ul>' +
     '<div style="font-weight:700;color:#39ff14;margin-bottom:4px">📝 ตัวอย่าง:</div>' +
     '<ul style="padding-left:20px">' + k.examples.map(function(p){return '<li>'+p+'</li>';}).join('') + '</ul></div>';
-  if (typeof showModal === 'function') showModal('📚 บทที่ ' + chNum, html, [{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+  var m = safeModal();
+  if (m) m('📚 บทที่ ' + chNum + ': ' + k.title, html, [{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
 };
 
-window.openKnowledgeBrowser = function(){
+window.openKnowledgeBrowser = function() {
   var el = document.getElementById('gameContent');
   if (!el) return;
   var h = '<h3>📚 สรุป ม.2 (10 บท)</h3>';
   for (var i = 1; i <= 10; i++) {
     var k = MQ_KNOWLEDGE[i];
-    h += '<div class="si" onclick="showKnowledge(' + i + ')" style="cursor:pointer"><div style="flex:1"><b>' + k.icon + ' บท ' + i + '</b><div class="ts" style="color:#b0b0d0">' + k.title + '</div></div><span style="color:#00f0ff">▶</span></div>';
+    h += '<div class="si" onclick="showKnowledge(' + i + ')" style="cursor:pointer">' +
+         '<div style="flex:1"><b>' + k.icon + ' บท ' + i + '</b>' +
+         '<div class="ts" style="color:#b0b0d0">' + k.title + '</div></div>' +
+         '<span style="color:#00f0ff">▶</span></div>';
   }
   h += '<button class="btn btn-o wf mt3" onclick="go(\'menu\')">🔙 กลับ</button>';
   el.innerHTML = h;
   el.scrollTop = 0;
 };
 
-/* แทรกปุ่มในเมนู */
-if (typeof renderMenu === 'function') {
-  var _origMenu1 = renderMenu;
-  window.renderMenu = function(){
-    _origMenu1.apply(this, arguments);
-    var el = document.getElementById('gameContent');
-    if (!el) return;
-    var btn = document.createElement('button');
-    btn.className = 'btn btn-o wf mt2';
-    btn.textContent = '📚 สรุป ม.2 (10 บท)';
-    btn.onclick = window.openKnowledgeBrowser;
-    var back = el.querySelector('button:last-of-type');
-    if (back && back.parentNode === el) el.insertBefore(btn, back);
-    else el.appendChild(btn);
-  };
-}
-console.info('✅ Knowledge Base loaded');
-</script>
-
-<script>
-"use strict";
 /* ============================================================
-   EXTRA-B FIXED: AFK MODE
+   2. AFK MODE (สมดุลใหม่)
    ============================================================ */
-window.__afk = (function(){
-  var AFK = {
-    KEY: 'mq_afk_v1',
-    enabled: false,
-    lastTick: 0,
-    totalEarned: 0,
-    rate: 1,
-    timer: null,
-    widget: null,
-    lastMenuRefresh: 0,
+var AFK = {
+  KEY: 'mq_afk_v3',
+  enabled: false,
+  lastTick: 0,
+  sessionEarned: 0,
+  rate: 1,
+  timer: null,
+  widget: null,
+  BASE: 1,
+  PER_LEVEL: 0.15,
+  PER_REBIRTH: 1.5,
+  MAX_PER_SEC: 10,
+  MAX_OFFLINE_HOURS: 2,
+  MAX_PER_SESSION: 5000,
 
-    save: function(){
-      try {
-        localStorage.setItem(this.KEY, JSON.stringify({
-          enabled: this.enabled,
-          lastTick: this.lastTick,
-          totalEarned: this.totalEarned
-        }));
-      } catch (e) {}
-    },
+  save: function(){
+    try { localStorage.setItem(this.KEY, JSON.stringify({ enabled: this.enabled, lastTick: this.lastTick })); } catch(e){}
+  },
+  load: function(){
+    try {
+      var d = JSON.parse(localStorage.getItem(this.KEY) || '{}');
+      this.enabled = !!d.enabled;
+      this.lastTick = d.lastTick || Date.now();
+    } catch(e) { this.lastTick = Date.now(); }
+  },
+  calcRate: function(){
+    var s = safeState();
+    if (!s || !s.player) return 1;
+    var lv = s.player.plv || 1;
+    var rb = s.player.rebirth || 0;
+    var bonus = 0;
+    try { if (typeof getGoldMul === 'function') bonus = (getGoldMul() - 1) * 0.5; } catch(e){}
+    var r = (this.BASE + lv * this.PER_LEVEL + rb * this.PER_REBIRTH) * (1 + bonus);
+    return Math.max(1, Math.min(Math.floor(r), this.MAX_PER_SEC));
+  },
+  tick: function(){
+    if (!this.enabled) return;
+    var s = safeState();
+    if (!s || !s.player) return;
+    var now = Date.now();
+    var elapsed = Math.min((now - this.lastTick) / 1000, this.MAX_OFFLINE_HOURS * 3600);
+    this.lastTick = now;
+    if (elapsed < 3) { this.save(); return; }
+    this.rate = this.calcRate();
+    var earn = Math.floor(this.rate * elapsed);
+    if (earn <= 0) { this.save(); return; }
+    var rem = this.MAX_PER_SESSION - this.sessionEarned;
+    if (rem <= 0) { this.save(); return; }
+    if (earn > rem) earn = rem;
+    s.player.gold += earn;
+    this.sessionEarned += earn;
+    var sv = safeSave();
+    if (sv && sv.write) sv.write(s);
+    this.updateWidget();
+    this.save();
+  },
+  start: function(){
+    if (this.enabled) return;
+    this.enabled = true;
+    this.lastTick = Date.now();
+    this.sessionEarned = 0;
+    this.save();
+    this.showWidget();
+    if (this.timer) clearInterval(this.timer);
+    var self = this;
+    this.timer = setInterval(function(){ self.tick(); }, 3000);
+    var ft = safeFloat();
+    if (ft) ft(window.innerWidth/2, window.innerHeight*0.3, '💤 AFK เปิด', 'heal');
+    var au = safeAudio();
+    if (au && au.sfx) au.sfx.passive();
+  },
+  stop: function(){
+    this.enabled = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    this.save();
+    this.hideWidget();
+    var ft = safeFloat();
+    if (ft) ft(window.innerWidth/2, window.innerHeight*0.3, '⏸ AFK ปิด', 'miss');
+  },
+  toggle: function(){ if (this.enabled) this.stop(); else this.start(); },
+  showWidget: function(){
+    if (this.widget) return;
+    var w = document.createElement('div');
+    w.id = '__afkWidget';
+    w.style.cssText = 'position:fixed;top:64px;left:10px;z-index:9997;background:linear-gradient(135deg,#00b09b,#96c93d);color:#0a1a0a;border-radius:12px;padding:8px 12px;font-family:Kanit,sans-serif;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,176,155,0.5);user-select:none';
+    w.onclick = function(){ if (window.showAFKInfo) window.showAFKInfo(); };
+    document.body.appendChild(w);
+    this.widget = w;
+  },
+  hideWidget: function(){
+    if (this.widget && this.widget.parentNode) this.widget.parentNode.removeChild(this.widget);
+    this.widget = null;
+  },
+  updateWidget: function(){
+    if (!this.widget) return;
+    var s = safeState();
+    var gold = (s && s.player) ? s.player.gold : 0;
+    var rem = Math.max(0, this.MAX_PER_SESSION - this.sessionEarned);
+    this.widget.textContent = '💤 +' + this.rate + '/s · เหลือ ' + rem.toLocaleString() + ' · 🪙 ' + gold.toLocaleString();
+  },
+  reset: function(){
+    this.sessionEarned = 0;
+    this.lastTick = Date.now();
+    this.save();
+    this.updateWidget();
+  }
+};
+window.__afk = AFK;
 
-    load: function(){
-      try {
-        var d = JSON.parse(localStorage.getItem(this.KEY) || '{}');
-        this.enabled = !!d.enabled;
-        this.lastTick = d.lastTick || Date.now();
-        this.totalEarned = d.totalEarned || 0;
-      } catch (e) { this.lastTick = Date.now(); }
-    },
+window.showAFKInfo = function(){
+  var rate = AFK.calcRate();
+  var s = safeState();
+  var gold = (s && s.player) ? s.player.gold : 0;
+  var rem = Math.max(0, AFK.MAX_PER_SESSION - AFK.sessionEarned);
+  var html = '<div style="text-align:center;font-size:13px;line-height:1.7">' +
+    '<div style="font-size:44px">' + (AFK.enabled ? '💤' : '⏸') + '</div>' +
+    '<div style="font-weight:700;margin:8px 0">AFK Mode v3</div>' +
+    '<div style="color:#b0b0d0">รับเงินอัตโนมัติแม้ปิดเกม</div>' +
+    '<div style="margin-top:12px;padding:10px;background:rgba(0,240,255,0.1);border-radius:10px;text-align:left;font-size:12px">' +
+    '<div>💰 ทอง: <b style="color:#ffe600">' + gold.toLocaleString() + '</b></div>' +
+    '<div>⚡ อัตรา: <b style="color:#39ff14">+' + rate + '/วินาที</b></div>' +
+    '<div>📊 Session นี้: <b>' + AFK.sessionEarned.toLocaleString() + '</b></div>' +
+    '<div>🎯 เพดาน: <b style="color:#ff006e">' + AFK.MAX_PER_SESSION.toLocaleString() + '</b></div>' +
+    '<div>⏱ ออฟไลน์สูงสุด: <b>' + AFK.MAX_OFFLINE_HOURS + ' ชม.</b></div>' +
+    '</div></div>';
+  var m = safeModal();
+  if (m) m('💤 AFK', html, [
+    { label: AFK.enabled ? '⏸ ปิด' : '▶ เปิด', cls: AFK.enabled ? 'btn-r' : 'btn-g',
+      action: 'window.__afk.toggle();closeModal();setTimeout(function(){if(currentScreen==="menu")renderMenu();},200)' },
+    { label: '🔄 รีเซ็ต', cls: 'btn-y', action: 'window.__afk.reset();closeModal()' },
+    { label: 'ปิด', cls: 'btn-o', action: 'closeModal()' }
+  ]);
+};
 
-    calcRate: function(){
-      // เข้าถึง state โดยตรง (let state อยู่ใน outer scope)
-      if (typeof state === 'undefined' || !state || !state.player) return 1;
-      var lv = state.player.plv || 1;
-      var rb = state.player.rebirth || 0;
-      var bonus = 0;
-      try { if (typeof getGoldMul === 'function') bonus = getGoldMul() - 1; } catch (e) {}
-      return Math.max(1, Math.floor((1 + lv * 0.5 + rb * 5) * (1 + bonus)));
-    },
+/* ============================================================
+   3. ADMIN PANEL — password: tawan
+   ============================================================ */
+var ADMIN = {
+  KEY: 'mq_admin_v3',
+  PASSWORD: 'tawan',
+  unlocked: false,
+  godMode: false,
+  infinityGold: false,
+  timer: null,
 
-    tick: function(){
-      if (!this.enabled) return;
-      if (typeof state === 'undefined' || !state || !state.player) {
-        if (console && console.warn) console.warn('[AFK] state not ready');
-        return;
-      }
-      var now = Date.now();
-      var elapsed = Math.min((now - this.lastTick) / 1000, 3600);
-      if (elapsed < 1) { this.lastTick = now; return; }
-      this.rate = this.calcRate();
-      var earn = Math.floor(this.rate * elapsed);
-      this.lastTick = now;
-      if (earn > 0) {
-        state.player.gold += earn;
-        this.totalEarned += earn;
-        if (typeof Save !== 'undefined' && Save && Save.write) Save.write(state);
-        this.updateWidget();
-        if (console && console.info) console.info('[AFK] +' + earn + ' gold, total: ' + state.player.gold);
-      }
-      this.save();
-    },
-
-    start: function(){
-      if (this.enabled) return;
-      this.enabled = true;
-      this.lastTick = Date.now();
-      this.save();
-      this.showWidget();
-      if (this.timer) clearInterval(this.timer);
-      var self = this;
-      this.timer = setInterval(function(){ self.tick(); }, 3000);
-      if (typeof floatText === 'function') floatText(window.innerWidth/2, window.innerHeight*0.3, '💤 AFK เปิด!', 'heal');
-      if (typeof Audio !== 'undefined' && Audio.sfx) Audio.sfx.passive();
-    },
-
-    stop: function(){
-      this.enabled = false;
-      if (this.timer) { clearInterval(this.timer); this.timer = null; }
-      this.save();
-      this.hideWidget();
-      if (typeof floatText === 'function') floatText(window.innerWidth/2, window.innerHeight*0.3, '⏸ AFK ปิด', 'miss');
-    },
-
-    toggle: function(){ if (this.enabled) this.stop(); else this.start(); },
-
-    showWidget: function(){
-      if (this.widget) return;
-      var w = document.createElement('div');
-      w.id = '__afkWidget';
-      w.style.cssText = 'position:fixed;top:64px;left:10px;z-index:9997;background:linear-gradient(135deg,#00b09b,#96c93d);color:#0a1a0a;border-radius:12px;padding:8px 12px;font-family:Kanit,sans-serif;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,176,155,0.5);user-select:none';
-      w.textContent = '💤 AFK +0/s';
-      w.onclick = function(){ if (window.showAFKInfo) window.showAFKInfo(); };
-      document.body.appendChild(w);
-      this.widget = w;
-    },
-
-    hideWidget: function(){
-      if (this.widget && this.widget.parentNode) this.widget.parentNode.removeChild(this.widget);
-      this.widget = null;
-    },
-
-    updateWidget: function(){
-      if (!this.widget) return;
-      var gold = (typeof state !== 'undefined' && state.player) ? state.player.gold : 0;
-      this.widget.textContent = '💤 +' + this.rate + '/s · 🪙 ' + gold.toLocaleString();
-    },
-
-    reset: function(){ this.totalEarned = 0; this.lastTick = Date.now(); this.save(); this.updateWidget(); }
-  };
-
-  window.showAFKInfo = function(){
-    var rate = AFK.calcRate();
-    var gold = (typeof state !== 'undefined' && state.player) ? state.player.gold : 0;
-    var html = '<div style="text-align:center;font-size:13px;line-height:1.7">' +
-      '<div style="font-size:44px">' + (AFK.enabled ? '💤' : '⏸') + '</div>' +
-      '<div style="font-weight:700;margin:8px 0">AFK Mode</div>' +
-      '<div style="color:#b0b0d0">รับเงินอัตโนมัติแม้ปิดเกม</div>' +
-      '<div style="margin-top:12px;padding:10px;background:rgba(0,240,255,0.1);border-radius:10px">' +
-      '<div>💰 ปัจจุบัน: <b style="color:#ffe600">' + gold.toLocaleString() + ' 🪙</b></div>' +
-      '<div>⚡ อัตรา: <b style="color:#39ff14">+' + rate + ' 🪙/วินาที</b></div>' +
-      '<div>📊 AFK สะสม: <b>' + AFK.totalEarned.toLocaleString() + ' 🪙</b></div>' +
-      '<div style="font-size:10px;color:#b0b0d0;margin-top:6px">นับสูงสุด 1 ชม. ตอนปิด</div></div></div>';
-    if (typeof showModal === 'function') showModal('💤 AFK', html, [
-      { label: AFK.enabled ? '⏸ ปิด' : '▶ เปิด', cls: AFK.enabled ? 'btn-r' : 'btn-g', action: 'window.__afk.toggle();closeModal();setTimeout(function(){if(currentScreen==="menu")renderMenu();},200)' },
-      { label: '🔄 รีเซ็ตยอด', cls: 'btn-y', action: 'window.__afk.reset();closeModal()' },
+  isUnlocked: function(){
+    try { return localStorage.getItem(this.KEY + '_u') === '1'; } catch(e) { return this.unlocked; }
+  },
+  unlock: function(pwd){
+    if (pwd === this.PASSWORD) {
+      this.unlocked = true;
+      try { localStorage.setItem(this.KEY + '_u', '1'); } catch(e){}
+      return true;
+    }
+    return false;
+  },
+  lock: function(){
+    this.unlocked = false;
+    this.godMode = false;
+    this.infinityGold = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    try { localStorage.removeItem(this.KEY + '_u'); } catch(e){}
+  },
+  showLogin: function(){
+    var html = '<div class="tc"><div style="font-size:36px">🔐</div>' +
+      '<div style="margin:8px 0;color:#b0b0d0">ใส่รหัส</div>' +
+      '<input id="adminPwd" type="password" placeholder="รหัส" ' +
+      'style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;' +
+      'border:2px solid #b537f2;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit,sans-serif;margin-top:8px" ' +
+      'autocomplete="off"></div>';
+    var m = safeModal();
+    if (m) m('🔐 Admin', html, [
+      { label: '🔓 เข้า', cls: 'btn-pur', action: 'window.__admin._doLogin()' },
       { label: 'ปิด', cls: 'btn-o', action: 'closeModal()' }
     ]);
-  };
-
-  /* แทรกปุ่มในเมนู */
-  if (typeof renderMenu === 'function') {
-    var _origMenu2 = renderMenu;
-    window.renderMenu = function(){
-      _origMenu2.apply(this, arguments);
-      var el = document.getElementById('gameContent');
-      if (!el) return;
-      var btn = document.createElement('button');
-      btn.className = 'btn ' + (AFK.enabled ? 'btn-g' : 'btn-o') + ' wf mt2';
-      btn.textContent = AFK.enabled ? ('💤 AFK เปิด (+' + AFK.calcRate() + '/s)') : '💤 เปิด AFK รับเงิน';
-      btn.onclick = window.showAFKInfo;
-      var back = el.querySelector('button:last-of-type');
-      if (back && back.parentNode === el) el.insertBefore(btn, back);
-      else el.appendChild(btn);
-      if (AFK.enabled) { AFK.showWidget(); AFK.updateWidget(); }
-    };
-  }
-
-  /* Boot */
-  AFK.load();
-  if (AFK.enabled) {
     setTimeout(function(){
-      AFK.tick();
-      AFK.timer = setInterval(function(){ AFK.tick(); }, 3000);
-      AFK.showWidget();
-      AFK.updateWidget();
-    }, 1500);
-  }
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden && AFK.enabled) AFK.tick(); });
-  window.addEventListener('beforeunload', function(){ AFK.save(); });
-
-  console.info('✅ AFK loaded · ' + (AFK.enabled ? 'ON' : 'OFF'));
-  return AFK;
-})();
-</script>
-
-<script>
-"use strict";
-/* ============================================================
-   EXTRA-C FIXED: ADMIN PANEL — password: tawan
-   ============================================================ */
-window.__admin = (function(){
-  var ADMIN = {
-    KEY: 'mq_admin_v1',
-    PASSWORD: 'tawan',  // ← เปลี่ยนแล้ว
-    unlocked: false,
-    godMode: false,
-    infinityGold: false,
-    timer: null,
-
-    isUnlocked: function(){
-      try { return localStorage.getItem(this.KEY + '_u') === '1'; } catch (e) { return this.unlocked; }
-    },
-
-    _unlock: function(pwd){
-      if (pwd === this.PASSWORD) {
-        this.unlocked = true;
-        try { localStorage.setItem(this.KEY + '_u', '1'); } catch (e) {}
-        return true;
-      }
-      return false;
-    },
-
-    lock: function(){
-      this.unlocked = false;
-      this.godMode = false;
-      this.infinityGold = false;
-      if (this.timer) { clearInterval(this.timer); this.timer = null; }
-      try { localStorage.removeItem(this.KEY + '_u'); } catch (e) {}
-    },
-
-    showLogin: function(){
-      var html = '<div class="tc"><div style="font-size:36px">🔐</div><div style="margin:8px 0;color:#b0b0d0">ใส่รหัส</div><input id="adminPwd" type="password" placeholder="รหัส" style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #b537f2;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit,sans-serif;margin-top:8px" autocomplete="off"></div>';
-      if (typeof showModal === 'function') showModal('🔐 Admin', html, [
-        { label: '🔓 เข้า', cls: 'btn-pur', action: 'window.__admin._doLogin()' },
-        { label: 'ปิด', cls: 'btn-o', action: 'closeModal()' }
-      ]);
-      setTimeout(function(){
-        var el = document.getElementById('adminPwd');
-        if (el) { el.focus(); el.addEventListener('keydown', function(e){ if (e.key === 'Enter') ADMIN._doLogin(); }); }
-      }, 200);
-    },
-
-    _doLogin: function(){
       var el = document.getElementById('adminPwd');
-      if (!el) return;
-      if (ADMIN._unlock(el.value)) {
-        if (typeof closeModal === 'function') closeModal();
-        if (typeof Audio !== 'undefined' && Audio.sfx) Audio.sfx.win();
-        setTimeout(function(){ ADMIN.panel(); }, 200);
-      } else {
-        if (typeof Audio !== 'undefined' && Audio.sfx) Audio.sfx.wrong();
-        el.value = ''; el.placeholder = '❌ รหัสผิด';
+      if (el) {
+        el.focus();
+        el.addEventListener('keydown', function(e){ if (e.key === 'Enter') ADMIN._doLogin(); });
       }
-    },
-
-    panel: function(){
-      if (!this.isUnlocked()) { this.showLogin(); return; }
-      var el = document.getElementById('gameContent');
-      if (!el) return;
-      var s = (typeof state !== 'undefined' && state) ? state : null;
-      var h = '<h3>🔐 Admin Panel</h3>';
-      if (!s) { h += '<div class="si">⚠️ state ไม่พร้อม</div>'; }
-      else {
-        h += '<div class="sbar"><span>💰 <span class="sg">' + s.player.gold + '</span></span><span>⭐ Lv.<span class="sv">' + s.player.plv + '</span></span><span>💀 RB<span class="sv">' + s.player.rebirth + '</span></span></div>';
-      }
-      h += '<div class="si col"><b>💰 ทอง</b><div class="fr mt2" style="gap:6px">' +
-        '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(1000)">+1K</button>' +
-        '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(10000)">+10K</button>' +
-        '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(100000)">+100K</button>' +
-        '<button class="btn btn-xs btn-r" onclick="__admin.setGold(0)">=0</button></div>' +
-        '<div class="mt2"><button class="btn btn-xs ' + (this.infinityGold ? 'btn-g' : 'btn-o') + ' wf" onclick="__admin.toggleInfGold()">' + (this.infinityGold ? '✅ ทองไม่จำกัด' : '💰 เปิดทองไม่จำกัด') + '</button></div></div>';
-      h += '<div class="si col"><b>⭐ เลเวล</b><div class="fr mt2" style="gap:6px">' +
-        '<button class="btn btn-xs btn-g" onclick="__admin.addExp(100)">+100</button>' +
-        '<button class="btn btn-xs btn-g" onclick="__admin.addExp(1000)">+1K</button>' +
-        '<button class="btn btn-xs btn-g" onclick="__admin.addExp(10000)">+10K</button>' +
-        '<button class="btn btn-xs btn-pur" onclick="__admin.addSP(10)">+10SP</button></div></div>';
-      h += '<div class="si col"><b>🎁 ปลดล็อก</b><div class="fc mt2">' +
-        '<button class="btn btn-xs btn-pur" onclick="__admin.unlockAll()">🎁 ปลดล็อกทั้งหมด</button>' +
-        '<button class="btn btn-xs btn-o" onclick="__admin.addAllItems()">📦 item ทุกอย่าง</button>' +
-        '<button class="btn btn-xs btn-o" onclick="__admin.fillConsumables()">🧪 consumable 99</button>' +
-        '<button class="btn btn-xs btn-o" onclick="__admin.giveAllPassives()">🌟 passive MAX</button>' +
-        '<button class="btn btn-xs btn-o" onclick="__admin.completeAllChapters()">🏆 ผ่านทุกด่าน</button></div></div>';
-      h += '<div class="si col"><b>🛡️ God Mode</b><div class="mt2"><button class="btn btn-xs ' + (this.godMode ? 'btn-g' : 'btn-o') + ' wf" onclick="__admin.toggleGod()">' + (this.godMode ? '✅ เปิดอยู่' : '🛡️ เปิด God') + '</button></div></div>';
-      h += '<div class="si col"><b>🎮 ระบบ</b><div class="fc mt2">' +
-        '<button class="btn btn-xs btn-o" onclick="__admin.resetState()">🔄 รีเซ็ต state</button>' +
-        '<button class="btn btn-xs btn-r" onclick="__admin.wipeAll()">🗑️ ลบ save</button>' +
-        '<button class="btn btn-xs btn-y" onclick="__admin.exportState()">📤 Export</button></div></div>';
-      h += '<button class="btn btn-r wf mt3" onclick="__admin.lock();go(\'menu\')">🔒 ออก</button>';
-      h += '<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
-      el.innerHTML = h;
-      el.scrollTop = 0;
-    },
-
-    addGold: function(n){
-      if (typeof state === 'undefined' || !state) return;
-      state.player.gold += n;
-      if (typeof Audio !== 'undefined' && Audio.sfx) Audio.sfx.gold();
-      if (typeof Save !== 'undefined' && Save.write) Save.write(state);
-      this.panel();
-    },
-    setGold: function(n){ if (typeof state !== 'undefined' && state) { state.player.gold = n; Save.write(state); } this.panel(); },
-    addExp: function(n){ if (typeof addExp === 'function') addExp(n); this.panel(); },
-    addSP: function(n){ if (typeof state !== 'undefined' && state) { state.player.skillPoints = (state.player.skillPoints || 0) + n; Save.write(state); } this.panel(); },
-
-    addAllItems: function(){
-      if (typeof state === 'undefined' || !state || typeof SHOP_ITEMS === 'undefined') return;
-      var p = state;
-      if (!p.rareItems) p.rareItems = [];
-      for (var id in SHOP_ITEMS) {
-        if (SHOP_ITEMS[id].cat === 'rare' && p.rareItems.indexOf(id) === -1) p.rareItems.push(id);
-      }
-      if (!p.permanentBoosts) p.permanentBoosts = {crit:0,cmul:0,gold:0,exp:0,hp:0,time:0};
-      for (var id2 in SHOP_ITEMS) {
-        var it = SHOP_ITEMS[id2];
-        if (it.cat === 'boost' && !p.permanentBoosts[id2]) {
-          p.permanentBoosts[id2] = 1;
-          if (it.boost) { for (var k in it.boost) p.permanentBoosts[k] = (p.permanentBoosts[k] || 0) + it.boost[k]; }
+    }, 200);
+  },
+  _doLogin: function(){
+    var el = document.getElementById('adminPwd');
+    if (!el) return;
+    if (ADMIN.unlock(el.value)) {
+      try { closeModal(); } catch(e){}
+      var au = safeAudio(); if (au && au.sfx) au.sfx.win();
+      setTimeout(function(){ ADMIN.panel(); }, 200);
+    } else {
+      var au2 = safeAudio(); if (au2 && au2.sfx) au2.sfx.wrong();
+      el.value = '';
+      el.placeholder = '❌ รหัสผิด';
+    }
+  },
+  panel: function(){
+    if (!this.isUnlocked()) { this.showLogin(); return; }
+    var el = document.getElementById('gameContent');
+    if (!el) return;
+    var s = safeState();
+    var h = '<h3>🔐 Admin Panel</h3>';
+    if (s && s.player) {
+      h += '<div class="sbar"><span>💰 <span class="sg">' + s.player.gold + '</span></span>' +
+           '<span>⭐ Lv.<span class="sv">' + s.player.plv + '</span></span>' +
+           '<span>💀 RB<span class="sv">' + s.player.rebirth + '</span></span></div>';
+    }
+    h += '<div class="si col"><b>💰 ทอง</b><div class="fr mt2" style="gap:6px">' +
+         '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(1000)">+1K</button>' +
+         '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(10000)">+10K</button>' +
+         '<button class="btn btn-xs btn-gold" onclick="__admin.addGold(100000)">+100K</button>' +
+         '<button class="btn btn-xs btn-r" onclick="__admin.setGold(0)">=0</button></div>' +
+         '<div class="mt2"><button class="btn btn-xs ' + (this.infinityGold ? 'btn-g' : 'btn-o') + ' wf" ' +
+         'onclick="__admin.toggleInfGold()">' + (this.infinityGold ? '✅ ทองไม่จำกัด' : '💰 เปิดทองไม่จำกัด') + '</button></div></div>';
+    h += '<div class="si col"><b>⭐ เลเวล</b><div class="fr mt2" style="gap:6px">' +
+         '<button class="btn btn-xs btn-g" onclick="__admin.addExp(100)">+100</button>' +
+         '<button class="btn btn-xs btn-g" onclick="__admin.addExp(1000)">+1K</button>' +
+         '<button class="btn btn-xs btn-g" onclick="__admin.addExp(10000)">+10K</button>' +
+         '<button class="btn btn-xs btn-pur" onclick="__admin.addSP(10)">+10SP</button></div></div>';
+    h += '<div class="si col"><b>🎁 ปลดล็อก</b><div class="fc mt2">' +
+         '<button class="btn btn-xs btn-pur" onclick="__admin.unlockAll()">🎁 ปลดล็อกทั้งหมด</button>' +
+         '<button class="btn btn-xs btn-o" onclick="__admin.addAllItems()">📦 item ทุกอย่าง</button>' +
+         '<button class="btn btn-xs btn-o" onclick="__admin.fillConsumables()">🧪 consumable 99</button>' +
+         '<button class="btn btn-xs btn-o" onclick="__admin.giveAllPassives()">🌟 passive MAX</button>' +
+         '<button class="btn btn-xs btn-o" onclick="__admin.completeAllChapters()">🏆 ผ่านทุกด่าน</button></div></div>';
+    h += '<div class="si col"><b>🛡️ God Mode</b><div class="mt2">' +
+         '<button class="btn btn-xs ' + (this.godMode ? 'btn-g' : 'btn-o') + ' wf" ' +
+         'onclick="__admin.toggleGod()">' + (this.godMode ? '✅ เปิดอยู่' : '🛡️ เปิด God') + '</button></div></div>';
+    h += '<div class="si col"><b>🎮 ระบบ</b><div class="fc mt2">' +
+         '<button class="btn btn-xs btn-o" onclick="__admin.resetState()">🔄 รีเซ็ต state</button>' +
+         '<button class="btn btn-xs btn-r" onclick="__admin.wipeAll()">🗑️ ลบ save</button>' +
+         '<button class="btn btn-xs btn-y" onclick="__admin.exportState()">📤 Export</button></div></div>';
+    h += '<button class="btn btn-r wf mt3" onclick="__admin.lock();go(\'menu\')">🔒 ออก</button>';
+    h += '<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
+    el.innerHTML = h;
+    el.scrollTop = 0;
+  },
+  addGold: function(n){
+    var s = safeState(); if (!s || !s.player) return;
+    s.player.gold += n;
+    var au = safeAudio(); if (au && au.sfx) au.sfx.gold();
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  setGold: function(n){
+    var s = safeState(); if (!s || !s.player) return;
+    s.player.gold = n;
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  addExp: function(n){
+    try { if (typeof addExp === 'function') addExp(n); } catch(e){}
+    this.panel();
+  },
+  addSP: function(n){
+    var s = safeState(); if (!s || !s.player) return;
+    s.player.skillPoints = (s.player.skillPoints || 0) + n;
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  addAllItems: function(){
+    var s = safeState(); if (!s) return;
+    if (typeof SHOP_ITEMS === 'undefined') return;
+    if (!s.rareItems) s.rareItems = [];
+    for (var id in SHOP_ITEMS) {
+      if (SHOP_ITEMS[id].cat === 'rare' && s.rareItems.indexOf(id) === -1) s.rareItems.push(id);
+    }
+    if (!s.permanentBoosts) s.permanentBoosts = {crit:0,cmul:0,gold:0,exp:0,hp:0,time:0};
+    for (var id2 in SHOP_ITEMS) {
+      var it = SHOP_ITEMS[id2];
+      if (it.cat === 'boost' && !s.permanentBoosts[id2]) {
+        s.permanentBoosts[id2] = 1;
+        if (it.boost) {
+          for (var k in it.boost) s.permanentBoosts[k] = (s.permanentBoosts[k] || 0) + it.boost[k];
         }
       }
-      if (typeof getMaxHp === 'function') p.player.maxHp = getMaxHp();
-      p.player.hp = p.player.maxHp;
-      if (Save.write) Save.write(p);
-      this.panel();
-    },
-
-    fillConsumables: function(){
-      if (typeof state === 'undefined' || !state || typeof SHOP_ITEMS === 'undefined') return;
-      if (!state.consumables) state.consumables = {};
-      for (var id in SHOP_ITEMS) { if (SHOP_ITEMS[id].cat === 'consumable') state.consumables[id] = 99; }
-      if (Save.write) Save.write(state);
-      this.panel();
-    },
-
-    unlockAll: function(){
-      if (typeof state === 'undefined' || !state) return;
-      var p = state;
-      if (typeof BaseClasses !== 'undefined') for (var k in BaseClasses) if (p.myGClasses.indexOf(k) === -1) p.myGClasses.push(k);
-      if (typeof AdvanceClasses !== 'undefined') for (var k2 in AdvanceClasses) if (p.myGClasses.indexOf(k2) === -1) p.myGClasses.push(k2);
-      if (typeof Pets !== 'undefined') for (var k3 in Pets) if (p.myPets.indexOf(k3) === -1) p.myPets.push(k3);
-      if (Save.write) Save.write(p);
-      this.panel();
-    },
-
-    giveAllPassives: function(){
-      if (typeof state === 'undefined' || !state || typeof PASSIVES === 'undefined') return;
-      if (!state.skillTree) state.skillTree = {};
-      for (var k in PASSIVES) state.skillTree[k] = 5;
-      if (typeof getMaxHp === 'function') state.player.maxHp = getMaxHp();
-      state.player.hp = state.player.maxHp;
-      if (Save.write) Save.write(state);
-      this.panel();
-    },
-
-    completeAllChapters: function(){
-      if (typeof state === 'undefined' || !state || typeof Chapters === 'undefined') return;
-      Chapters.forEach(function(ch){
-        state.completed[ch.id] = [1,2,3,4,5];
-        if (state.bossKills.indexOf(ch.id) === -1) state.bossKills.push(ch.id);
-      });
-      if (Save.write) Save.write(state);
-      this.panel();
-    },
-
-    toggleGod: function(){
-      this.godMode = !this.godMode;
-      var self = this;
-      if (this.godMode && !this.timer) {
-        this.timer = setInterval(function(){
-          if (self.godMode && typeof state !== 'undefined' && state && state.player) {
-            state.player.hp = state.player.maxHp;
-          }
-        }, 500);
-      } else if (!this.godMode && this.timer) {
-        clearInterval(this.timer); this.timer = null;
-      }
-      this.panel();
-    },
-
-    toggleInfGold: function(){ this.infinityGold = !this.infinityGold; this.panel(); },
-
-    resetState: function(){
-      if (!confirm('รีเซ็ต state?')) return;
+    }
+    try { if (typeof getMaxHp === 'function') s.player.maxHp = getMaxHp(); } catch(e){}
+    s.player.hp = s.player.maxHp;
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  fillConsumables: function(){
+    var s = safeState(); if (!s) return;
+    if (typeof SHOP_ITEMS === 'undefined') return;
+    if (!s.consumables) s.consumables = {};
+    for (var id in SHOP_ITEMS) {
+      if (SHOP_ITEMS[id].cat === 'consumable') s.consumables[id] = 99;
+    }
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  unlockAll: function(){
+    var s = safeState(); if (!s) return;
+    if (typeof BaseClasses !== 'undefined') {
+      for (var k in BaseClasses) if (s.myGClasses.indexOf(k) === -1) s.myGClasses.push(k);
+    }
+    if (typeof AdvanceClasses !== 'undefined') {
+      for (var k2 in AdvanceClasses) if (s.myGClasses.indexOf(k2) === -1) s.myGClasses.push(k2);
+    }
+    if (typeof Pets !== 'undefined') {
+      for (var k3 in Pets) if (s.myPets.indexOf(k3) === -1) s.myPets.push(k3);
+    }
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  giveAllPassives: function(){
+    var s = safeState(); if (!s) return;
+    if (typeof PASSIVES === 'undefined') return;
+    if (!s.skillTree) s.skillTree = {};
+    for (var k in PASSIVES) s.skillTree[k] = 5;
+    try { if (typeof getMaxHp === 'function') s.player.maxHp = getMaxHp(); } catch(e){}
+    s.player.hp = s.player.maxHp;
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  completeAllChapters: function(){
+    var s = safeState(); if (!s) return;
+    if (typeof Chapters === 'undefined') return;
+    for (var i = 0; i < Chapters.length; i++) {
+      var ch = Chapters[i];
+      s.completed[ch.id] = [1,2,3,4,5];
+      if (s.bossKills.indexOf(ch.id) === -1) s.bossKills.push(ch.id);
+    }
+    var sv = safeSave(); if (sv && sv.write) sv.write(s);
+    this.panel();
+  },
+  toggleGod: function(){
+    this.godMode = !this.godMode;
+    var self = this;
+    if (this.godMode && !this.timer) {
+      this.timer = setInterval(function(){
+        if (self.godMode) {
+          var s = safeState();
+          if (s && s.player) s.player.hp = s.player.maxHp;
+        }
+      }, 500);
+    } else if (!this.godMode && this.timer) {
+      clearInterval(this.timer); this.timer = null;
+    }
+    this.panel();
+  },
+  toggleInfGold: function(){ this.infinityGold = !this.infinityGold; this.panel(); },
+  resetState: function(){
+    if (!confirm('รีเซ็ต state?')) return;
+    try {
       if (typeof Save !== 'undefined' && Save.defaultState) {
         state = Save.defaultState();
-        if (typeof getMaxHp === 'function') state.player.maxHp = getMaxHp();
+        try { if (typeof getMaxHp === 'function') state.player.maxHp = getMaxHp(); } catch(e){}
         state.player.hp = state.player.maxHp;
         if (Save.write) Save.write(state);
       }
-      this.panel();
-    },
+    } catch(e){}
+    this.panel();
+  },
+  wipeAll: function(){
+    if (!confirm('⚠️ ลบทั้งหมด?')) return;
+    try { localStorage.clear(); } catch(e){}
+    location.reload();
+  },
+  exportState: function(){
+    try {
+      var s = safeState();
+      var str = JSON.stringify(s, null, 2);
+      if (navigator.clipboard) navigator.clipboard.writeText(str).then(function(){ alert('Copy แล้ว'); });
+      else prompt('Copy:', str);
+    } catch(e) { alert('ไม่ได้'); }
+  }
+};
+window.__admin = ADMIN;
 
-    wipeAll: function(){
-      if (!confirm('⚠️ ลบทั้งหมด?')) return;
-      try { localStorage.clear(); } catch (e) {}
-      location.reload();
-    },
-
-    exportState: function(){
-      try {
-        var s = JSON.stringify(state, null, 2);
-        if (navigator.clipboard) navigator.clipboard.writeText(s).then(function(){ alert('Copy แล้ว'); });
-        else prompt('Copy:', s);
-      } catch (e) { alert('ไม่ได้'); }
-    }
-  };
-
-  /* ปุ่มลับ: กด header 5 ครั้ง */
+/* Tap header 5x */
+(function(){
   var taps = 0, tmr = null;
   document.addEventListener('click', function(e){
     var header = document.querySelector('.gh');
@@ -3228,23 +3253,84 @@ window.__admin = (function(){
     if (tmr) clearTimeout(tmr);
     tmr = setTimeout(function(){ taps = 0; }, 1500);
     if (taps >= 5) {
-      taps = 0; clearTimeout(tmr);
-      if (typeof Audio !== 'undefined' && Audio.sfx) Audio.sfx.level();
+      taps = 0;
+      clearTimeout(tmr);
+      var au = safeAudio(); if (au && au.sfx) au.sfx.level();
       if (ADMIN.isUnlocked()) ADMIN.panel();
       else ADMIN.showLogin();
     }
   }, true);
-
-  /* Infinity gold enforcement */
-  setInterval(function(){
-    if (ADMIN.infinityGold && typeof state !== 'undefined' && state && state.player) {
-      if (state.player.gold < 999999) state.player.gold = 999999;
-    }
-  }, 1000);
-
-  console.info('✅ Admin loaded · password: tawan · tap header 5x');
-  return ADMIN;
 })();
-</script>
+
+/* Infinity gold enforcement */
+setInterval(function(){
+  if (ADMIN.infinityGold) {
+    var s = safeState();
+    if (s && s.player && s.player.gold < 999999) s.player.gold = 999999;
+  }
+}, 1000);
+
+/* ============================================================
+   4. INJECT BUTTONS INTO MENU
+   ============================================================ */
+function injectMenuButtons() {
+  var el = document.getElementById('gameContent');
+  if (!el) return;
+  var back = el.querySelector('button:last-of-type');
+
+  var kb = document.createElement('button');
+  kb.className = 'btn btn-o wf mt2';
+  kb.textContent = '📚 สรุป ม.2 (10 บท)';
+  kb.onclick = window.openKnowledgeBrowser;
+  if (back && back.parentNode === el) el.insertBefore(kb, back);
+  else el.appendChild(kb);
+
+  var ak = document.createElement('button');
+  ak.className = 'btn ' + (AFK.enabled ? 'btn-g' : 'btn-o') + ' wf mt2';
+  ak.textContent = AFK.enabled
+    ? ('💤 AFK (+' + AFK.calcRate() + '/s · เหลือ ' + Math.max(0, AFK.MAX_PER_SESSION - AFK.sessionEarned) + ')')
+    : '💤 เปิด AFK รับเงิน';
+  ak.onclick = window.showAFKInfo;
+  if (back && back.parentNode === el) el.insertBefore(ak, back);
+  else el.appendChild(ak);
+
+  if (AFK.enabled) {
+    AFK.showWidget();
+    AFK.updateWidget();
+  }
+}
+
+try {
+  if (typeof renderMenu === 'function') {
+    var _origRenderMenu = renderMenu;
+    window.renderMenu = function(){
+      _origRenderMenu.apply(this, arguments);
+      setTimeout(injectMenuButtons, 20);
+    };
+  }
+} catch(e) { console.warn('Menu wrap:', e.message); }
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+AFK.load();
+if (AFK.enabled) {
+  setTimeout(function(){
+    AFK.tick();
+    AFK.timer = setInterval(function(){ AFK.tick(); }, 3000);
+    AFK.showWidget();
+    AFK.updateWidget();
+  }, 1500);
+}
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden && AFK.enabled) AFK.tick();
+});
+window.addEventListener('beforeunload', function(){ AFK.save(); });
+
+console.info('✅ EXTRA PACK v3 · Knowledge + AFK + Admin');
+console.info('   Admin password: tawan · tap header 5x');
+
+})();
+    </script>
 </body>
   </html>
