@@ -1,0 +1,2655 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Math Quest ม.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--neon-blue:#00f0ff;--neon-pink:#ff006e;--neon-purple:#b537f2;--neon-green:#39ff14;--neon-yellow:#ffe600;--neon-orange:#ff8c00;--dark-bg:#0a0a1a;--card-bg:rgba(15,15,35,0.92);--glass:rgba(255,255,255,0.06);--glass-border:rgba(255,255,255,0.14);--text-bright:#fff;--text-dim:#b0b0d0;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{overscroll-behavior:none;}
+body{font-family:'Kanit',sans-serif;background:var(--dark-bg);background-image:radial-gradient(ellipse at 20% 10%,rgba(0,240,255,0.08) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(255,0,110,0.07) 0%,transparent 55%),radial-gradient(ellipse at 50% 90%,rgba(181,55,242,0.08) 0%,transparent 55%);color:var(--text-bright);min-height:100vh;min-height:100dvh;display:flex;justify-content:center;align-items:stretch;padding:0;overflow:hidden;position:relative;user-select:none;-webkit-user-select:none;}
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.app{width:100%;max-width:820px;position:relative;z-index:2;display:flex;flex-direction:column;height:100vh;height:100dvh;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
+.game-wrapper{background:var(--card-bg);overflow:hidden;backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:flex;flex-direction:column;flex:1;min-height:0;border-bottom:1px solid var(--glass-border);}
+@media(min-width:640px){body{padding:12px;align-items:center;}.app{height:min(100dvh - 24px,900px);}.game-wrapper{border-radius:22px;border:1px solid var(--glass-border);box-shadow:0 0 30px rgba(0,240,255,0.18),0 20px 60px rgba(0,0,0,0.7);}}
+.game-header{padding:8px 14px;text-align:center;background:rgba(0,240,255,0.04);border-bottom:1px solid var(--glass-border);flex-shrink:0;position:relative;}
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.creator-badge{display:inline-block;background:rgba(255,0,110,0.18);border:1px solid var(--neon-pink);padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;color:var(--neon-pink);letter-spacing:1.5px;}
+.sound-toggle{background:transparent;border:1px solid var(--glass-border);color:var(--text-bright);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer;}
+.game-title{font-family:'Orbitron',sans-serif;font-size:1.35em;font-weight:900;background:linear-gradient(90deg,var(--neon-blue),var(--neon-green),var(--neon-yellow),var(--neon-pink));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;line-height:1.15;margin-top:2px;}
+.subtitle{color:var(--text-dim);font-size:9px;letter-spacing:1px;}
+.game-content{padding:12px;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;min-height:0;}
+.game-content::-webkit-scrollbar{width:4px;}
+.game-content::-webkit-scrollbar-thumb{background:var(--neon-purple);border-radius:3px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:600;font-size:14px;border:none;border-radius:12px;cursor:pointer;transition:transform 0.12s,box-shadow 0.2s,filter 0.2s;letter-spacing:0.4px;text-align:center;color:#fff;background:linear-gradient(135deg,#00c6ff,#0072ff);box-shadow:0 4px 15px rgba(0,114,255,0.28);touch-action:manipulation;position:relative;}
+.btn:active{transform:scale(0.96);filter:brightness(0.95);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;pointer-events:none;}
+.btn-green{background:linear-gradient(135deg,#00b09b,#96c93d);box-shadow:0 4px 15px rgba(0,176,155,0.28);}
+.btn-red{background:linear-gradient(135deg,#ff416c,#ff4b2b);box-shadow:0 4px 15px rgba(255,65,108,0.28);}
+.btn-yellow{background:linear-gradient(135deg,#f7971e,#ffd200);color:#1a1a2e;box-shadow:0 4px 15px rgba(247,151,30,0.28);}
+.btn-gold{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;box-shadow:0 4px 15px rgba(255,215,0,0.28);}
+.btn-pink{background:linear-gradient(135deg,#ff006e,#ff4b8b);box-shadow:0 4px 15px rgba(255,0,110,0.28);}
+.btn-purple{background:linear-gradient(135deg,#b537f2,#7b2ff7);box-shadow:0 4px 15px rgba(181,55,242,0.28);}
+.btn-outline{background:transparent;border:2px solid var(--neon-blue);color:var(--neon-blue);box-shadow:none;}
+.btn-outline:active{background:rgba(0,240,255,0.12);}
+.btn-sm{min-height:42px;padding:8px 12px;font-size:12px;border-radius:10px;}
+.btn-xs{min-height:36px;padding:5px 9px;font-size:11px;border-radius:8px;}
+.stats-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,0.4);border-radius:12px;margin-bottom:8px;font-size:12px;color:#e0e0f0;flex-wrap:wrap;gap:4px;border:1px solid var(--glass-border);}
+.stat-value{font-weight:700;color:var(--neon-blue);}
+.stat-gold{font-weight:700;color:var(--neon-yellow);}
+.badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.4px;}
+.badge-gold{background:rgba(255,230,0,0.15);color:var(--neon-yellow);border:1px solid rgba(255,230,0,0.4);}
+.badge-green{background:rgba(57,255,20,0.15);color:var(--neon-green);border:1px solid rgba(57,255,20,0.4);}
+.badge-blue{background:rgba(0,240,255,0.15);color:var(--neon-blue);border:1px solid rgba(0,240,255,0.4);}
+.badge-red{background:rgba(255,0,110,0.15);color:var(--neon-pink);border:1px solid rgba(255,0,110,0.4);}
+.class-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.class-card{background:var(--glass);border:2px solid var(--glass-border);border-radius:14px;padding:12px 10px;cursor:pointer;transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s;text-align:center;position:relative;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.class-card:active{transform:scale(0.97);}
+.class-card.selected{border-color:var(--neon-green);background:rgba(57,255,20,0.08);box-shadow:0 0 18px rgba(57,255,20,0.25);}
+.class-card.locked{opacity:0.55;}
+.class-emoji{font-size:40px;display:block;margin-bottom:2px;line-height:1;}
+.class-name{font-weight:700;color:var(--text-bright);font-size:14px;}
+.class-desc{font-size:10px;color:var(--text-dim);margin-top:4px;line-height:1.35;}
+.chapter-container{margin-bottom:8px;}
+.chapter-header{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s;}
+.chapter-header:active{transform:scale(0.98);border-color:var(--neon-blue);}
+.chapter-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);flex-shrink:0;}
+.chapter-info{flex:1;min-width:0;}
+.chapter-name{font-weight:600;color:var(--text-bright);font-size:13px;}
+.chapter-progress{font-size:10px;color:var(--text-dim);}
+.level-list{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:6px 0 0 50px;}
+.level-btn{min-height:44px;padding:6px 4px;border-radius:9px;border:1px solid var(--glass-border);background:rgba(0,0,0,0.35);color:var(--text-bright);cursor:pointer;font-size:11px;transition:all 0.2s;text-align:center;font-family:'Kanit',sans-serif;font-weight:600;}
+.level-btn.completed{border-color:var(--neon-green);background:rgba(57,255,20,0.12);}
+.battle-scene{background:rgba(0,0,0,0.5);border-radius:14px;padding:12px;border:1px solid var(--glass-border);margin-bottom:10px;text-align:center;position:relative;overflow:hidden;}
+.battle-scene.shake{animation:screenShake 0.4s ease;}
+@keyframes screenShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-6px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-4px,-2px);}80%{transform:translate(4px,2px);}}
+.emoji-display{font-size:54px;display:inline-block;transition:transform 0.3s;line-height:1;user-select:none;}
+.emoji-display.hit{animation:emojiHit 0.4s ease;}
+.emoji-display.crit{animation:emojiCrit 0.5s ease-out;}
+@keyframes emojiHit{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@keyframes emojiCrit{0%{transform:scale(1);}30%{transform:scale(1.6) rotate(-10deg);}60%{transform:scale(1.15) rotate(5deg);}100%{transform:scale(1) rotate(0);}}
+.combatants-row{display:flex;align-items:center;justify-content:space-around;gap:8px;flex-wrap:wrap;}
+.combatant{text-align:center;min-width:95px;flex:1;max-width:130px;}
+.combatant-name{color:var(--text-bright);font-weight:600;font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.combatant-name.boss{color:var(--neon-pink);}
+.hp-bar-outer{background:#1a1a2e;border-radius:7px;height:10px;overflow:hidden;border:1px solid var(--glass-border);margin-top:4px;width:100%;}
+.hp-bar-inner{height:100%;border-radius:7px;transition:width 0.4s ease;background:linear-gradient(90deg,#00f0ff,#00c6ff);box-shadow:0 0 8px rgba(0,240,255,0.5);}
+.hp-bar-inner.boss-hp{background:linear-gradient(90deg,#ff006e,#ff4b2b);box-shadow:0 0 8px rgba(255,0,110,0.5);}
+.hp-text{font-size:10px;color:var(--text-dim);margin-top:2px;}
+.vs-badge{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:var(--neon-yellow);text-shadow:0 0 12px rgba(255,230,0,0.6);}
+.timer-bar-outer{background:#1a1a2e;border-radius:5px;height:9px;overflow:hidden;border:1px solid var(--glass-border);margin-top:8px;}
+.timer-bar-inner{height:100%;border-radius:5px;transition:width 0.15s linear;background:linear-gradient(90deg,var(--neon-green),var(--neon-yellow),var(--neon-orange));}
+.timer-text{font-size:11px;color:var(--neon-yellow);font-weight:700;text-align:center;margin-top:3px;}
+.question-panel{background:rgba(0,0,0,0.5);border-radius:14px;padding:14px;border:1px solid var(--glass-border);margin-bottom:10px;}
+.question-display{font-size:20px;font-weight:700;color:var(--text-bright);text-align:center;margin-bottom:10px;line-height:1.5;min-height:30px;word-break:break-word;}
+.answer-input-row{display:flex;gap:8px;}
+.answer-input{flex:1;padding:12px 14px;font-size:16px;font-weight:600;text-align:center;border-radius:10px;border:2px solid var(--glass-border);background:rgba(0,0,0,0.5);color:var(--text-bright);outline:none;transition:border-color 0.2s,box-shadow 0.2s;font-family:'Kanit',sans-serif;min-width:0;}
+.answer-input:focus{border-color:var(--neon-blue);box-shadow:0 0 14px rgba(0,240,255,0.25);}
+.answer-input:disabled{opacity:0.6;}
+.answer-input.correct-flash{border-color:var(--neon-green)!important;box-shadow:0 0 18px rgba(57,255,20,0.5)!important;background:rgba(57,255,20,0.1)!important;}
+.answer-input.wrong-flash{border-color:var(--neon-pink)!important;box-shadow:0 0 18px rgba(255,0,110,0.5)!important;background:rgba(255,0,110,0.1)!important;}
+.combo-display{text-align:center;font-weight:700;font-size:15px;margin-top:6px;min-height:20px;color:var(--neon-yellow);text-shadow:0 0 10px rgba(255,230,0,0.5);}
+.feedback-msg{font-size:12px;text-align:center;margin-top:4px;min-height:16px;color:var(--text-dim);}
+.shop-item{background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:border-color 0.2s;}
+.gacha-card{background:var(--glass);border:2px solid var(--neon-yellow);border-radius:16px;padding:20px;text-align:center;box-shadow:0 0 25px rgba(255,230,0,0.2);}
+.gacha-result{font-size:56px;animation:gachaReveal 0.6s ease-out;line-height:1;}
+@keyframes gachaReveal{0%{transform:scale(0) rotate(180deg);opacity:0;}60%{transform:scale(1.3) rotate(-8deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+.pet-card{background:var(--glass);border:2px solid var(--glass-border);border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;width:100%;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.pet-card.equipped{border-color:var(--neon-green);background:rgba(57,255,20,0.08);box-shadow:0 0 15px rgba(57,255,20,0.25);}
+.pet-emoji{font-size:38px;display:block;line-height:1;}
+.numpad-container{flex-shrink:0;background:rgba(10,10,26,0.96);border-top:1px solid var(--glass-border);padding:8px;display:none;backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);}
+.numpad-container.active{display:block;}
+.numpad-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:560px;margin:0 auto;}
+.numpad-btn{min-height:52px;padding:8px;font-size:20px;font-weight:700;font-family:'Orbitron','Kanit',sans-serif;border-radius:10px;border:1px solid var(--glass-border);background:rgba(0,240,255,0.08);color:var(--text-bright);cursor:pointer;transition:transform 0.08s,background 0.15s;touch-action:manipulation;user-select:none;}
+.numpad-btn:active{transform:scale(0.94);background:rgba(0,240,255,0.25);}
+.numpad-btn.op{background:rgba(181,55,242,0.15);color:var(--neon-purple);}
+.numpad-btn.submit{background:linear-gradient(135deg,var(--neon-green),#00b09b);color:#0a1a0a;font-size:18px;}
+.numpad-btn.back{background:rgba(255,0,110,0.15);color:var(--neon-pink);font-size:18px;}
+.float-text{position:fixed;pointer-events:none;font-weight:900;font-family:'Orbitron','Kanit',sans-serif;z-index:500;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 12px currentColor;animation:floatUp 1.1s ease-out forwards;font-size:24px;white-space:nowrap;}
+.float-text.crit{font-size:34px;}
+.float-text.miss{color:#888;font-size:20px;}
+.float-text.heal{color:var(--neon-green);}
+.float-text.dmg{color:var(--neon-yellow);}
+.float-text.critdmg{color:var(--neon-pink);}
+.float-text.gold{color:#ffd700;font-size:18px;}
+@keyframes floatUp{0%{transform:translate(-50%,0) scale(0.6);opacity:0;}15%{transform:translate(-50%,-10px) scale(1.2);opacity:1;}100%{transform:translate(-50%,-90px) scale(1);opacity:0;}}
+.start-overlay{position:fixed;inset:0;z-index:9000;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2a 50%,#0a1a2a 100%);display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;transition:opacity 0.4s;}
+.start-overlay.hide{opacity:0;pointer-events:none;}
+.start-content{max-width:400px;width:100%;background:var(--card-bg);border:2px solid var(--neon-blue);border-radius:24px;padding:32px 24px;box-shadow:0 0 50px rgba(0,240,255,0.3);}
+.start-logo{font-family:'Orbitron',sans-serif;font-size:2em;font-weight:900;background:linear-gradient(90deg,var(--neon-blue),var(--neon-green),var(--neon-yellow),var(--neon-pink));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px;}
+.start-sub{color:var(--text-dim);font-size:12px;margin-bottom:20px;}
+.start-btn{display:inline-block;min-height:56px;padding:14px 32px;font-size:16px;font-weight:700;border-radius:14px;border:none;background:linear-gradient(135deg,var(--neon-green),var(--neon-blue));color:#0a1a0a;cursor:pointer;font-family:'Kanit',sans-serif;letter-spacing:1.5px;box-shadow:0 0 30px rgba(57,255,20,0.4);animation:pulseGlow 2s ease-in-out infinite;}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 30px rgba(57,255,20,0.4);}50%{box-shadow:0 0 50px rgba(57,255,20,0.7);}}
+.start-features{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:20px;font-size:11px;color:var(--text-dim);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:3000;padding:20px;backdrop-filter:blur(5px);animation:fadeIn 0.25s;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal-content{background:var(--card-bg);border-radius:20px;padding:22px;max-width:440px;width:100%;border:2px solid var(--neon-blue);box-shadow:0 0 40px rgba(0,240,255,0.28);text-align:center;max-height:85vh;overflow-y:auto;}
+.modal-title{font-size:20px;font-weight:700;margin-bottom:10px;}
+.modal-body{font-size:14px;color:var(--text-dim);line-height:1.55;margin-bottom:16px;text-align:left;}
+.modal-body .step{padding:6px 10px;background:rgba(0,240,255,0.08);border-left:3px solid var(--neon-blue);border-radius:4px;margin:6px 0;color:var(--text-bright);font-size:13px;}
+.flex-row{display:flex;gap:8px;flex-wrap:wrap;}
+.flex-col{display:flex;flex-direction:column;gap:8px;}
+.text-center{text-align:center;}
+.text-sm{font-size:11px;}
+.mt-1{margin-top:4px;}.mt-2{margin-top:8px;}.mt-3{margin-top:12px;}.mt-4{margin-top:16px;}
+.mb-2{margin-bottom:8px;}
+.w-full{width:100%;}
+.progress-bar{background:#1a1a2e;border-radius:5px;height:5px;overflow:hidden;margin-top:3px;}
+.progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--neon-green),var(--neon-blue));transition:width 0.4s;}
+h3{font-size:18px;margin-bottom:10px;color:var(--text-bright);}
+.calc-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:2500;padding:16px;backdrop-filter:blur(8px);animation:fadeIn 0.2s;}
+.calc-panel{background:var(--card-bg);border:2px solid var(--neon-blue);border-radius:18px;padding:16px;max-width:360px;width:100%;box-shadow:0 0 40px rgba(0,240,255,0.35);}
+.calc-display{background:rgba(0,0,0,0.75);color:var(--neon-green);font-family:'Orbitron',monospace;font-size:26px;font-weight:700;text-align:right;padding:12px 14px;border-radius:12px;margin-bottom:10px;min-height:56px;word-break:break-all;border:1px solid var(--glass-border);}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.calc-btn{min-height:52px;font-size:19px;font-weight:700;font-family:'Orbitron','Kanit',sans-serif;border:1px solid var(--glass-border);border-radius:10px;background:rgba(0,240,255,0.08);color:var(--text-bright);cursor:pointer;transition:transform 0.08s,background 0.15s;touch-action:manipulation;}
+.calc-btn:active{transform:scale(0.94);background:rgba(0,240,255,0.25);}
+.calc-btn.op{background:rgba(181,55,242,0.15);color:var(--neon-purple);}
+.calc-btn.eq{background:linear-gradient(135deg,var(--neon-green),#00b09b);color:#0a1a0a;grid-column:span 2;}
+.calc-btn.span2{grid-column:span 2;}
+.calc-actions{display:flex;gap:6px;}
+.calc-actions .btn{flex:1;}
+.calc-fab{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(--neon-green),#00b09b);color:#0a1a0a;border:none;border-radius:10px;padding:6px 10px;font-family:'Kanit',sans-serif;font-weight:700;font-size:11px;cursor:pointer;z-index:10;box-shadow:0 0 12px rgba(57,255,20,0.4);}
+.treasure-panel{background:rgba(0,0,0,0.5);border:1px solid var(--glass-border);border-radius:14px;padding:12px;margin-bottom:8px;}
+.treasure-target{text-align:center;font-family:'Orbitron',sans-serif;font-size:34px;font-weight:900;color:var(--neon-yellow);text-shadow:0 0 20px rgba(255,230,0,0.6);margin-bottom:8px;letter-spacing:2px;}
+.treasure-equation{background:rgba(0,0,0,0.6);border:1px dashed var(--glass-border);border-radius:10px;padding:10px;min-height:48px;text-align:center;font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:8px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;}
+.eq-slot{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 6px;border-radius:6px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);font-family:'Orbitron',sans-serif;font-weight:700;}
+.eq-slot.op{background:rgba(181,55,242,0.15);border-color:rgba(181,55,242,0.4);color:var(--neon-purple);}
+.eq-slot.empty{opacity:0.4;background:transparent;border-style:dashed;}
+.treasure-hand{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;}
+.tile{aspect-ratio:1;min-height:60px;border-radius:10px;background:linear-gradient(135deg,rgba(0,240,255,0.2),rgba(181,55,242,0.15));border:2px solid var(--neon-blue);color:var(--text-bright);font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s,box-shadow 0.2s,opacity 0.2s;touch-action:manipulation;}
+.tile:active{transform:scale(0.92);}
+.tile.used{opacity:0.3;background:rgba(0,0,0,0.3);border-color:var(--glass-border);cursor:not-allowed;}
+.tile.coin{background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,170,0,0.2));border-color:var(--neon-yellow);color:var(--neon-yellow);font-size:19px;}
+.treasure-ops{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+.op-btn{min-height:48px;border-radius:10px;background:rgba(181,55,242,0.15);border:1px solid rgba(181,55,242,0.4);color:var(--neon-purple);font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;cursor:pointer;touch-action:manipulation;}
+.op-btn:active{transform:scale(0.94);background:rgba(181,55,242,0.35);}
+.pvp-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;letter-spacing:1px;}
+.pvp-p1{background:rgba(0,240,255,0.2);color:var(--neon-blue);border:1px solid var(--neon-blue);}
+.pvp-p2{background:rgba(255,0,110,0.2);color:var(--neon-pink);border:1px solid var(--neon-pink);}
+.pvp-turn{text-align:center;font-size:13px;font-weight:700;margin-bottom:8px;padding:8px;border-radius:10px;transition:all 0.3s;}
+.pvp-turn.p1{background:rgba(0,240,255,0.12);color:var(--neon-blue);border:1px solid rgba(0,240,255,0.5);}
+.pvp-turn.p2{background:rgba(255,0,110,0.12);color:var(--neon-pink);border:1px solid rgba(255,0,110,0.5);}
+.pvp-score{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.pvp-score>div{padding:8px;border-radius:10px;text-align:center;font-weight:700;font-size:14px;}
+.pvp-score .s1{background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);color:var(--neon-blue);}
+.pvp-score .s2{background:rgba(255,0,110,0.08);border:1px solid rgba(255,0,110,0.3);color:var(--neon-pink);}
+.mode-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+.mode-card{background:var(--glass);border:2px solid var(--glass-border);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.2s;display:flex;gap:12px;align-items:center;}
+.mode-card:active{transform:scale(0.98);border-color:var(--neon-blue);box-shadow:0 0 20px rgba(0,240,255,0.25);}
+.mode-card .mode-emoji{font-size:38px;line-height:1;flex-shrink:0;}
+.mode-card .mode-info{flex:1;min-width:0;}
+.mode-card .mode-name{font-weight:700;font-size:15px;color:var(--text-bright);}
+.mode-card .mode-desc{font-size:11px;color:var(--text-dim);margin-top:2px;line-height:1.3;}
+.treasure-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:6px 10px;background:rgba(0,0,0,0.4);border-radius:10px;font-size:12px;}
+.amath-board{background:rgba(0,0,0,0.4);border:2px solid var(--glass-border);border-radius:14px;padding:6px;margin-bottom:8px;display:flex;justify-content:center;overflow-x:auto;}
+.amath-grid{display:grid;grid-template-columns:repeat(15,var(--cell,22px));grid-template-rows:repeat(15,var(--cell,22px));gap:1px;min-width:0;}
+.amath-cell{width:var(--cell,22px);height:var(--cell,22px);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:calc(var(--cell,22px) * 0.55);font-weight:900;cursor:pointer;color:var(--text-bright);transition:all 0.15s;position:relative;touch-action:manipulation;}
+.amath-cell.star{background:rgba(255,230,0,0.15);border-color:rgba(255,230,0,0.4);}
+.amath-cell.center{background:linear-gradient(135deg,rgba(255,0,110,0.3),rgba(181,55,242,0.3));border-color:var(--neon-pink);box-shadow:0 0 6px rgba(255,0,110,0.5);}
+.amath-cell.dl{background:rgba(0,240,255,0.1);}
+.amath-cell.tl{background:rgba(0,240,255,0.2);}
+.amath-cell.dw{background:rgba(255,0,110,0.1);}
+.amath-cell.tw{background:rgba(255,0,110,0.22);}
+.amath-cell.selected{border-color:var(--neon-green);box-shadow:0 0 8px rgba(57,255,20,0.6);}
+.amath-cell.preview{border-color:var(--neon-yellow);background:rgba(255,230,0,0.25);}
+.amath-cell.tile{background:linear-gradient(135deg,rgba(0,240,255,0.35),rgba(181,55,242,0.25));border-color:var(--neon-blue);box-shadow:0 0 4px rgba(0,240,255,0.5);}
+.amath-cell.tile.op{background:linear-gradient(135deg,rgba(181,55,242,0.4),rgba(255,0,110,0.3));border-color:var(--neon-purple);}
+.amath-cell.locked{opacity:0.7;cursor:not-allowed;}
+.amath-rack{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px;}
+.amath-tile{aspect-ratio:0.85;border-radius:8px;background:linear-gradient(135deg,rgba(0,240,255,0.35),rgba(181,55,242,0.25));border:2px solid var(--neon-blue);color:var(--text-bright);font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all 0.15s;touch-action:manipulation;position:relative;}
+.amath-tile:active{transform:scale(0.92);}
+.amath-tile.selected{border-color:var(--neon-green);box-shadow:0 0 15px rgba(57,255,20,0.6);transform:translateY(-4px);}
+.amath-tile.op{background:linear-gradient(135deg,rgba(181,55,242,0.4),rgba(255,0,110,0.3));border-color:var(--neon-purple);}
+.amath-tile .val{font-size:20px;line-height:1;}
+.amath-tile .pts{font-size:9px;color:var(--text-dim);font-family:'Kanit',sans-serif;font-weight:600;margin-top:2px;}
+.amath-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.amath-info{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,0.4);border-radius:10px;margin-bottom:8px;font-size:12px;flex-wrap:wrap;gap:6px;}
+.chess-board{background:rgba(0,0,0,0.4);border:2px solid var(--glass-border);border-radius:14px;padding:6px;margin-bottom:8px;display:flex;justify-content:center;overflow-x:auto;}
+.chess-grid{display:grid;grid-template-columns:repeat(8,var(--cc,38px));grid-template-rows:repeat(8,var(--cc,38px));gap:1px;min-width:0;}
+.chess-cell{width:var(--cc,38px);height:var(--cc,38px);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cc,38px) * 0.62);cursor:pointer;transition:all 0.15s;touch-action:manipulation;position:relative;user-select:none;}
+.chess-cell.dark{background:rgba(0,240,255,0.06);}
+.chess-cell.light{background:rgba(255,255,255,0.02);}
+.chess-cell.selected{border-color:var(--neon-green);box-shadow:0 0 10px rgba(57,255,20,0.6);background:rgba(57,255,20,0.15);}
+.chess-cell.move-hint{background:rgba(57,255,20,0.22);}
+.chess-cell.capture-hint{background:rgba(255,0,110,0.28);box-shadow:inset 0 0 10px rgba(255,0,110,0.5);}
+.chess-cell.puzzle{background:rgba(255,230,0,0.18);border-color:var(--neon-yellow);}
+.chess-cell.puzzle::after{content:'?';position:absolute;top:2px;right:4px;font-size:calc(var(--cc,38px) * 0.28);color:var(--neon-yellow);font-weight:900;}
+.chess-puzzle{background:rgba(255,230,0,0.08);border:2px solid var(--neon-yellow);border-radius:12px;padding:12px;margin-bottom:8px;text-align:center;}
+.chess-puzzle-q{font-size:17px;font-weight:700;color:var(--text-bright);margin-bottom:8px;}
+.chess-puzzle-ans{display:flex;gap:6px;justify-content:center;}
+.chess-puzzle-ans input{flex:1;max-width:200px;padding:10px;font-size:16px;text-align:center;border-radius:10px;border:2px solid var(--glass-border);background:rgba(0,0,0,0.5);color:var(--text-bright);font-family:'Kanit',sans-serif;font-weight:600;}
+.chess-info{display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.4);border-radius:10px;margin-bottom:8px;font-size:12px;flex-wrap:wrap;gap:6px;}
+.lb-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.lb-tab{min-height:44px;border-radius:10px;background:var(--glass);border:1px solid var(--glass-border);color:var(--text-dim);font-family:'Kanit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.lb-tab.active{background:rgba(0,240,255,0.15);border-color:var(--neon-blue);color:var(--neon-blue);box-shadow:0 0 12px rgba(0,240,255,0.3);}
+.stat-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.stat-card .label{font-size:12px;color:var(--text-dim);}
+.stat-card .value{font-size:16px;font-weight:700;color:var(--neon-blue);font-family:'Orbitron',sans-serif;}
+@media(max-width:480px){.game-content{padding:8px;}.game-header{padding:6px 10px;}.game-title{font-size:1.05em;}.creator-badge{font-size:9px;padding:2px 8px;}.btn{min-height:44px;font-size:13px;padding:8px 14px;}.btn-sm{min-height:40px;font-size:11px;padding:6px 10px;}.numpad-btn{min-height:44px;font-size:17px;padding:4px;}.numpad-grid{gap:4px;}.numpad-container{padding:6px;}.stats-bar{font-size:11px;padding:6px 10px;}.question-display{font-size:17px;}.emoji-display{font-size:42px;}.combatant{min-width:75px;}.badge{font-size:9px;padding:2px 7px;}h3{font-size:16px;}.class-emoji{font-size:32px;}.level-list{grid-template-columns:repeat(5,1fr);padding-left:0;}}
+@media(orientation:landscape) and (max-height:500px){.game-header{padding:4px 10px;}.game-title{font-size:0.95em;}.subtitle{display:none;}.battle-scene{padding:8px;margin-bottom:6px;}.question-panel{padding:10px;margin-bottom:6px;}}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="start-overlay" id="startOverlay">
+  <div class="start-content">
+    <div class="start-logo">MATH QUEST</div>
+    <div class="start-sub">พิชิตจักรวาลคณิตศาสตร์ ม.2</div>
+    <button class="start-btn" id="startBtn">▶ TAP TO START</button>
+    <div class="start-features"><span>10 บท</span><span>6 คลาส</span><span>สัตว์เลี้ยง</span><span>เสียงครบ</span></div>
+  </div>
+</div>
+<div class="app">
+  <div class="game-wrapper">
+    <div class="game-header">
+      <div class="brand-row">
+        <span class="creator-badge">⚡ ตะวันสุดหล่อ ⚡</span>
+        <button class="sound-toggle" id="soundToggle">🔊</button>
+      </div>
+      <div class="game-title">MATH QUEST</div>
+      <div class="subtitle">ULTIMATE EDITION | ม.2</div>
+    </div>
+    <div class="game-content" id="gameContent"></div>
+    <div class="numpad-container" id="numpadContainer"><div class="numpad-grid" id="numpadGrid"></div></div>
+  </div>
+</div>
+<div id="modalContainer"></div><script>
+"use strict";
+const BaseClasses = {
+  warrior:{ id:'warrior', name:'นักรบ', emoji:'🦸', desc:'DMG+35% HP+20\n⚔️ ฟันดาบ · 🛡️ ตั้งรับ', hp:20, dmg:1.35, crit:0, cmul:3, s1:{ n:'⚔️ ฟันดาบ', cd:3, cost:12, type:'dmg', mul:2 }, s2:{ n:'🛡️ ตั้งรับ', cd:4, cost:10, type:'shield' } },
+  mage:{ id:'mage', name:'จอมเวทย์', emoji:'🧙', desc:'CRIT+25% CMUL×4\n🔥 ลูกไฟ · 💚 ฮีล', hp:0, dmg:1, crit:0.25, cmul:4, s1:{ n:'🔥 ลูกไฟ', cd:4, cost:14, type:'gcrit', mul:2.5 }, s2:{ n:'💚 ฮีล', cd:3, cost:12, type:'heal', heal:45 } },
+  rogue:{ id:'rogue', name:'โจร', emoji:'🥷', desc:'CRIT+15% คอมโบ1.5×\n🗡️ ลอบ · 💨 หลบ', hp:-8, dmg:1, crit:0.15, cmul:3, comboMul:1.5, s1:{ n:'🗡️ ลอบ', cd:3, cost:13, type:'cboost', mul:3 }, s2:{ n:'💨 หลบ', cd:5, cost:15, type:'dodge' } }
+};
+const AdvanceClasses = {
+  paladin:{ id:'paladin', name:'พาลาดิน', emoji:'🛡️', desc:'HP+60 DMG+25%\n✨ แสง · 🛡️ โล่เทพ', unlock:10, hp:60, dmg:1.25, crit:0.05, cmul:3, s1:{ n:'✨ แสง', cd:3, cost:18, type:'dmgheal', mul:2, heal:30 }, s2:{ n:'🛡️ โล่เทพ', cd:4, cost:16, type:'shieldheal', heal:25 } },
+  necromancer:{ id:'necromancer', name:'เนโคร', emoji:'🧟', desc:'CRIT+40% CMUL×6\n👻 วิญญาณ · 💀 ดูดเลือด', unlock:10, hp:-15, dmg:1, crit:0.4, cmul:6, s1:{ n:'👻 วิญญาณ', cd:4, cost:20, type:'gcrit', mul:3.5 }, s2:{ n:'💀 ดูดเลือด', cd:3, cost:18, type:'drain', mul:2, healPct:0.5 } },
+  berserker:{ id:'berserker', name:'เบอร์เซิร์ก', emoji:'💢', desc:'DMG+70% HP-20\n💢 คลั่ง · ⚡ สู้ตาย', unlock:10, hp:-20, dmg:1.7, crit:0.1, cmul:3, s1:{ n:'💢 คลั่ง', cd:3, cost:16, type:'dmg', mul:4 }, s2:{ n:'⚡ สู้ตาย', cd:4, cost:12, type:'berserk' } }
+};
+const Pets = {
+  dog:{ id:'dog', name:'สุนัข', emoji:'🐕', cost:100, bonus:'dmg', amt:0.10, desc:'ดาเมจ +10%', shop:true },
+  cat:{ id:'cat', name:'แมว', emoji:'🐱', cost:100, bonus:'crit', amt:0.08, desc:'คริ +8%', shop:true },
+  fox:{ id:'fox', name:'จิ้งจอก', emoji:'🦊', cost:180, bonus:'combo', amt:0.50, desc:'คอมโบ +50%', shop:true },
+  phoenix:{ id:'phoenix', name:'ฟีนิกซ์', emoji:'🦅', cost:300, bonus:'both', amt:0.12, desc:'DMG+12% คริ+12%', shop:true },
+  dragon:{ id:'dragon', name:'มังกรน้อย', emoji:'🐉', cost:500, bonus:'all', amt:0.18, desc:'+18% ทุกอย่าง', shop:true },
+  unicorn:{ id:'unicorn', name:'ยูนิคอร์น', emoji:'🦄', bonus:'both', amt:0.20, desc:'DMG+20% คริ+20%' },
+  phking:{ id:'phking', name:'ราชาฟีนิกซ์', emoji:'🔥', bonus:'all', amt:0.25, desc:'+25% ทุกอย่าง' },
+  wolf:{ id:'wolf', name:'หมาป่า', emoji:'🐺', bonus:'dmg', amt:0.30, desc:'ดาเมจ +30%' },
+  angel:{ id:'angel', name:'แมวเทวา', emoji:'😇', bonus:'crit', amt:0.22, desc:'คริ +22%' },
+  demon:{ id:'demon', name:'จิ้งจอกปีศาจ', emoji:'👹', bonus:'combo', amt:1.20, desc:'คอมโบ +120%' },
+  cosmic:{ id:'cosmic', name:'มังกรจักรวาล', emoji:'🌌', bonus:'all', amt:0.35, desc:'+35% ทุกอย่าง' }
+};
+const GachaPets = ['unicorn','phking','wolf','angel','demon','cosmic'];
+const GachaClasses = ['paladin','necromancer','berserker'];
+
+let state = Save.defaultState();
+let currentQuest = null;
+let battleTimer = null;
+let timerLeft = 0, timerMax = 30;
+let skillCooldownUntil = { s1:0, s2:0 };
+let skillUses = { s1:0, s2:0 };
+let skillTickInterval = null;
+let activeEffects = {};
+let currentScreen = 'menu';
+let battleSession = 0;
+let battleEnded = false;
+let pendingTimeouts = [];
+let modalAutoAdvanceId = null;
+let isSubmitting = false;
+
+function schedule(fn, ms) {
+  const id = setTimeout(() => { pendingTimeouts = pendingTimeouts.filter(t => t !== id); try { fn(); } catch (e) {} }, ms);
+  pendingTimeouts.push(id);
+  return id;
+}
+function clearPendingTimeouts() { pendingTimeouts.forEach(t => clearTimeout(t)); pendingTimeouts = []; }
+function clearModalAutoAdvance() { if (modalAutoAdvanceId) { clearTimeout(modalAutoAdvanceId); modalAutoAdvanceId = null; } }
+function getClass() { return BaseClasses[state.pclass] || AdvanceClasses[state.pclass] || BaseClasses.warrior; }
+function getPetBonus() {
+  if (!state.epet || !Pets[state.epet]) return { dmg:0, crit:0, combo:0 };
+  const p = Pets[state.epet];
+  const b = { dmg:0, crit:0, combo:0 };
+  if (p.bonus === 'dmg') b.dmg = p.amt;
+  else if (p.bonus === 'crit') b.crit = p.amt;
+  else if (p.bonus === 'combo') b.combo = p.amt;
+  else if (p.bonus === 'both') { b.dmg = p.amt; b.crit = p.amt; }
+  else if (p.bonus === 'all') { b.dmg = p.amt; b.crit = p.amt; b.combo = p.amt; }
+  return b;
+}
+function getMaxHp() { return 100 + (getClass().hp || 0) + (state.player.plv-1)*5 + state.inv.s*12 + state.inv.h*5 + state.inv.a*8 + state.inv.p*6 + state.player.rbonus*25; }
+function getWeaponMul() { return 1 + state.inv.w * 0.20; }
+
+const $ = id => document.getElementById(id);
+const contentEl = $('gameContent');
+const numpadContainer = $('numpadContainer');
+const numpadGrid = $('numpadGrid');
+const modalContainer = $('modalContainer');
+
+function buildNumpad() {
+  const keys = [
+    { k:'7', t:'7' }, { k:'8', t:'8' }, { k:'9', t:'9' }, { k:'/', t:'÷', cls:'op', insert:'/' }, { k:'√', t:'√', cls:'op', insert:'√' },
+    { k:'4', t:'4' }, { k:'5', t:'5' }, { k:'6', t:'6' }, { k:'*', t:'×', cls:'op', insert:'×' }, { k:'^', t:'^', cls:'op', insert:'^' },
+    { k:'1', t:'1' }, { k:'2', t:'2' }, { k:'3', t:'3' }, { k:'-', t:'−', cls:'op', insert:'-' }, { k:'+', t:'+', cls:'op', insert:'+' },
+    { k:'0', t:'0' }, { k:'.', t:'.', insert:'.' }, { k:',', t:',', cls:'op', insert:',' }, { k:'back', t:'⌫', cls:'back' }, { k:'submit', t:'✓', cls:'submit' }
+  ];
+  numpadGrid.innerHTML = keys.map(k => `<button class="numpad-btn ${k.cls || ''}" data-key="${k.k}" data-insert="${k.insert || k.k}" aria-label="${k.t}">${k.t}</button>`).join('');
+}
+buildNumpad();
+
+numpadGrid.addEventListener('click', e => {
+  const btn = e.target.closest('.numpad-btn');
+  if (!btn || btn.disabled) return;
+  const key = btn.dataset.key;
+  const insert = btn.dataset.insert || key;
+  const inp = $('ansInp');
+  if (!inp || inp.disabled) return;
+  Audio.resume();
+  if (key === 'back') { inp.value = inp.value.slice(0, -1); }
+  else if (key === 'submit') { submitAnswer(); return; }
+  else { if (inp.value.length < 24) inp.value += insert; }
+  Audio.sfx.click();
+  updateNumpadSubmitState();
+}, { passive:false });
+
+function updateNumpadSubmitState() {
+  const inp = $('ansInp');
+  if (!inp) return;
+  const btn = numpadGrid ? numpadGrid.querySelector('[data-key="submit"]') : null;
+  if (!btn) return;
+  btn.disabled = !inp.value.trim() || inp.disabled;
+}
+function showNumpad(show) { numpadContainer.classList.toggle('active', !!show); }
+function hideNumpad() { numpadContainer.classList.remove('active'); }
+
+function showModal(title, bodyHTML, buttons) {
+  modalContainer.innerHTML = `<div class="modal-overlay"><div class="modal-content"><div class="modal-title">${title}</div><div class="modal-body">${bodyHTML}</div><div class="flex-col">${(buttons || [{ label:'ตกลง', cls:'btn', action:'closeModal()' }]).map(b => `<button class="btn ${b.cls||''} w-full" onclick="${b.action||'closeModal()'}">${b.label}</button>`).join('')}</div></div></div>`;
+}
+function closeModal() { modalContainer.innerHTML = ''; }
+
+function go(screen) {
+  if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+  if (skillTickInterval) { clearInterval(skillTickInterval); skillTickInterval = null; }
+  clearPendingTimeouts();
+  clearModalAutoAdvance();
+  closeModal();
+  Audio.stopMusic();
+  hideNumpad();
+  isSubmitting = false;
+  currentScreen = screen;
+  if (screen !== 'battle') { battleSession++; battleEnded = false; }
+  try {
+    switch (screen) {
+      case 'menu': renderMenu(); break;
+      case 'chapters': renderChapters(); break;
+      case 'battle': renderBattle(); break;
+      case 'inventory': renderInventory(); break;
+      case 'shop': renderShop(); break;
+      case 'petshop': renderPetShop(); break;
+      case 'gachaPet': renderGacha('pet'); break;
+      case 'gachaClass': renderGacha('class'); break;
+      case 'upgrade': renderUpgrade(); break;
+      case 'class': renderClassSelect(); break;
+      case 'rebirth': renderRebirth(); break;
+      case 'stats': renderStats(); break;
+      case 'settings': renderSettings(); break;
+      case 'modes': renderModeMenu(); break;
+      case 'treasureSetup': renderTreasureSetup(); break;
+      case 'treasure': if (window.treasure) window.renderTreasure(); break;
+      default: renderMenu();
+    }
+  } catch (e) { contentEl.innerHTML = '<div class="text-center" style="padding:30px">เกิดข้อผิดพลาด <button class="btn mt-3" onclick="go(\'menu\')">กลับเมนู</button></div>'; }
+  contentEl.scrollTop = 0;
+}
+
+function renderMenu() {
+  const cd = getClass();
+  const petInfo = state.epet && Pets[state.epet] ? Pets[state.epet].emoji + ' ' + Pets[state.epet].name : 'ไม่มี';
+  const totalCompleted = Object.values(state.completed).reduce((a, arr) => a + ((arr && arr.length) || 0), 0);
+  const wrongCount = (state.wrongLog || []).length;
+  contentEl.innerHTML = `
+    <div class="text-center mb-2" style="font-size:14px"><b>${cd.emoji} ${cd.name}</b> <span class="badge badge-blue">เกิดใหม่ ${state.player.rebirth}</span></div>
+    <div class="stats-bar"><span>⭐ <span class="stat-value">${state.player.score}</span></span><span>🪙 <span class="stat-gold">${state.player.gold}</span></span><span>📊 Lv.<span class="stat-value">${state.player.plv}</span></span><span>🔥 <span class="stat-value">${state.player.maxCombo}</span></span></div>
+    <div class="stats-bar"><span>🎯 ${totalCompleted}/50 ด่าน</span><span>👑 ${state.bossKills.length}/10 บอส</span><span>🐾 ${petInfo}</span></div>
+    <div class="progress-bar mb-2"><div class="progress-fill" style="width:${(totalCompleted/50)*100}%"></div></div>
+    <button class="btn btn-green w-full" onclick="go('chapters')">⚔️ ผจญภัย</button>
+    <button class="btn btn-purple w-full mt-2" onclick="go('modes')">🎮 โหมดพิเศษ</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('inventory')">🎒 กระเป๋า</button>
+    <button class="btn btn-yellow w-full mt-2" onclick="go('shop')">🛒 ร้านค้า</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('petshop')">🐾 ร้านสัตว์เลี้ยง</button>
+    <button class="btn btn-gold w-full mt-2" onclick="go('gachaPet')">🎰 กาชาสัตว์เลี้ยง (200🪙)</button>
+    <button class="btn btn-pink w-full mt-2" onclick="go('gachaClass')">💎 กาชาคลาส (500🪙)</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('upgrade')">🔧 อัพเกรดอุปกรณ์</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('class')">🔄 เปลี่ยนคลาส</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('stats')">📈 สถิติการเรียน (ผิด:${wrongCount})</button>
+    <button class="btn btn-red w-full mt-2" onclick="go('rebirth')">💀 เกิดใหม่</button>
+    <button class="btn btn-outline w-full mt-2" onclick="go('settings')">⚙️ ตั้งค่า</button>
+  `;
+}
+
+function renderChapters() {
+  let h = '<h3>⚔️ แผนที่การเรียนรู้</h3>';
+  Chapters.forEach(ch => {
+    const done = (state.completed[ch.id] || []).length;
+    h += `<div class="chapter-container"><div class="chapter-header" onclick="toggleChapter(${ch.id})"><div class="chapter-icon" style="border-color:${ch.color};color:${ch.color}">${ch.icon}</div><div class="chapter-info"><div class="chapter-name">บทที่ ${ch.id}: ${ch.name}</div><div class="chapter-progress">${done}/5 ด่าน · บอส ${ch.boss}</div><div class="progress-bar"><div class="progress-fill" style="width:${(done/5)*100}%"></div></div></div></div><div class="level-list" id="ch-${ch.id}" style="display:none">${[1,2,3,4,5].map(l => { const c = isCompleted(ch.id, l); return `<button class="level-btn ${c?'completed':''}" onclick="event.stopPropagation();startBattle(${ch.id},${l})">ด.${l}${l===5?'👑':''}</button>`; }).join('')}</div></div>`;
+  });
+  h += '<button class="btn btn-outline w-full mt-3" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.innerHTML = h;
+}
+function toggleChapter(id) { const el = $('ch-' + id); if (el) el.style.display = el.style.display === 'none' ? 'grid' : 'none'; }
+function isCompleted(ch, lv) { return (state.completed[ch] || []).includes(lv); }
+
+function renderBattle() {
+  const cd = getClass();
+  const ch = Chapters.find(c => c.id === state.player.ch) || Chapters[0];
+  const bossEmoji = state.player.lv === 5 ? ch.boss : '👾';
+  const petEmoji = state.epet && Pets[state.epet] ? `<span style="font-size:14px">${Pets[state.epet].emoji}</span>` : '';
+  contentEl.innerHTML = `
+    <div class="battle-scene" id="battleScene">
+      <div class="stats-bar mb-2"><span class="badge badge-blue">${ch.icon} ${ch.name} ด.${state.player.lv}</span><span class="badge badge-red" id="comboBadge">🔥0</span></div>
+      <div class="combatants-row">
+        <div class="combatant"><div class="emoji-display" id="pEmoji">${cd.emoji}</div><div class="combatant-name">${state.player.name}${petEmoji}</div><div class="hp-bar-outer"><div class="hp-bar-inner" id="pHp" style="width:100%"></div></div><div class="hp-text">❤️ <span id="pHpTxt">0/0</span></div></div>
+        <div class="vs-badge">VS</div>
+        <div class="combatant"><div class="emoji-display" id="bEmoji">${bossEmoji}</div><div class="combatant-name boss">บอส Lv.${state.player.lv}</div><div class="hp-bar-outer"><div class="hp-bar-inner boss-hp" id="bHp" style="width:100%"></div></div><div class="hp-text">❤️ <span id="bHpTxt">0/0</span></div></div>
+      </div>
+      <div class="timer-bar-outer"><div class="timer-bar-inner" id="tBar" style="width:100%"></div></div>
+      <div class="timer-text" id="tTxt">⏱ 30s</div>
+      <button class="calc-fab" id="calcBtn" onclick="openCalculator()">🧮 คิดเลข (5🪙)</button>
+    </div>
+    <div class="question-panel">
+      <div class="question-display" id="qTxt">กำลังสร้างโจทย์...</div>
+      <div class="answer-input-row"><input class="answer-input" id="ansInp" placeholder="พิมพ์คำตอบ" inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false"><button class="btn btn-green" id="subBtn" onclick="submitAnswer()" style="min-width:60px">✓</button></div>
+      <div class="combo-display" id="comboDisp"></div>
+      <div class="feedback-msg" id="fbMsg"></div>
+    </div>
+    <div class="flex-row" style="gap:6px"><button class="btn btn-sm btn-yellow" id="btnS1" onclick="useSkill('s1')"></button><button class="btn btn-sm btn-green" id="btnS2" onclick="useSkill('s2')"></button><button class="btn btn-sm btn-red" onclick="skipQuestion()">⏩ ข้าม</button></div>
+    ${state.inv.potion > 0 ? `<button class="btn btn-sm btn-outline w-full mt-2" data-item="potion" onclick="useItem('potion')">🧪 โพชั่น (${state.inv.potion})</button>` : ''}
+    ${state.inv.sp > 0 ? `<button class="btn btn-sm btn-yellow w-full mt-1" data-item="sp" onclick="useItem('sp')">💜 ซุปเปอร์ (${state.inv.sp})</button>` : ''}
+    <button class="btn btn-sm btn-outline w-full mt-2" onclick="fleeBattle()">🏃 หนี</button>
+  `;
+  setupBattle();
+  showNumpad(true);
+  Audio.startMusic(state.player.lv === 5 ? 130 : 110);
+}
+
+function setupBattle() {
+  battleSession++;
+  battleEnded = false;
+  isSubmitting = false;
+  clearPendingTimeouts();
+  clearModalAutoAdvance();
+  state.player.maxHp = getMaxHp();
+  state.player.hp = state.player.maxHp;
+  state.player.combo = 0;
+  state.player.shield = false;
+  skillCooldownUntil = { s1:0, s2:0 };
+  skillUses = { s1:0, s2:0 };
+  activeEffects = {};
+  state.player.bossMaxHp = 150 + state.player.ch * 20 + state.player.lv * 50 + state.player.rebirth * 40;
+  state.player.bossHp = state.player.bossMaxHp;
+  if (skillTickInterval) { clearInterval(skillTickInterval); skillTickInterval = null; }
+  skillTickInterval = setInterval(() => {
+    if (currentScreen !== 'battle' || battleEnded) { if (skillTickInterval) { clearInterval(skillTickInterval); skillTickInterval = null; } return; }
+    updateSkillButtons();
+  }, 400);
+  updateBattleUI();
+  updateSkillButtons();
+  nextQuestion();
+  const inp = $('ansInp');
+  if (inp) inp.addEventListener('input', updateNumpadSubmitState);
+  updateNumpadSubmitState();
+}
+
+function updateBattleUI() {
+  const pHp = $('pHp'), bHp = $('bHp');
+  const pHpTxt = $('pHpTxt'), bHpTxt = $('bHpTxt');
+  const comboBadge = $('comboBadge');
+  if (!pHp) return;
+  pHp.style.width = Math.max(0, (state.player.hp / state.player.maxHp) * 100) + '%';
+  bHp.style.width = Math.max(0, (state.player.bossHp / state.player.bossMaxHp) * 100) + '%';
+  pHpTxt.textContent = `${Math.max(0, Math.round(state.player.hp))}/${state.player.maxHp}`;
+  bHpTxt.textContent = `${Math.max(0, Math.round(state.player.bossHp))}/${state.player.bossMaxHp}`;
+  comboBadge.textContent = `🔥${state.player.combo}`;
+}
+
+function updateSkillButtons() {
+  const cd = getClass();
+  const b1 = $('btnS1'), b2 = $('btnS2');
+  if (!b1 || !b2) return;
+  const now = Date.now();
+  const rem1 = Math.max(0, Math.ceil((skillCooldownUntil.s1 - now) / 1000));
+  const rem2 = Math.max(0, Math.ceil((skillCooldownUntil.s2 - now) / 1000));
+  const info1 = rem1 > 0 ? ` ⏳${rem1}s` : ` (${cd.s1.cost}🪙)`;
+  const info2 = rem2 > 0 ? ` ⏳${rem2}s` : ` (${cd.s2.cost}🪙)`;
+  b1.innerHTML = `${cd.s1.n}${info1} <span id="s1cnt">${3-skillUses.s1}</span>`;
+  b2.innerHTML = `${cd.s2.n}${info2} <span id="s2cnt">${3-skillUses.s2}</span>`;
+  b1.disabled = rem1 > 0 || state.player.gold < cd.s1.cost || skillUses.s1 >= 3;
+  b2.disabled = rem2 > 0 || state.player.gold < cd.s2.cost || skillUses.s2 >= 3;
+}
+
+function startTimer() {
+  if (battleTimer) clearInterval(battleTimer);
+  const sessionAtStart = battleSession;
+  const timerTable = { 1:60, 2:55, 3:50, 4:45, 5:40 };
+  timerMax = timerTable[state.player.lv] || 60;
+  timerLeft = timerMax;
+  const bar = $('tBar'), txt = $('tTxt');
+  if (bar) bar.style.width = '100%';
+  if (txt) txt.textContent = `⏱ ${timerMax}s`;
+  battleTimer = setInterval(() => {
+    if (sessionAtStart !== battleSession || battleEnded) { clearInterval(battleTimer); battleTimer = null; return; }
+    timerLeft--;
+    const pct = Math.max(0, (timerLeft / timerMax) * 100);
+    if (bar) bar.style.width = pct + '%';
+    if (txt) txt.textContent = `⏱ ${Math.max(0, timerLeft)}s`;
+    if (timerLeft <= 5 && timerLeft > 0) Audio.sfx.tick_low();
+    if (timerLeft <= 0) { clearInterval(battleTimer); battleTimer = null; timeUp(); }
+  }, 1000);
+}
+
+function timeUp() {
+  if (battleEnded) return;
+  const inp = $('ansInp'), sb = $('subBtn');
+  if (inp) inp.disabled = true;
+  if (sb) sb.disabled = true;
+  handleWrong(true);
+}
+
+function nextQuestion() {
+  if (battleEnded || currentScreen !== 'battle') return;
+  if (state.player.bossHp <= 0 || state.player.hp <= 0) { endBattle(); return; }
+  isSubmitting = false;
+  currentQuest = generateQuestion(state.player.ch, state.player.lv);
+  const qEl = $('qTxt');
+  if (qEl) qEl.textContent = currentQuest.q;
+  const inp = $('ansInp');
+  if (inp) { inp.value = ''; inp.disabled = false; inp.className = 'answer-input'; try { inp.focus(); } catch(e){} }
+  const sb = $('subBtn');
+  if (sb) sb.disabled = false;
+  const fb = $('fbMsg');
+  if (fb) { fb.textContent = ''; fb.style.color = 'var(--text-dim)'; }
+  const cd = $('comboDisp');
+  if (cd) cd.textContent = '';
+  updateSkillButtons();
+  updateNumpadSubmitState();
+  startTimer();
+}
+
+function submitAnswer() {
+  if (isSubmitting || battleEnded) return;
+  if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+  const inp = $('ansInp');
+  if (!inp || !currentQuest) return;
+  if (inp.disabled) return;
+  const ua = inp.value.trim();
+  if (!ua) return;
+  isSubmitting = true;
+  inp.disabled = true;
+  const sb = $('subBtn');
+  if (sb) sb.disabled = true;
+  updateNumpadSubmitState();
+  const correct = answersMatch(ua, currentQuest.a);
+  if (correct) {
+    inp.classList.add('correct-flash');
+    setTimeout(() => { try { inp.classList.remove('correct-flash'); } catch(e){} }, 500);
+    handleCorrect();
+  } else {
+    inp.classList.add('wrong-flash');
+    setTimeout(() => { try { inp.classList.remove('wrong-flash'); } catch(e){} }, 500);
+    handleWrong(false);
+  }
+}
+
+function handleCorrect() {
+  if (battleEnded || currentScreen !== 'battle') return;
+  Audio.sfx.correct();
+  state.player.combo++;
+  if (state.player.combo > state.player.maxCombo) state.player.maxCombo = state.player.combo;
+  state.player.tc++;
+  const ch = state.player.ch;
+  if (!state.stats[ch]) state.stats[ch] = { correct:0, wrong:0 };
+  state.stats[ch].correct++;
+  if (state.player.combo === 5 || state.player.combo === 10 || state.player.combo === 20) {
+    schedule(() => Audio.sfx.comboMilestone(), 250);
+    floatText(window.innerWidth/2, window.innerHeight*0.25, `🔥 COMBO x${state.player.combo}!`, 'critdmg');
+  }
+  const cd = getClass();
+  const pb = getPetBonus();
+  let baseDmg = 20 + state.player.combo * 5;
+  let dmg = Math.round(baseDmg * (cd.dmg || 1) * getWeaponMul() * (1 + pb.dmg));
+  if (state.player.combo >= 5 && cd.comboMul) dmg = Math.round(dmg * cd.comboMul);
+  if (state.player.combo >= 5 && pb.combo) dmg = Math.round(dmg * (1 + pb.combo));
+  const critChance = 0.06 + (cd.crit || 0) + pb.crit + (state.inv.orb ? 0.20 : 0);
+  let isCrit = Math.random() < critChance;
+  if (activeEffects.gcrit) { isCrit = true; activeEffects.gcrit = false; }
+  if (activeEffects.berserk) { dmg = Math.round(dmg * 2); }
+  if (isCrit) {
+    dmg = Math.round(dmg * (cd.cmul || 3));
+    Audio.sfx.crit();
+    const bE = $('bEmoji');
+    if (bE) { bE.classList.add('crit'); schedule(() => bE.classList.remove('crit'), 500); }
+    screenShake();
+  } else {
+    const bE = $('bEmoji');
+    if (bE) { bE.classList.add('hit'); schedule(() => bE.classList.remove('hit'), 400); }
+  }
+  state.player.bossHp = Math.max(0, state.player.bossHp - dmg);
+  const gold = Math.round(12 + state.player.combo * 3 + state.player.lv * 3 + (isCrit ? 5 : 0));
+  state.player.gold += gold;
+  state.player.score += Math.round(30 + state.player.combo * 5);
+  const bx = window.innerWidth / 2 + 80;
+  const by = window.innerHeight * 0.35;
+  if (isCrit) {
+    floatText(bx, by, `💥 ${dmg}`, 'critdmg');
+    Particles.burst(bx, by, { count: 30, speed: 6, colors: ['#ff006e','#ffe600','#ff8c00'] });
+  } else {
+    floatText(bx, by, `-${dmg}`, 'dmg');
+    Particles.burst(bx, by, { count: 14, speed: 4, colors: ['#ffe600','#00f0ff'] });
+  }
+  floatText(bx, by + 30, `+${gold}🪙`, 'gold');
+  Audio.sfx.gold();
+  if (state.player.combo >= 3) Audio.sfx.combo(state.player.combo);
+  const fb = $('fbMsg');
+  if (fb) { fb.textContent = `✅ ถูก! DMG ${dmg}${isCrit?' 💥CRIT!':''} · +${gold}🪙`; fb.style.color = 'var(--neon-green)'; }
+  if (state.player.combo >= 3) { const cd2 = $('comboDisp'); if (cd2) cd2.textContent = `🔥 COMBO x${state.player.combo}!`; }
+  updateBattleUI();
+  Save.write(state);
+  if (state.player.bossHp <= 0) { schedule(() => endBattle(), 700); }
+  else { schedule(() => { if (battleEnded || currentScreen !== 'battle') return; nextQuestion(); }, 850); }
+}
+
+function handleWrong(timeUp) {
+  if (battleEnded || currentScreen !== 'battle') return;
+  Audio.sfx.wrong();
+  state.player.combo = 0;
+  state.player.tw++;
+  const ch = state.player.ch;
+  if (!state.stats[ch]) state.stats[ch] = { correct:0, wrong:0 };
+  state.stats[ch].wrong++;
+  if (!state.wrongLog) state.wrongLog = [];
+  const inpNow = $('ansInp');
+  state.wrongLog.unshift({ ch, lv: state.player.lv, q: currentQuest ? currentQuest.q : '', correct: currentQuest ? String(currentQuest.a) : '?', hint: currentQuest ? (currentQuest.h || '') : '', user: timeUp ? '(หมดเวลา)' : ((inpNow && inpNow.value) || '(ว่าง)'), time: Date.now() });
+  if (state.wrongLog.length > 50) state.wrongLog.length = 50;
+  let dmg = 8 + state.player.lv * 2 + (timeUp ? 6 : 0);
+  let blocked = false;
+  if (activeEffects.dodge) { activeEffects.dodge = false; dmg = 0; blocked = true; const fb = $('fbMsg'); if (fb) { fb.textContent = '💨 หลบได้!'; fb.style.color = 'var(--neon-blue)'; } }
+  else if (state.player.shield) {
+    state.player.shield = false;
+    if (activeEffects.reflect) { activeEffects.reflect = false; state.player.bossHp = Math.max(0, state.player.bossHp - 25); const fb = $('fbMsg'); if (fb) { fb.textContent = '🛡️ สะท้อน 25!'; fb.style.color = 'var(--neon-blue)'; } blocked = true; dmg = 0; }
+    else { dmg = 0; blocked = true; const fb = $('fbMsg'); if (fb) { fb.textContent = '🛡️ ป้องกันได้!'; fb.style.color = 'var(--neon-blue)'; } }
+  } else if (state.inv.sh > 0 && Math.random() < state.inv.sh * 0.025) { dmg = 0; blocked = true; const fb = $('fbMsg'); if (fb) { fb.textContent = '👟 หลบด้วยรองเท้า!'; fb.style.color = 'var(--neon-blue)'; } }
+  if (!blocked) {
+    state.player.hp = Math.max(0, state.player.hp - dmg);
+    Audio.sfx.hit();
+    const pE = $('pEmoji');
+    if (pE) { pE.classList.add('hit'); schedule(() => pE.classList.remove('hit'), 400); }
+    screenShake();
+    Particles.burst(window.innerWidth/2 - 80, window.innerHeight * 0.35, { count: 12, speed: 3, colors: ['#ff006e','#ff4b2b'] });
+    const fb = $('fbMsg');
+    if (fb) { fb.textContent = `❌ ผิด!${timeUp?' ⏱ หมดเวลา':''} เฉลย: ${currentQuest.a} · -${dmg} HP`; fb.style.color = 'var(--neon-pink)'; }
+  }
+  const cb = $('comboBadge'); if (cb) cb.textContent = '🔥0';
+  const cdsp = $('comboDisp'); if (cdsp) cdsp.textContent = '';
+  updateBattleUI();
+  Save.write(state);
+  if (state.player.hp <= 0) { schedule(() => endBattle(), blocked ? 700 : 900); return; }
+  if (currentQuest && currentQuest.h) {
+    schedule(() => {
+      if (battleEnded || currentScreen !== 'battle') return;
+      showModal('📖 วิธีทำ', `<div>${currentQuest.q}</div><div class="step">${currentQuest.h}</div><div class="step">คำตอบ: <b style="color:var(--neon-green)">${currentQuest.a}</b></div>`, [{ label:'เข้าใจแล้ว ▶', cls:'btn-green', action:'modalNextQuestion()' }]);
+      clearModalAutoAdvance();
+      modalAutoAdvanceId = setTimeout(() => { if (modalContainer.innerHTML) modalNextQuestion(); }, 7000);
+    }, 400);
+  } else {
+    schedule(() => { if (battleEnded || currentScreen !== 'battle') return; nextQuestion(); }, blocked ? 900 : 1400);
+  }
+}
+
+function modalNextQuestion() {
+  clearModalAutoAdvance();
+  closeModal();
+  if (battleEnded || currentScreen !== 'battle') return;
+  if (state.player.hp <= 0) endBattle();
+  else nextQuestion();
+}
+
+function useSkill(slot) {
+  if (battleEnded || currentScreen !== 'battle') return;
+  const cd = getClass();
+  const skill = cd[slot];
+  if (!skill) return;
+  const now = Date.now();
+  if (skillCooldownUntil[slot] > now || skillUses[slot] >= 3) return;
+  if (state.player.gold < skill.cost) { Audio.sfx.buttonError(); floatText(window.innerWidth/2, window.innerHeight*0.5, 'เหรียญไม่พอ!', 'miss'); return; }
+  state.player.gold -= skill.cost;
+  skillCooldownUntil[slot] = now + 5000;
+  skillUses[slot]++;
+  Audio.sfx.click();
+  Audio.sfx.skillCast();
+  if (skill.type === 'shield' || skill.type === 'shieldheal') Audio.sfx.shield();
+  if (skill.type === 'dodge') Audio.sfx.dodge();
+  if (skill.type === 'heal' || skill.type === 'dmgheal') Audio.sfx.heal();
+  switch (skill.type) {
+    case 'dmg': { const d = Math.round(30 * (skill.mul || 2) * getWeaponMul()); state.player.bossHp = Math.max(0, state.player.bossHp - d); floatText(window.innerWidth/2 + 80, window.innerHeight*0.35, `⚔️ ${d}`, 'critdmg'); Particles.burst(window.innerWidth/2 + 80, window.innerHeight*0.35, { count: 20, speed: 5, colors: ['#ffe600','#ff8c00'] }); break; }
+    case 'gcrit': activeEffects.gcrit = true; floatText(window.innerWidth/2, window.innerHeight*0.35, '✨ คริติคอล!', 'heal'); break;
+    case 'shield': state.player.shield = true; floatText(window.innerWidth/2, window.innerHeight*0.35, '🛡️ เกราะ!', 'heal'); break;
+    case 'reflect': state.player.shield = true; activeEffects.reflect = true; break;
+    case 'heal': state.player.hp = Math.min(state.player.maxHp, state.player.hp + (skill.heal || 30)); floatText(window.innerWidth/2, window.innerHeight*0.35, `💚 +${skill.heal}`, 'heal'); Particles.burst(window.innerWidth/2, window.innerHeight*0.35, { count: 18, speed: 4, colors: ['#39ff14','#00f0ff'] }); break;
+    case 'dmgheal': state.player.bossHp = Math.max(0, state.player.bossHp - Math.round(30*(skill.mul||2)*getWeaponMul())); state.player.hp = Math.min(state.player.maxHp, state.player.hp + (skill.heal || 30)); floatText(window.innerWidth/2, window.innerHeight*0.35, `✨ +${skill.heal}HP`, 'heal'); break;
+    case 'shieldheal': state.player.shield = true; state.player.hp = Math.min(state.player.maxHp, state.player.hp + (skill.heal || 25)); floatText(window.innerWidth/2, window.innerHeight*0.35, '🛡️ โล่เทพ!', 'heal'); break;
+    case 'dodge': activeEffects.dodge = true; floatText(window.innerWidth/2, window.innerHeight*0.35, '💨 เตรียมหลบ', 'miss'); break;
+    case 'drain': activeEffects.drain = true; break;
+    case 'berserk': activeEffects.berserk = true; floatText(window.innerWidth/2, window.innerHeight*0.35, '💢 คลั่ง!', 'critdmg'); break;
+    case 'cboost': activeEffects.cboost = true; state.player.combo += 2; floatText(window.innerWidth/2, window.innerHeight*0.35, '🗡️ คอมโบ+2', 'dmg'); break;
+  }
+  updateBattleUI();
+  updateSkillButtons();
+  Save.write(state);
+  if (state.player.bossHp <= 0) schedule(() => endBattle(), 600);
+}
+
+function skipQuestion() {
+  if (battleEnded || currentScreen !== 'battle') return;
+  if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+  state.player.hp = Math.max(0, state.player.hp - 8);
+  state.player.combo = 0;
+  updateBattleUI();
+  const cb = $('comboBadge'); if (cb) cb.textContent = '🔥0';
+  if (state.player.hp <= 0) endBattle();
+  else nextQuestion();
+}
+
+function useItem(type) {
+  if (battleEnded || currentScreen !== 'battle') return;
+  if (type === 'potion' && state.inv.potion > 0) {
+    state.inv.potion--;
+    state.player.hp = state.player.maxHp;
+    Audio.sfx.heal();
+    floatText(window.innerWidth/2, window.innerHeight*0.4, '🧪 ฟื้นเต็ม!', 'heal');
+    Particles.burst(window.innerWidth/2, window.innerHeight*0.4, { count: 20, speed: 4, colors: ['#39ff14','#00f0ff'] });
+    updateBattleUI();
+  } else if (type === 'sp' && state.inv.sp > 0) {
+    state.inv.sp--;
+    state.player.hp = state.player.maxHp;
+    state.player.bossHp = Math.max(0, state.player.bossHp - 60);
+    Audio.sfx.crit();
+    floatText(window.innerWidth/2, window.innerHeight*0.4, '💜 +HP / -60 บอส', 'critdmg');
+    Particles.burst(window.innerWidth/2 + 80, window.innerHeight*0.35, { count: 30, speed: 6, colors: ['#b537f2','#ff006e'] });
+    updateBattleUI();
+    if (state.player.bossHp <= 0) { schedule(() => endBattle(), 400); return; }
+  }
+  Save.write(state);
+  refreshBattleItemButtons();
+}
+
+function refreshBattleItemButtons() {
+  if (currentScreen !== 'battle') return;
+  const potBtn = document.querySelector('[data-item="potion"]');
+  const spBtn = document.querySelector('[data-item="sp"]');
+  if (potBtn) { if (state.inv.potion <= 0) potBtn.remove(); else potBtn.textContent = `🧪 โพชั่น (${state.inv.potion})`; }
+  if (spBtn) { if (state.inv.sp <= 0) spBtn.remove(); else spBtn.textContent = `💜 ซุปเปอร์ (${state.inv.sp})`; }
+}
+
+function screenShake() {
+  const s = $('battleScene');
+  if (!s) return;
+  s.classList.remove('shake');
+  void s.offsetWidth;
+  s.classList.add('shake');
+  setTimeout(() => { try { s.classList.remove('shake'); } catch(e){} }, 500);
+}
+
+function endBattle() {
+  if (battleEnded) return;
+  battleEnded = true;
+  if (skillTickInterval) { clearInterval(skillTickInterval); skillTickInterval = null; }
+  clearPendingTimeouts();
+  clearModalAutoAdvance();
+  closeModal();
+  if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+  Audio.stopMusic();
+  hideNumpad();
+  isSubmitting = true;
+  if (state.player.bossHp <= 0) {
+    Audio.sfx.bossRoar();
+    schedule(() => {
+      Audio.sfx.win();
+      const gold = Math.round(35 + state.player.lv * 25);
+      state.player.gold += gold;
+      state.player.score += Math.round(100 + state.player.lv * 50);
+      const ch = state.player.ch, lv = state.player.lv;
+      if (!state.completed[ch]) state.completed[ch] = [];
+      if (!state.completed[ch].includes(lv)) state.completed[ch].push(lv);
+      if (lv === 5 && !state.bossKills.includes(ch)) state.bossKills.push(ch);
+      addExp(lv === 5 ? 80 : 25);
+      Particles.burst(window.innerWidth/2, window.innerHeight/2, { count: 60, speed: 8, colors: ['#00f0ff','#39ff14','#ffe600','#ff006e'] });
+      Save.write(state);
+      showModal('🎉 ชนะ!', `<div class="text-center"><div style="font-size:56px">🏆</div><div>ได้รับ ${gold}🪙</div><div>คะแนน +${100 + lv * 50}</div><div>EXP +${lv === 5 ? 80 : 25}</div>${lv === 5 ? '<div style="color:var(--neon-pink);margin-top:8px">👑 ปราบบอสสำเร็จ!</div>' : ''}</div>`, [{ label:'เยี่ยม!', cls:'btn-green', action: "closeModal();go('chapters')" }]);
+    }, 300);
+  } else {
+    Audio.sfx.lose();
+    state.player.gold = Math.max(0, state.player.gold - 10);
+    Save.write(state);
+    showModal('💀 พ่ายแพ้', `<div class="text-center"><div style="font-size:56px">💀</div><div>เสีย 10🪙</div></div>`, [{ label:'ลองใหม่', cls:'btn-red', action: "closeModal();go('chapters')" }]);
+  }
+}
+
+function addExp(amount) {
+  state.player.exp += amount;
+  let need = state.player.plv * 80 + state.player.rebirth * 40;
+  let safety = 0;
+  while (state.player.exp >= need && safety < 100) {
+    safety++;
+    state.player.exp -= need;
+    state.player.plv++;
+    state.player.maxHp = getMaxHp();
+    state.player.hp = state.player.maxHp;
+    need = state.player.plv * 80 + state.player.rebirth * 40;
+    Audio.sfx.level();
+    floatText(window.innerWidth/2, window.innerHeight*0.35, '⭐ LEVEL UP!', 'heal');
+    Particles.burst(window.innerWidth/2, window.innerHeight*0.35, { count: 40, speed: 7, colors: ['#00f0ff','#39ff14','#ffe600'] });
+  }
+}
+
+function startBattle(ch, lv) {
+  state.player.ch = ch;
+  state.player.lv = lv;
+  state.player.maxHp = getMaxHp();
+  state.player.hp = state.player.maxHp;
+  go('battle');
+}
+
+function fleeBattle() {
+  if (battleTimer) { clearInterval(battleTimer); battleTimer = null; }
+  if (skillTickInterval) { clearInterval(skillTickInterval); skillTickInterval = null; }
+  clearPendingTimeouts();
+  clearModalAutoAdvance();
+  closeModal();
+  Audio.stopMusic();
+  hideNumpad();
+  battleSession++;
+  battleEnded = true;
+  state.player.gold = Math.max(0, state.player.gold - 10);
+  Save.write(state);
+  go('chapters');
+}
+    </script><script>
+"use strict";
+function renderInventory() {
+  const cd = getClass();
+  const petInfo = state.epet && Pets[state.epet] ? Pets[state.epet].emoji + ' ' + Pets[state.epet].name : 'ไม่มี';
+  contentEl.innerHTML = `
+    <h3>🎒 กระเป๋า</h3>
+    <div class="shop-item"><b>${cd.emoji} ${cd.name}</b></div>
+    <div class="shop-item"><b>🐾 ${petInfo}</b></div>
+    <div class="shop-item"><span>⚔️ ดาบ Lv.${state.inv.w}</span><span class="text-sm">DMG +${state.inv.w*20}%</span></div>
+    <div class="shop-item"><span>🛡️ โล่ Lv.${state.inv.s}</span><span class="text-sm">HP +${state.inv.s*12}</span></div>
+    <div class="shop-item"><span>⛑️ หมวก Lv.${state.inv.h}</span><span class="text-sm">HP +${state.inv.h*5}</span></div>
+    <div class="shop-item"><span>👕 เกราะ Lv.${state.inv.a}</span><span class="text-sm">HP +${state.inv.a*8}</span></div>
+    <div class="shop-item"><span>👖 กางเกง Lv.${state.inv.p}</span><span class="text-sm">HP +${state.inv.p*6}</span></div>
+    <div class="shop-item"><span>👟 รองเท้า Lv.${state.inv.sh}</span><span class="text-sm">หลบ ${(state.inv.sh*2.5).toFixed(1)}%</span></div>
+    <div class="shop-item"><span>🔮 ลูกแก้วคริ</span><span>${state.inv.orb?'✅':'❌'}</span></div>
+    <div class="shop-item"><span>🧪 โพชั่น</span><span>${state.inv.potion}</span></div>
+    <div class="shop-item"><span>💜 ซุปเปอร์โพชั่น</span><span>${state.inv.sp}</span></div>
+    <div class="text-sm mt-3" style="color:var(--text-dim);text-align:center">HP สูงสุด: ${getMaxHp()} · ดาเมจ ×${(getWeaponMul()*(getClass().dmg||1)).toFixed(2)}</div>
+    <button class="btn btn-outline w-full mt-3" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function renderShop() {
+  contentEl.innerHTML = `
+    <h3>🛒 ร้านค้า</h3>
+    <div class="shop-item"><div><b>🧪 โพชั่น</b><br><span class="text-sm">ฟื้น HP เต็ม</span></div><button class="btn btn-sm" onclick="buyItem('potion')">80🪙 (${state.inv.potion})</button></div>
+    <div class="shop-item"><div><b>💜 ซุปเปอร์โพชั่น</b><br><span class="text-sm">ฟื้นเต็ม + ฟันบอส 60</span></div><button class="btn btn-sm" onclick="buyItem('sp')">300🪙 (${state.inv.sp})</button></div>
+    <div class="shop-item"><div><b>🔮 ลูกแก้วคริ</b><br><span class="text-sm">คริ +20%</span></div><button class="btn btn-sm" onclick="buyItem('orb')" ${state.inv.orb?'disabled':''}>${state.inv.orb?'✅ มีแล้ว':'700🪙'}</button></div>
+    <button class="btn btn-outline w-full mt-3" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function buyItem(t) {
+  const prices = { potion:80, sp:300, orb:700 };
+  if (state.player.gold < prices[t]) { Audio.sfx.buttonError(); return; }
+  state.player.gold -= prices[t];
+  if (t === 'potion') state.inv.potion++;
+  else if (t === 'sp') state.inv.sp++;
+  else if (t === 'orb') state.inv.orb = true;
+  Audio.sfx.gold();
+  Save.write(state);
+  renderShop();
+}
+function renderUpgrade() {
+  const names = { w:'⚔️ ดาบ', s:'🛡️ โล่', h:'⛑️ หมวก', a:'👕 เกราะ', p:'👖 กางเกง', sh:'👟 รองเท้า' };
+  const costs = { w:[0,300,700,1400,2500,4500], s:[0,250,600,1200,2200,4000], h:[0,200,500,1000,1800,3200], a:[0,300,700,1400,2500,4500], p:[0,250,600,1200,2200,4000], sh:[0,350,800,1600,3000,5000] };
+  const eff = { w:l=>`DMG +${l*20}%`, s:l=>`HP +${l*12}`, h:l=>`HP +${l*5}`, a:l=>`HP +${l*8}`, p:l=>`HP +${l*6}`, sh:l=>`หลบ ${(l*2.5).toFixed(1)}%` };
+  let h = '<h3>🔧 อัพเกรด</h3>';
+  for (const k of Object.keys(names)) {
+    const lv = state.inv[k];
+    const max = lv >= 5;
+    h += `<div class="shop-item"><div><b>${names[k]} Lv.${lv}</b><br><span class="text-sm">${eff[k](lv)}${max?'':' → '+eff[k](lv+1)}</span></div>${max ? '<span class="badge badge-gold">MAX</span>' : `<button class="btn btn-sm" onclick="doUpgrade('${k}')">${costs[k][lv+1]}🪙</button>`}</div>`;
+  }
+  h += '<button class="btn btn-outline w-full mt-3" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.innerHTML = h;
+}
+function doUpgrade(t) {
+  const costs = { w:[0,300,700,1400,2500,4500], s:[0,250,600,1200,2200,4000], h:[0,200,500,1000,1800,3200], a:[0,300,700,1400,2500,4500], p:[0,250,600,1200,2200,4000], sh:[0,350,800,1600,3000,5000] };
+  const lv = state.inv[t];
+  if (lv >= 5) return;
+  const price = costs[t][lv + 1];
+  if (state.player.gold < price) { Audio.sfx.buttonError(); return; }
+  state.player.gold -= price;
+  state.inv[t]++;
+  state.player.maxHp = getMaxHp();
+  Audio.sfx.level();
+  Save.write(state);
+  renderUpgrade();
+}
+function renderPetShop() {
+  let h = '<h3>🐾 ร้านสัตว์เลี้ยง</h3><div class="class-grid">';
+  for (const k of Object.keys(Pets)) {
+    const p = Pets[k];
+    if (!p.shop) continue;
+    const owned = state.myPets.includes(k);
+    const eq = state.epet === k;
+    h += `<div class="pet-card ${eq?'equipped':''}"><span class="pet-emoji">${p.emoji}</span><div style="font-weight:700;font-size:13px">${p.name}</div><div class="text-sm" style="color:var(--text-dim)">${p.desc}</div>${owned ? `<button class="btn btn-xs ${eq?'btn-green':'btn-outline'}" onclick="equipPet('${k}')">${eq?'✅':'🎯'}</button>` : `<button class="btn btn-xs" onclick="buyPet('${k}')">${p.cost}🪙</button>`}</div>`;
+  }
+  h += '</div>';
+  const gachaOwned = state.myPets.filter(k => !Pets[k].shop);
+  if (gachaOwned.length) {
+    h += '<h3 class="mt-4">✨ หายาก</h3><div class="class-grid">';
+    gachaOwned.forEach(k => {
+      const p = Pets[k];
+      const eq = state.epet === k;
+      h += `<div class="pet-card ${eq?'equipped':''}"><span class="pet-emoji">${p.emoji}</span><div style="font-weight:700;font-size:13px">${p.name}</div><div class="text-sm" style="color:var(--text-dim)">${p.desc}</div><button class="btn btn-xs ${eq?'btn-green':'btn-outline'}" onclick="equipPet('${k}')">${eq?'✅':'🎯'}</button></div>`;
+    });
+    h += '</div>';
+  }
+  h += '<button class="btn btn-outline w-full mt-3" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.innerHTML = h;
+}
+function buyPet(k) {
+  const p = Pets[k];
+  if (!p || state.myPets.includes(k)) return;
+  if (state.player.gold < p.cost) { Audio.sfx.buttonError(); return; }
+  state.player.gold -= p.cost;
+  state.myPets.push(k);
+  if (!state.epet) state.epet = k;
+  Audio.sfx.gold();
+  Save.write(state);
+  renderPetShop();
+}
+function equipPet(k) {
+  if (!state.myPets.includes(k)) return;
+  state.epet = state.epet === k ? null : k;
+  Save.write(state);
+  renderPetShop();
+}
+function renderGacha(type) {
+  const isPet = type === 'pet';
+  const cost = isPet ? 200 : 500;
+  contentEl.innerHTML = `
+    <h3>${isPet ? '🎰 กาชาสัตว์เลี้ยง' : '💎 กาชาคลาส'}</h3>
+    <div class="gacha-card">
+      <div class="gacha-result" id="gd">${isPet ? '🐾' : '💎'}</div>
+      <p id="gr" style="margin:10px 0;color:var(--text-dim)">สุ่มของหายาก!</p>
+      <button class="btn ${isPet ? 'btn-gold' : 'btn-pink'} w-full" id="gachaBtn" onclick="doGacha('${type}')">🎰 สุ่ม (${cost}🪙)</button>
+    </div>
+    <button class="btn btn-outline w-full mt-3" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function doGacha(type) {
+  const isPet = type === 'pet';
+  const cost = isPet ? 200 : 500;
+  if (state.player.gold < cost) { Audio.sfx.buttonError(); return; }
+  const btn = $('gachaBtn');
+  if (btn && btn.disabled) return;
+  state.player.gold -= cost;
+  if (btn) btn.disabled = true;
+  const result = $('gd');
+  let pool, picked;
+  if (isPet) {
+    pool = GachaPets.filter(k => !state.myPets.includes(k));
+    if (!pool.length) { state.player.gold += cost; alert('มีครบแล้ว!'); if (btn) btn.disabled = false; return; }
+    picked = pool[Math.floor(Math.random() * pool.length)];
+    state.myPets.push(picked);
+    if (!state.epet) state.epet = picked;
+  } else {
+    pool = GachaClasses.filter(k => !state.myGClasses.includes(k));
+    if (!pool.length) { state.player.gold += cost; alert('มีครบแล้ว!'); if (btn) btn.disabled = false; return; }
+    picked = pool[Math.floor(Math.random() * pool.length)];
+    state.myGClasses.push(picked);
+  }
+  const data = isPet ? Pets[picked] : AdvanceClasses[picked];
+  let rolls = 0;
+  const sessionAtStart = battleSession;
+  const iv = setInterval(() => {
+    if (sessionAtStart !== battleSession || currentScreen !== (isPet ? 'gachaPet' : 'gachaClass')) { clearInterval(iv); if (btn) btn.disabled = false; return; }
+    const all = isPet ? GachaPets : GachaClasses;
+    const rnd = all[Math.floor(Math.random()*all.length)];
+    const d2 = isPet ? Pets[rnd] : AdvanceClasses[rnd];
+    if (result) result.textContent = d2.emoji;
+    rolls++;
+    if (rolls > 10) {
+      clearInterval(iv);
+      if (result) result.textContent = data.emoji;
+      const gr = $('gr');
+      if (gr) gr.innerHTML = `<b style="color:var(--neon-yellow);font-size:16px">${data.name}</b><br>${data.desc || ''}`;
+      Audio.sfx.win();
+      Particles.burst(window.innerWidth/2, window.innerHeight/2, { count: 60, speed: 8, colors: ['#ffd700','#ff006e','#00f0ff','#39ff14'] });
+      Save.write(state);
+      if (btn) btn.disabled = false;
+    }
+  }, 90);
+  Audio.sfx.combo(5);
+}
+function renderClassSelect() {
+  const all = { ...BaseClasses, ...AdvanceClasses };
+  let h = '<h3>🔄 เลือกคลาส</h3><div class="class-grid">';
+  for (const k of Object.keys(all)) {
+    const d = all[k];
+    const locked = d.unlock !== undefined && !state.myGClasses.includes(k);
+    const selected = state.pclass === k;
+    h += `<div class="class-card ${selected?'selected':''} ${locked?'locked':''}" onclick="${locked ? `alert('🔒 ต้องปลดล็อคด้วยกาชาคลาส')` : `selectClass('${k}')`}"><span class="class-emoji">${d.emoji}${locked?'🔒':''}</span><div class="class-name">${d.name}</div><div class="class-desc">${d.desc.replace(/\n/g,'<br>')}</div></div>`;
+  }
+  h += '</div><button class="btn btn-outline w-full mt-3" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.innerHTML = h;
+}
+function selectClass(k) {
+  const all = { ...BaseClasses, ...AdvanceClasses };
+  if (!all[k]) return;
+  state.pclass = k;
+  state.player.maxHp = getMaxHp();
+  state.player.hp = state.player.maxHp;
+  Audio.sfx.click();
+  Save.write(state);
+  renderClassSelect();
+}
+function renderStats() {
+  let totalC = 0, totalW = 0;
+  const rows = Chapters.map(ch => {
+    const s = state.stats[ch.id] || { correct:0, wrong:0 };
+    const total = s.correct + s.wrong;
+    const pct = total ? ((s.correct / total) * 100).toFixed(0) : '—';
+    totalC += s.correct; totalW += s.wrong;
+    const done = (state.completed[ch.id] || []).length;
+    const pctNum = pct === '—' ? 0 : parseInt(pct);
+    return `<div class="shop-item" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between"><span>${ch.icon} ${ch.name}</span><span class="badge ${pctNum>=70?'badge-green':pctNum>=40?'badge-blue':'badge-red'}">${pct}%</span></div><div class="text-sm" style="color:var(--text-dim)">✅ ${s.correct} · ❌ ${s.wrong} · ด่าน ${done}/5</div><div class="progress-bar mt-1"><div class="progress-fill" style="width:${pctNum}%"></div></div></div>`;
+  }).join('');
+  const total = totalC + totalW;
+  const acc = total ? ((totalC/total)*100).toFixed(1) : '—';
+  const wrongCount = (state.wrongLog || []).length;
+  contentEl.innerHTML = `
+    <h3>📈 สถิติการเรียน</h3>
+    <div class="stats-bar"><span>✅ ถูก <span class="stat-value">${totalC}</span></span><span>❌ ผิด <span class="stat-value" style="color:var(--neon-pink)">${totalW}</span></span><span>🎯 แม่น <span class="stat-value">${acc}%</span></span></div>
+    <div class="stats-bar"><span>🔥 สูงสุด <span class="stat-value">${state.player.maxCombo}</span></span><span>⭐ Lv.<span class="stat-value">${state.player.plv}</span></span><span>💯 <span class="stat-value">${state.player.score}</span></span></div>
+    <button class="btn btn-pink w-full mt-2" onclick="renderWrongReview()">📝 ทบทวนข้อผิด (${wrongCount})</button>
+    <div class="mt-3">${rows}</div>
+    <button class="btn btn-outline w-full mt-2" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function renderWrongReview() {
+  const log = state.wrongLog || [];
+  if (!log.length) {
+    contentEl.innerHTML = `<h3>📝 ทบทวน</h3><div class="text-center" style="padding:30px;color:var(--text-dim)">🎉 ยังไม่มีข้อผิด</div><button class="btn btn-outline w-full mt-3" onclick="renderStats()">🔙 กลับ</button>`;
+    return;
+  }
+  let h = `<h3>📝 ทบทวนข้อผิด (${log.length})</h3>`;
+  log.forEach((item) => {
+    const ch = Chapters.find(c => c.id === item.ch) || { name:'?', icon:'?' };
+    const d = new Date(item.time);
+    const t = `${d.getDate()}/${d.getMonth()+1} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    h += `<div class="shop-item" style="flex-direction:column;align-items:stretch;gap:6px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim)"><span>${ch.icon} บท ${item.ch} · ด่าน ${item.lv}</span><span>${t}</span></div><div style="font-weight:600">${item.q}</div><div style="color:var(--neon-pink);font-size:13px">❌ ตอบ: <b>${item.user}</b></div><div style="color:var(--neon-green);font-size:13px">✅ เฉลย: <b>${item.correct}</b></div>${item.hint ? `<div class="text-sm" style="color:var(--text-dim);border-left:2px solid var(--neon-blue);padding-left:8px">${item.hint}</div>` : ''}</div>`;
+  });
+  h += `<button class="btn btn-red w-full mt-3" onclick="clearWrongLog()">🗑️ ล้างประวัติ</button><button class="btn btn-outline w-full mt-2" onclick="renderStats()">🔙 กลับ</button>`;
+  contentEl.innerHTML = h;
+}
+function clearWrongLog() {
+  if (!confirm('ล้างประวัติ?')) return;
+  state.wrongLog = [];
+  Save.write(state);
+  renderWrongReview();
+}
+function renderRebirth() {
+  const allBoss = state.bossKills.length >= 10;
+  const reqG = 15000 + state.player.rebirth * 10000;
+  const reqL = 25 + state.player.rebirth * 10;
+  const hasG = state.player.gold >= reqG;
+  const hasL = state.player.plv >= reqL;
+  const can = allBoss && hasG && hasL;
+  contentEl.innerHTML = `
+    <h3>💀 เกิดใหม่</h3>
+    <div class="shop-item">${allBoss?'✅':'❌'} ปราบบอส 10 บท (${state.bossKills.length}/10)</div>
+    <div class="shop-item">${hasG?'✅':'❌'} เหรียญ ${reqG.toLocaleString()} (มี ${state.player.gold})</div>
+    <div class="shop-item">${hasL?'✅':'❌'} ระดับ ${reqL}+ (มี ${state.player.plv})</div>
+    <div class="text-sm mt-2" style="color:var(--text-dim);text-align:center">รางวัล: +25 HP ถาวร · รีเซ็ตด่าน</div>
+    ${can ? `<button class="btn btn-red w-full mt-3" onclick="doRebirth()">💀 เกิดใหม่!</button>` : `<button class="btn w-full mt-3" disabled>🔒 ยังไม่พร้อม</button>`}
+    <button class="btn btn-outline w-full mt-2" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function doRebirth() {
+  const allBoss = state.bossKills.length >= 10;
+  const reqG = 15000 + state.player.rebirth * 10000;
+  const reqL = 25 + state.player.rebirth * 10;
+  if (!(allBoss && state.player.gold >= reqG && state.player.plv >= reqL)) return;
+  showModal('⚠️ ยืนยัน', `<div class="text-center"><div style="font-size:48px">💀</div><div>รีเซ็ตความคืบหน้า +25 HP</div></div>`, [{ label:'❌ ยกเลิก', cls:'btn-outline', action:'closeModal()' }, { label:'💀 ยืนยัน', cls:'btn-red', action:'confirmRebirth()' }]);
+}
+function confirmRebirth() {
+  closeModal();
+  const cost = 15000 + state.player.rebirth * 10000;
+  state.player.gold -= cost;
+  state.player.rebirth++;
+  state.player.rbonus = state.player.rebirth;
+  state.player.plv = 1;
+  state.player.exp = 0;
+  state.player.score = Math.round(state.player.score * 0.3);
+  state.player.ch = 1;
+  state.player.lv = 1;
+  state.completed = {};
+  state.bossKills = [];
+  state.player.maxHp = getMaxHp();
+  state.player.hp = state.player.maxHp;
+  Audio.sfx.level();
+  Particles.burst(window.innerWidth/2, window.innerHeight/2, { count: 80, speed: 10, colors: ['#ff006e','#ffe600','#00f0ff','#39ff14','#b537f2'] });
+  Save.write(state);
+  showModal('🌟 สำเร็จ!', `<div class="text-center"><div style="font-size:56px">🌟</div><div>ระดับ ${state.player.rebirth}</div></div>`, [{ label:'ตกลง', cls:'btn-green', action: "closeModal();go('menu')" }]);
+}
+function renderSettings() {
+  contentEl.innerHTML = `
+    <h3>⚙️ ตั้งค่า</h3>
+    <div class="shop-item"><span>🔊 เสียง</span><button class="btn btn-sm ${state.soundOn?'btn-green':'btn-outline'}" onclick="toggleSound()">${state.soundOn?'เปิด':'ปิด'}</button></div>
+    <div class="shop-item"><span>🎵 เพลง</span><button class="btn btn-sm btn-outline" onclick="testMusic()">▶ ทดสอบ</button></div>
+    <div class="shop-item"><span>📤 ส่งออก</span><button class="btn btn-sm btn-outline" onclick="exportSave()">คัดลอก</button></div>
+    <div class="shop-item"><span>📥 นำเข้า</span><button class="btn btn-sm btn-outline" onclick="importSave()">วาง</button></div>
+    <div class="shop-item"><span>🗑️ ล้างข้อมูล</span><button class="btn btn-sm btn-red" onclick="confirmReset()">รีเซ็ต</button></div>
+    <div class="text-sm mt-3" style="color:var(--text-dim);text-align:center">Version ${SAVE_VERSION}</div>
+    <button class="btn btn-outline w-full mt-3" onclick="go('menu')">🔙 กลับ</button>
+  `;
+}
+function toggleSound() {
+  state.soundOn = !state.soundOn;
+  Audio.setEnabled(state.soundOn);
+  if (state.soundOn) { Audio.resume(); Audio.sfx.click(); }
+  Save.write(state);
+  renderSettings();
+}
+function testMusic() { Audio.resume(); Audio.stopMusic(); Audio.startMusic(120); setTimeout(() => Audio.stopMusic(), 3000); }
+function exportSave() {
+  try {
+    const data = JSON.stringify(state);
+    const b64 = btoa(unescape(encodeURIComponent(data)));
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b64).then(() => alert('คัดลอกแล้ว!')).catch(() => prompt('คัดลอก:', b64));
+    else prompt('คัดลอก:', b64);
+  } catch (e) { alert('ไม่สำเร็จ'); }
+}
+function importSave() {
+  const b64 = prompt('วางข้อมูล:');
+  if (!b64) return;
+  try {
+    const json = decodeURIComponent(escape(atob(b64.trim())));
+    const data = JSON.parse(json);
+    if (!Save.validate(data)) { alert('ข้อมูลไม่ถูกต้อง'); return; }
+    state = data;
+    if (!state.wrongLog) state.wrongLog = [];
+    Save.write(state);
+    alert('นำเข้าสำเร็จ');
+    go('menu');
+  } catch (e) { alert('นำเข้าไม่สำเร็จ'); }
+}
+function confirmReset() {
+  showModal('⚠️ ยืนยันรีเซ็ต', '<div class="text-center">ล้างความคืบหน้าทั้งหมด?</div>', [{ label:'❌ ยกเลิก', cls:'btn-outline', action:'closeModal()' }, { label:'🗑️ ล้าง', cls:'btn-red', action:'resetAll()' }]);
+}
+function resetAll() { Save.clear(); state = Save.defaultState(); closeModal(); Audio.sfx.wrong(); go('menu'); }
+</script><script>
+"use strict";
+const Audio = (() => {
+  let ctx = null, masterGain = null, musicGain = null;
+  let enabled = true, musicOn = false;
+  let musicTimer = null, musicStep = 0;
+  function init() {
+    if (ctx) return;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.85;
+      masterGain.connect(ctx.destination);
+      musicGain = ctx.createGain();
+      musicGain.gain.value = 0.22;
+      musicGain.connect(masterGain);
+    } catch (e) {}
+  }
+  function resume() { try { if (ctx && ctx.state === 'suspended') ctx.resume(); } catch (e) {} }
+  function tone(freq, type, dur, vol, dest, delay) {
+    if (!ctx || !enabled) return;
+    try {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const t0 = ctx.currentTime + (delay || 0);
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.06, t0 + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(dest || masterGain);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  function sweep(f1, f2, type, dur, vol) {
+    if (!ctx || !enabled) return;
+    try {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const t0 = ctx.currentTime;
+      o.type = type;
+      o.frequency.setValueAtTime(f1, t0);
+      o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t0 + dur);
+      g.gain.setValueAtTime(vol, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(masterGain);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  function noise(dur, vol) {
+    if (!ctx || !enabled) return;
+    try {
+      const buf = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * dur)), ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      src.connect(g); g.connect(masterGain);
+      src.start();
+    } catch (e) {}
+  }
+  const sfx = {
+    click: () => tone(600,'sine',0.06,0.08),
+    correct: () => { tone(700,'triangle',0.12,0.10); tone(1050,'triangle',0.14,0.10,null,0.07); tone(1400,'sine',0.16,0.07,null,0.14); },
+    wrong: () => { tone(220,'sawtooth',0.16,0.10); tone(150,'sawtooth',0.24,0.10,null,0.1); },
+    crit: () => { sweep(500,1400,'square',0.16,0.14); tone(1800,'square',0.22,0.11,null,0.1); noise(0.16,0.06); },
+    level: () => { [523,659,784,1047,1319].forEach((f,i)=>tone(f,'triangle',0.2,0.12,null,i*0.08)); },
+    win: () => { [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,'triangle',0.22,0.13,null,i*0.09)); },
+    lose: () => { [420,340,270,200,150].forEach((f,i)=>tone(f,'sawtooth',0.22,0.10,null,i*0.1)); },
+    hit: () => { noise(0.08,0.08); tone(160,'square',0.08,0.08); },
+    heal: () => { tone(880,'sine',0.14,0.09); tone(1320,'sine',0.2,0.09,null,0.06); tone(1760,'sine',0.14,0.06,null,0.14); },
+    gold: () => { tone(1400,'triangle',0.08,0.08); tone(2100,'triangle',0.12,0.08,null,0.06); },
+    combo: (n) => { const base = 500 + Math.min((n||1)*90,1100); tone(base,'square',0.1,0.08); tone(base*1.5,'square',0.1,0.06,null,0.05); },
+    skillCast: () => { sweep(200,900,'sawtooth',0.2,0.10); tone(1200,'square',0.15,0.08,null,0.15); },
+    shield: () => { tone(400,'sine',0.2,0.09); tone(600,'sine',0.25,0.08,null,0.08); },
+    dodge: () => { sweep(900,300,'sine',0.15,0.09); noise(0.1,0.05); },
+    tick_low: () => tone(1800,'square',0.05,0.07),
+    bossRoar: () => { sweep(120,60,'sawtooth',0.5,0.15); noise(0.4,0.10); },
+    comboMilestone: () => { [660,880,1100,1320].forEach((f,i)=>tone(f,'square',0.1,0.09,null,i*0.06)); },
+    buttonError: () => { tone(300,'square',0.1,0.10); tone(200,'square',0.15,0.09,null,0.06); }
+  };
+  const scale = [220,246.94,261.63,293.66,329.63,349.23,392.00,440,493.88];
+  const bassLine = [110,110,164.81,146.83,110,110,98,130.81];
+  function startMusic(tempo) {
+    if (!ctx || musicOn || !enabled) return;
+    musicOn = true; musicStep = 0;
+    const bpm = tempo || 110;
+    const stepMs = 60000 / bpm / 2;
+    musicTimer = setInterval(() => {
+      if (!ctx || !enabled) return;
+      const s = musicStep % 16;
+      if (s % 2 === 0) { const idx = (s/2)%scale.length; tone(scale[(idx*3)%scale.length],'square',0.18,0.10,musicGain); }
+      if (s % 4 === 0) { tone(scale[(s*5)%scale.length],'triangle',0.24,0.08,musicGain); }
+      if (s % 8 === 2) { tone(scale[(s*2+4)%scale.length],'sine',0.2,0.06,musicGain); }
+      if (s % 4 === 0) { tone(bassLine[(s/4)%bassLine.length],'triangle',0.42,0.14,musicGain); }
+      if (s % 4 === 0) { sweep(140,50,'sine',0.1,0.10); }
+      if (s % 2 === 1) { noise(0.035,0.020); }
+      if (s === 4 || s === 12) { noise(0.06,0.05); tone(200,'triangle',0.06,0.05); }
+      musicStep++;
+    }, stepMs);
+  }
+  function stopMusic() { if (musicTimer) clearInterval(musicTimer); musicTimer = null; musicOn = false; }
+  function setEnabled(v) { enabled = v; if (masterGain) masterGain.gain.value = v ? 0.85 : 0; }
+  return { init, resume, sfx, startMusic, stopMusic, setEnabled, isEnabled: () => enabled };
+})();
+
+const Particles = (() => {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1;
+  const particles = [], stars = [];
+  const MAX_P = 350;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    initStars();
+  }
+  function initStars() {
+    stars.length = 0;
+    const count = Math.floor((W * H) / 12000);
+    for (let i = 0; i < count; i++) {
+      stars.push({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.4+0.3, a:Math.random(), da:(Math.random()*0.02+0.005)*(Math.random()<0.5?-1:1) });
+    }
+  }
+  function burst(x, y, opts) {
+    opts = opts || {};
+    const count = opts.count || 20;
+    const colors = opts.colors || ['#00f0ff','#ff006e','#ffe600','#39ff14','#b537f2'];
+    for (let i = 0; i < count; i++) {
+      if (particles.length >= MAX_P) break;
+      const ang = Math.random()*Math.PI*2;
+      const spd = (opts.speed || 4) * (0.5 + Math.random()*0.8);
+      particles.push({ x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - (opts.upward||0), life:1, decay:0.015 + Math.random()*0.02, size:opts.size || (2+Math.random()*3), color:colors[Math.floor(Math.random()*colors.length)], gravity:opts.gravity !== undefined ? opts.gravity : 0.08, shape:opts.shape || 'circle' });
+    }
+  }
+  function update() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.985; p.vy *= 0.985;
+      p.life -= p.decay;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.a += s.da;
+      if (s.a <= 0 || s.a >= 1) s.da = -s.da;
+      s.a = Math.max(0.05, Math.min(1, s.a));
+    }
+  }
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    for (const s of stars) {
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(180,220,255,${s.a*0.5})`;
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life);
+      if (p.shape === 'square') {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+      } else {
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size*1.8);
+        grad.addColorStop(0, p.color);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size*1.8, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  let running = true, rafId = 0;
+  function loop() { if (!running) return; update(); draw(); rafId = requestAnimationFrame(loop); }
+  function start() { if (!running) { running = true; loop(); } }
+  function stop() { running = false; cancelAnimationFrame(rafId); }
+  window.addEventListener('resize', resize, { passive:true });
+  window.addEventListener('orientationchange', () => setTimeout(resize, 200), { passive:true });
+  resize();
+  return { start, stop, burst, resize };
+})();
+
+function floatText(x, y, text, cls) {
+  const el = document.createElement('div');
+  el.className = 'float-text ' + (cls || '');
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => { try { el.remove(); } catch(e){} }, 1200);
+}
+
+const SAVE_KEY = 'mq_ultra_v4';
+const SAVE_VERSION = 4;
+const Save = {
+  defaultState() {
+    return {
+      version: SAVE_VERSION,
+      player: { name:'ผู้กล้า', hp:100, maxHp:100, score:0, gold:100, combo:0, maxCombo:0, tc:0, tw:0, ch:1, lv:1, exp:0, plv:1, rebirth:0, rbonus:0 },
+      pclass:'warrior', epet:null,
+      inv:{ w:0,s:0,h:0,a:0,p:0,sh:0,orb:false,potion:0,sp:0 },
+      myPets:[], myGClasses:[], completed:{}, bossKills:[], stats:{}, wrongLog:[],
+      soundOn:true, createdAt:Date.now(), updatedAt:Date.now()
+    };
+  },
+  validate(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (data.version !== SAVE_VERSION) return false;
+    if (!data.player || typeof data.player !== 'object') return false;
+    if (typeof data.player.gold !== 'number') return false;
+    if (typeof data.player.plv !== 'number') return false;
+    if (!Array.isArray(data.myPets)) return false;
+    if (!Array.isArray(data.myGClasses)) return false;
+    return true;
+  },
+  load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!this.validate(parsed)) { try { localStorage.removeItem(SAVE_KEY); } catch(_){} return null; }
+      return parsed;
+    } catch (e) { try { localStorage.removeItem(SAVE_KEY); } catch(_){} return null; }
+  },
+  write(s) { try { s.updatedAt = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(s)); return true; } catch (e) { return false; } },
+  clear() { try { localStorage.removeItem(SAVE_KEY); } catch(_){} }
+};
+
+const R = (a,b) => Math.floor(Math.random()*(b-a+1)) + a;
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const gcd = (a,b) => { a = Math.abs(a); b = Math.abs(b); while (b) { const t = b; b = a % b; a = t; } return a; };
+const simplify = (n,d) => { const g = gcd(n,d) || 1; return [n/g, d/g]; };
+
+function parseFraction(s) {
+  s = String(s).trim().replace(/\s+/g, '');
+  const m = s.match(/^(-?\d+)\/(-?\d+)$/);
+  if (m && parseFloat(m[2]) !== 0) return parseFloat(m[1]) / parseFloat(m[2]);
+  const m2 = s.match(/^(-?\d+)$/);
+  if (m2) return parseFloat(s);
+  return null;
+}
+function parsePair(s) {
+  const parts = String(s).split(',').map(x => x.trim());
+  if (parts.length !== 2) return null;
+  const a = parseFloat(parts[0]), b = parseFloat(parts[1]);
+  if (isNaN(a) || isNaN(b)) return null;
+  return [a, b];
+}
+function parseRadical(s) {
+  s = String(s).trim().replace(/\s+/g, '');
+  const m = s.match(/^(-?\d*)√(\d+)$/);
+  if (!m) return null;
+  let coef;
+  if (m[1] === '' || m[1] === '+') coef = 1;
+  else if (m[1] === '-') coef = -1;
+  else coef = parseFloat(m[1]);
+  if (isNaN(coef)) return null;
+  const rad = parseFloat(m[2]);
+  if (isNaN(rad)) return null;
+  return { coef, rad, value: coef * Math.sqrt(rad) };
+}
+function safeEval(expr) {
+  if (!expr) return null;
+  if (/[√,]/.test(expr)) return null;
+  let js = String(expr).replace(/×/g,'*').replace(/÷/g,'/').replace(/\^/g,'**').replace(/−/g,'-');
+  if (!/^[\d\s\+\-\*\/\.\(\)]+$/.test(js)) return null;
+  if (!/\d/.test(js)) return null;
+  if (/\*{3,}/.test(js)) return null;
+  try {
+    const result = Function('"use strict";return (' + js + ')')();
+    if (typeof result !== 'number' || !isFinite(result)) return null;
+    return result;
+  } catch (e) { return null; }
+}
+function answersMatch(user, correct) {
+  if (user === undefined || user === null) return false;
+  const rawU = String(user).trim();
+  const rawC = String(correct).trim();
+  if (!rawU) return false;
+  const u = rawU.replace(/\s+/g,'');
+  const c = rawC.replace(/\s+/g,'');
+  const TOL = 0.011;
+  if (u.toLowerCase() === c.toLowerCase()) return true;
+  const uEval = safeEval(u), cEval = safeEval(c);
+  if (uEval !== null && cEval !== null && Math.abs(uEval - cEval) <= TOL) return true;
+  const un = /√/.test(u) ? NaN : parseFloat(u);
+  const cn = /√/.test(c) ? NaN : parseFloat(c);
+  if (!isNaN(un) && !isNaN(cn) && Math.abs(un - cn) <= TOL) return true;
+  const uf = parseFraction(u), cf = parseFraction(c);
+  if (uf !== null && cf !== null && Math.abs(uf - cf) <= TOL) return true;
+  if (uf !== null && !isNaN(cn) && Math.abs(uf - cn) <= TOL) return true;
+  if (cf !== null && !isNaN(un) && Math.abs(cf - un) <= TOL) return true;
+  const ur = parseRadical(u), cr = parseRadical(c);
+  if (ur && cr && Math.abs(ur.value - cr.value) <= TOL) return true;
+  if (ur && !isNaN(cn) && Math.abs(ur.value - cn) <= TOL) return true;
+  if (cr && !isNaN(un) && Math.abs(cr.value - un) <= TOL) return true;
+  if (ur && cEval !== null && Math.abs(ur.value - cEval) <= TOL) return true;
+  if (cr && uEval !== null && Math.abs(cr.value - uEval) <= TOL) return true;
+  const up = parsePair(u), cp = parsePair(c);
+  if (up && cp && Math.abs(up[0]-cp[0]) <= TOL && Math.abs(up[1]-cp[1]) <= TOL) return true;
+  return false;
+}
+
+const Chapters = [
+  { id:1, name:'จำนวนจริงและรากที่ n', icon:'√', boss:'🐢', color:'#00f0ff' },
+  { id:2, name:'เศษส่วนและทศนิยมซ้ำ', icon:'➗', boss:'🐉', color:'#ff006e' },
+  { id:3, name:'เลขยกกำลัง', icon:'ⁿ', boss:'⚡', color:'#ffe600' },
+  { id:4, name:'พหุนาม', icon:'📐', boss:'🧙', color:'#b537f2' },
+  { id:5, name:'แยกตัวประกอบดีกรีสอง', icon:'🧩', boss:'🤖', color:'#39ff14' },
+  { id:6, name:'สมการเชิงเส้นตัวแปรเดียว', icon:'⚖️', boss:'👾', color:'#ff8c00' },
+  { id:7, name:'อัตราส่วนและร้อยละ', icon:'📊', boss:'🦊', color:'#00ffaa' },
+  { id:8, name:'ความเท่ากันทุกประการ', icon:'🔷', boss:'💀', color:'#ff4b8b' },
+  { id:9, name:'ทฤษฎีบทพีทาโกรัส', icon:'📏', boss:'🐺', color:'#00c6ff' },
+  { id:10, name:'สถิติและความน่าจะเป็น', icon:'🎲', boss:'👑', color:'#ffd700' }
+];
+
+const Generators = {
+  1:[
+    () => { const r = R(2,15); return { q:`√${r*r} = ?`, a:String(r), h:`√${r*r} = ${r} เพราะ ${r}² = ${r*r}` }; },
+    () => { const r = R(2,7); return { q:`∛${r*r*r} = ?`, a:String(r), h:`∛${r*r*r} = ${r}` }; },
+    () => { const b = pick([2,3,5,6,7,10,11,13]); const v = Math.sqrt(b); return { q:`√${b} ≈ ? (2 ตำแหน่ง)`, a:v.toFixed(2), h:`√${b} ≈ ${v.toFixed(2)}` }; },
+    () => { const a = R(2,6), b = pick([2,3,5,7]); const n = a*a*b; return { q:`√${n} = ? (รูป a√b)`, a:`${a}√${b}`, h:`√${n} = √(${a}²·${b}) = ${a}√${b}` }; },
+    () => { const a = R(1,8), b = R(1,8); return { q:`√${a*a} + √${b*b} = ?`, a:String(a+b), h:`${a} + ${b} = ${a+b}` }; }
+  ],
+  2:[
+    () => { const a=R(1,5),b=R(2,6),c=R(1,5),d=R(2,6); const num=a*d+c*b, den=b*d; const [sn,sd]=simplify(num,den); return { q:`${a}/${b} + ${c}/${d} = ?`, a:sd===1?String(sn):`${sn}/${sd}`, h:`= ${num}/${den} = ${sn}/${sd}` }; },
+    () => { const n=R(1,7), d=R(2,9); const v = n/d; return { q:`${n}/${d} ≈ ? (3 ตำแหน่ง)`, a:v.toFixed(3), h:`${n}÷${d} = ${v.toFixed(3)}` }; },
+    () => ({ q:`0.333... = เศษส่วน?`, a:'1/3', h:`0.3̅ = 3/9 = 1/3` }),
+    () => { const a = R(2,9), b = R(2,9); return { q:`${a}/${b} ของ 100 = ? (2 ตำแหน่ง)`, a:((a/b)*100).toFixed(2), h:`(${a}÷${b})×100 = ${((a/b)*100).toFixed(2)}` }; }
+  ],
+  3:[
+    () => { const a = R(2,7), m = R(2,4), n = R(2,4); return { q:`${a}^${m} × ${a}^${n} = ${a}^?`, a:String(m+n), h:`a^m × a^n = a^(m+n) = ${a}^${m+n}` }; },
+    () => { const a = R(2,5), m = R(2,3), n = R(2,3); return { q:`(${a}^${m})^${n} = ${a}^?`, a:String(m*n), h:`(a^m)^n = a^(mn) = ${a}^${m*n}` }; },
+    () => { const a = R(2,6), m = R(2,3); return { q:`${a}^(-${m}) = ? (1/a^m)`, a:`1/${Math.pow(a,m)}`, h:`= 1/${Math.pow(a,m)}` }; },
+    () => { const a = R(2,9), m = R(2,4); return { q:`${a}^${m} = ?`, a:String(Math.pow(a,m)), h:`= ${Math.pow(a,m)}` }; },
+    () => { const a = R(2,5); return { q:`${a}^0 = ?`, a:'1', h:`a^0 = 1` }; }
+  ],
+  4:[
+    () => { const a=R(2,6),b=R(1,9),c=R(2,6),d=R(1,9); return { q:`(${a}x+${b}) + (${c}x+${d}) = ?x+? (a,b)`, a:`${a+c},${b+d}`, h:`${a+c}x + ${b+d}` }; },
+    () => { const a=R(2,5),b=R(2,5); return { q:`${a}x · ${b}x = ?x²`, a:String(a*b), h:`${a}×${b} = ${a*b}` }; },
+    () => { const a=R(2,6),b=R(1,5),c=R(2,5); return { q:`${a}x(${b}x+${c}) = ${a*b}x² + ?x`, a:String(a*c), h:`${a}×${c} = ${a*c}` }; },
+    () => { const p = R(2,5), q = R(2,5); return { q:`(${p}x+1)(${q}x+1) ที่ x=1 = ?`, a:String((p+1)*(q+1)), h:`(${p}+1)(${q}+1) = ${(p+1)*(q+1)}` }; }
+  ],
+  5:[
+    () => { const p = R(1,8), q = R(1,8); return { q:`x² + ${p+q}x + ${p*q} = (x+a)(x+b), a≤b, a = ?`, a:String(Math.min(p,q)), h:`a=${Math.min(p,q)}, b=${Math.max(p,q)}` }; },
+    () => { const a = R(2,9); return { q:`x² - ${a*a} = (x+a)(x-a), a = ?`, a:String(a), h:`a = ${a}` }; },
+    () => { const a = R(2,6); return { q:`x² + ${2*a}x + ${a*a} = (x+?)²`, a:String(a), h:`= (x+${a})²` }; },
+    () => { const p = R(2,6), q = R(2,6); return { q:`x² + ${p+q}x + ${p*q}: ผลบวกของราก = ?`, a:String(p+q), h:`${p}+${q} = ${p+q}` }; }
+  ],
+  6:[
+    () => { const x = R(2,12), b = R(1,15); return { q:`x + ${b} = ${x+b} → x = ?`, a:String(x), h:`x = ${x}` }; },
+    () => { const x = R(2,9), a = R(2,6), b = R(1,10); return { q:`${a}x + ${b} = ${a*x+b} → x = ?`, a:String(x), h:`${a}x = ${a*x}, x = ${x}` }; },
+    () => { const x = R(2,8), a = R(2,5), c = R(1,3), b = R(1,8), d = a*x + b - c*x; return { q:`${a}x + ${b} = ${c}x + ${d} → x = ?`, a:String(x), h:`x = ${x}` }; },
+    () => { const x = R(2,8), a = R(2,5); return { q:`${a}x = ${a*x} → x = ?`, a:String(x), h:`x = ${x}` }; }
+  ],
+  7:[
+    () => { const p = R(5,50); return { q:`${p}% ของ 200 = ?`, a:String(p*2), h:`= ${p*2}` }; },
+    () => { const price = R(50,500); const disc = pick([10,15,20,25,30]); const pay = Math.round(price*(100-disc)/100); return { q:`สินค้า ${price} บาท ลด ${disc}% → จ่าย?`, a:String(pay), h:`${price}×${(100-disc)/100} = ${pay}` }; },
+    () => { const a = R(2,9), b = R(2,9), k = R(2,6); const total = (a+b)*k; return { q:`อัตราส่วน ${a}:${b} รวม ${total} → ส่วนแรก = ?`, a:String(a*k), h:`${a}×${k} = ${a*k}` }; },
+    () => { const p = R(2,20), n = R(50,500); return { q:`${p}% ของ ${n} = ?`, a:String(Math.round(p*n/100)), h:`= ${Math.round(p*n/100)}` }; }
+  ],
+  8:[
+    () => { const a = R(3,12); return { q:`สามเหลี่ยมด้านเท่า ด้าน=${a} ด้านอื่น?`, a:String(a), h:`ทุกด้าน = ${a}` }; },
+    () => { const a = R(30,70), b = R(30, Math.max(30, 180-a-20)); const c = 180-a-b; return { q:`สามเหลี่ยม A=${a}° B=${b}° → C = ?`, a:String(c), h:`C = 180-${a}-${b} = ${c}` }; },
+    () => { const s = R(5,15); return { q:`SSS เท่ากันทุกประการ ด้าน=${s} → ด้านคู่ = ?`, a:String(s), h:`= ${s}` }; },
+    () => { const a = R(20,80); return { q:`สามเหลี่ยมหน้าจั่ว มุมยอด=${a}° → มุมฐาน = ?`, a:String((180-a)/2), h:`= (180-${a})/2 = ${(180-a)/2}` }; }
+  ],
+  9:[
+    () => { const t = pick([[3,4,5],[5,12,13],[6,8,10],[8,15,17],[7,24,25],[9,12,15]]); return { q:`มุมฉาก ด้าน ${t[0]}, ${t[1]} → c = ?`, a:String(t[2]), h:`c² = ${t[0]*t[0]+t[1]*t[1]}, c = ${t[2]}` }; },
+    () => { const t = pick([[3,4,5],[5,12,13],[6,8,10],[8,15,17]]); return { q:`c=${t[2]}, ด้าน=${t[0]} → อีกด้าน = ?`, a:String(t[1]), h:`b = ${t[1]}` }; },
+    () => { const a = R(3,9); return { q:`ด้านประกอบฉาก = ${a}, ${a} → c² = ?`, a:String(2*a*a), h:`c² = ${2*a*a}` }; }
+  ],
+  10:[
+    () => { const nums = Array.from({length:5}, () => R(1,20)); const sum = nums.reduce((a,b)=>a+b,0); const mean = sum/nums.length; return { q:`ค่าเฉลี่ยของ ${nums.join(', ')} = ?`, a:Number.isInteger(mean)?String(mean):mean.toFixed(2), h:`ผลรวม ${sum}, เฉลี่ย = ${(sum/5).toFixed(2)}` }; },
+    () => { const nums = Array.from({length:5}, () => R(1,20)); const sorted = [...nums].sort((a,b)=>a-b); return { q:`มัธยฐานของ ${nums.join(', ')} = ?`, a:String(sorted[2]), h:`เรียง ${sorted.join(',')} → ${sorted[2]}` }; },
+    () => ({ q:`ทอยลูกเต๋า โอกาสเลขคู่ = ?`, a:'1/2', h:`3/6 = 1/2` }),
+    () => { const nums = Array.from({length:6}, () => R(1,9)); const counts = {}; nums.forEach(n => counts[n]=(counts[n]||0)+1); let mode = nums[0], max = 0; for (const k in counts) if (counts[k] > max) { max = counts[k]; mode = k; } return { q:`ฐานนิยมของ ${nums.join(', ')} = ?`, a:String(mode), h:`= ${mode}` }; },
+    () => ({ q:`ทอยลูกเต๋า โอกาสได้ 6 = ?`, a:'1/6', h:`= 1/6` })
+  ]
+};
+function generateQuestion(chapter, level) { const pool = Generators[chapter] || Generators[1]; return pick(pool)(); }
+                         </script><script>
+"use strict";
+let __calcState = { open:false, display:'0', pending:null, waiting:false };
+const __CALC_COST = 5;
+
+function openCalculator() {
+  if (battleEnded || currentScreen !== 'battle') return;
+  if (__calcState.open) return;
+  if (state.player.gold < __CALC_COST) { Audio.sfx.buttonError(); floatText(window.innerWidth/2, window.innerHeight*0.5, 'เหรียญไม่พอ!', 'miss'); return; }
+  state.player.gold -= __CALC_COST;
+  Save.write(state);
+  __calcState = { open:true, display:'0', pending:null, waiting:false };
+  renderCalculator();
+  Audio.sfx.click();
+  updateBattleUI();
+}
+function closeCalculator() { __calcState.open = false; const el = document.getElementById('__calcOverlay'); if (el) el.remove(); }
+function renderCalculator() {
+  let overlay = document.getElementById('__calcOverlay');
+  if (!overlay) { overlay = document.createElement('div'); overlay.id = '__calcOverlay'; document.body.appendChild(overlay); }
+  overlay.className = 'calc-overlay';
+  const keys = [
+    { t:'C', cls:'op', fn:"calcPress('C')" }, { t:'⌫', cls:'op', fn:"calcPress('back')" }, { t:'÷', cls:'op', fn:"calcPress('÷')" }, { t:'×', cls:'op', fn:"calcPress('×')" },
+    { t:'7', fn:"calcPress('7')" }, { t:'8', fn:"calcPress('8')" }, { t:'9', fn:"calcPress('9')" }, { t:'−', cls:'op', fn:"calcPress('−')" },
+    { t:'4', fn:"calcPress('4')" }, { t:'5', fn:"calcPress('5')" }, { t:'6', fn:"calcPress('6')" }, { t:'+', cls:'op', fn:"calcPress('+')" },
+    { t:'1', fn:"calcPress('1')" }, { t:'2', fn:"calcPress('2')" }, { t:'3', fn:"calcPress('3')" }, { t:'.', fn:"calcPress('.')" },
+    { t:'0', cls:'span2', fn:"calcPress('0')" }, { t:'=', cls:'eq', fn:"calcPress('=')" }
+  ];
+  overlay.innerHTML = '<div class="calc-panel"><div class="calc-display">' + __calcState.display + '</div><div class="calc-grid">' + keys.map(k => '<button class="calc-btn ' + (k.cls||'') + '" onclick="' + k.fn + '">' + k.t + '</button>').join('') + '</div><div class="calc-actions"><button class="btn btn-sm btn-outline" onclick="closeCalculator()">✖ ปิด</button><button class="btn btn-sm btn-green" onclick="calcUse()">📋 ใช้ผล</button></div></div>';
+}
+function calcPress(k) {
+  const s = __calcState;
+  if (k >= '0' && k <= '9') { s.display = s.waiting ? k : (s.display === '0' ? k : s.display + k); s.waiting = false; }
+  else if (k === '.') { if (s.display.indexOf('.') === -1) { s.display = s.waiting ? '0.' : s.display + '.'; s.waiting = false; } }
+  else if (k === 'C') { s.display = '0'; s.pending = null; s.waiting = false; }
+  else if (k === 'back') { s.display = s.display.length > 1 ? s.display.slice(0, -1) : '0'; }
+  else if ('+−×÷'.indexOf(k) !== -1) {
+    if (s.pending && !s.waiting) { const r = calcEval(parseFloat(s.pending.value), parseFloat(s.display), s.pending.op); s.display = String(r); }
+    s.pending = { value: s.display, op: k };
+    s.waiting = true;
+  } else if (k === '=') {
+    if (s.pending) { const r2 = calcEval(parseFloat(s.pending.value), parseFloat(s.display), s.pending.op); s.display = String(r2); s.pending = null; s.waiting = true; }
+  }
+  Audio.sfx.click();
+  renderCalculator();
+}
+function calcEval(a, b, op) {
+  let r;
+  switch (op) { case '+': r = a + b; break; case '−': r = a - b; break; case '×': r = a * b; break; case '÷': r = b === 0 ? NaN : a / b; break; default: r = b; }
+  if (!isFinite(r) || isNaN(r)) return 'ERR';
+  return Math.round(r * 1e10) / 1e10;
+}
+function calcUse() {
+  const inp = document.getElementById('ansInp');
+  if (inp && !inp.disabled && __calcState.display !== 'ERR') {
+    inp.value = __calcState.display;
+    updateNumpadSubmitState();
+    Audio.sfx.gold();
+  }
+  closeCalculator();
+}
+
+function renderModeMenu() {
+  contentEl.innerHTML = '<h3>🎮 โหมดพิเศษ</h3><div class="mode-grid">' +
+    '<div class="mode-card" onclick="go(\'treasureSetup\')"><span class="mode-emoji">💎</span><div class="mode-info"><div class="mode-name">Speed Treasure</div><div class="mode-desc">สร้างสมการจากตัวเลขในมือ</div></div></div>' +
+    '<div class="mode-card" onclick="startAMath(\'solo\')"><span class="mode-emoji">🧮</span><div class="mode-info"><div class="mode-name">A-Math Solo</div><div class="mode-desc">ต่อสมการบนกระดาน 15×15</div></div></div>' +
+    '<div class="mode-card" onclick="startAMath(\'pvp\')"><span class="mode-emoji">🧮</span><div class="mode-info"><div class="mode-name">A-Math PvP</div><div class="mode-desc">2 ผู้เล่นผลัดกัน</div></div></div>' +
+    '<div class="mode-card" onclick="startChess(\'solo\')"><span class="mode-emoji">♟️</span><div class="mode-info"><div class="mode-name">Math Chess Solo</div><div class="mode-desc">หมากรุก 8×8 + โจทย์</div></div></div>' +
+    '<div class="mode-card" onclick="startChess(\'pvp\')"><span class="mode-emoji">♟️</span><div class="mode-info"><div class="mode-name">Math Chess PvP</div><div class="mode-desc">2 ผู้เล่นหมากรุก</div></div></div>' +
+    '</div><button class="btn btn-outline w-full mt-3" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.scrollTop = 0;
+}
+function renderTreasureSetup() {
+  contentEl.innerHTML = '<h3>💎 Speed Treasure</h3>' +
+    '<div class="text-sm mb-2" style="color:var(--text-dim);text-align:center">ใช้ 5 tiles + เหรียญ ±1 สร้างสมการให้ได้ = เป้าหมาย</div>' +
+    '<div class="mode-card" onclick="startTreasure(\'solo\', 1)"><span class="mode-emoji">🎯</span><div class="mode-info"><div class="mode-name">Solo Mode</div><div class="mode-desc">เล่นคนเดียว 5 รอบ</div></div></div>' +
+    '<div class="mode-card mt-2" onclick="startTreasure(\'pvp\', 1)"><span class="mode-emoji">⚔️</span><div class="mode-info"><div class="mode-name">PvP 2 ผู้เล่น</div><div class="mode-desc">ใครครบ 5 ก่อนชนะ</div></div></div>' +
+    '<button class="btn btn-outline w-full mt-3" onclick="go(\'modes\')">🔙 กลับ</button>';
+  contentEl.scrollTop = 0;
+}
+
+let treasure = null;
+function startTreasure(mode, level) {
+  treasure = { mode, level, target:0, hand:[], coins:[], equation:[], p1Score:0, p2Score:0, currentPlayer:1, round:1, dead:false };
+  generateTreasureRound();
+  currentScreen = 'treasure';
+  renderTreasure();
+  Audio.sfx.win();
+}
+function generateTreasureRound() {
+  if (!treasure) return;
+  const lv = treasure.level;
+  const ranges = [
+    { target:[5,20], nums:[1,9], count:5, coins:2 },
+    { target:[10,30], nums:[1,12], count:5, coins:2 },
+    { target:[20,50], nums:[1,15], count:5, coins:2 },
+    { target:[50,120], nums:[1,20], count:5, coins:1 },
+    { target:[100,250], nums:[1,25], count:5, coins:1 }
+  ];
+  const cfg = ranges[Math.min(lv - 1, ranges.length - 1)];
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const nums = [];
+    for (let i = 0; i < cfg.count; i++) nums.push(R(cfg.nums[0], cfg.nums[1]));
+    const target = R(cfg.target[0], cfg.target[1]);
+    if (canSolve(nums, target)) {
+      treasure.target = target;
+      treasure.hand = nums.map((n, idx) => ({ id:idx, value:n, used:false }));
+      treasure.coins = [];
+      for (let c = 0; c < cfg.coins; c++) treasure.coins.push({ id:'c'+c, delta:(c%2===0?1:-1), used:false });
+      treasure.equation = [];
+      treasure.dead = false;
+      return;
+    }
+  }
+  const n1 = R(1,9), n2 = R(1,9), n3 = R(1,9), n4 = R(1,9), n5 = R(1,9);
+  treasure.target = n1 + n2 + n3 + n4 + n5;
+  treasure.hand = [n1,n2,n3,n4,n5].map((n, i) => ({ id:i, value:n, used:false }));
+  treasure.coins = [{ id:'c0', delta:1, used:false }, { id:'c1', delta:-1, used:false }];
+  treasure.equation = [];
+  treasure.dead = false;
+}
+function canSolve(nums, target) {
+  const used = new Array(nums.length).fill(false);
+  function rec(current, step) {
+    if (step === nums.length) return Math.abs(current - target) < 0.001;
+    if (Math.abs(current - target) < 0.001) return true;
+    for (let i = 0; i < nums.length; i++) {
+      if (used[i]) continue;
+      used[i] = true;
+      const n = nums[i];
+      if (rec(current + n, step+1)) { used[i] = false; return true; }
+      if (rec(current - n, step+1)) { used[i] = false; return true; }
+      if (rec(n - current, step+1)) { used[i] = false; return true; }
+      if (rec(current * n, step+1)) { used[i] = false; return true; }
+      if (n !== 0 && rec(current / n, step+1)) { used[i] = false; return true; }
+      if (current !== 0 && rec(n / current, step+1)) { used[i] = false; return true; }
+      used[i] = false;
+    }
+    return false;
+  }
+  for (let i = 0; i < nums.length; i++) { used[i] = true; if (rec(nums[i], 1)) { used[i] = false; return true; } used[i] = false; }
+  return false;
+}
+function renderTreasure() {
+  if (!treasure) return;
+  const t = treasure;
+  const isPvp = t.mode === 'pvp';
+  let header = '';
+  if (isPvp) {
+    header = '<div class="pvp-score"><div class="s1"><span class="pvp-badge pvp-p1">P1</span> ' + t.p1Score + '</div><div class="s2"><span class="pvp-badge pvp-p2">P2</span> ' + t.p2Score + '</div></div><div class="pvp-turn ' + (t.currentPlayer === 1 ? 'p1' : 'p2') + '">' + (t.currentPlayer === 1 ? '🔵 P1' : '🔴 P2') + ' เป็นตา — รอบ ' + t.round + '</div>';
+  } else {
+    header = '<div class="treasure-header"><span>🎯 รอบ ' + t.round + '/5</span><span>ด่าน ' + t.level + '</span></div>';
+  }
+  let eqHtml = '';
+  if (t.equation.length === 0) eqHtml = '<span class="eq-slot empty">?</span>';
+  else eqHtml = t.equation.map(item => item.type === 'num' ? '<span class="eq-slot">' + item.value + '</span>' : '<span class="eq-slot op">' + item.value + '</span>').join('');
+  eqHtml += '<span class="eq-slot empty">= ' + t.target + '</span>';
+  const handHtml = t.hand.map(h => '<button class="tile ' + (h.used ? 'used' : '') + '" onclick="treasurePickNum(' + h.id + ')" ' + (h.used ? 'disabled' : '') + '>' + h.value + '</button>').join('');
+  let coinHtml = '';
+  if (t.coins.length > 0) {
+    coinHtml = '<div class="treasure-panel"><div class="text-sm" style="color:var(--text-dim);margin-bottom:6px">🪙 เหรียญพิเศษ</div><div class="treasure-hand">' + t.coins.map(c => '<button class="tile coin ' + (c.used ? 'used' : '') + '" onclick="treasurePickCoin(\'' + c.id + '\')" ' + (c.used ? 'disabled' : '') + '>' + (c.delta > 0 ? '+1' : '−1') + '</button>').join('') + '</div></div>';
+  }
+  contentEl.innerHTML = header +
+    '<div class="treasure-panel"><div class="text-sm text-center" style="color:var(--text-dim);margin-bottom:4px">🎯 เป้าหมาย</div><div class="treasure-target">' + t.target + '</div><div class="treasure-equation">' + eqHtml + '</div></div>' +
+    '<div class="treasure-panel"><div class="text-sm" style="color:var(--text-dim);margin-bottom:6px">🔢 ตัวเลขในมือ</div><div class="treasure-hand">' + handHtml + '</div></div>' +
+    coinHtml +
+    '<div class="treasure-panel"><div class="text-sm" style="color:var(--text-dim);margin-bottom:6px">➕ ตัวดำเนินการ + วงเล็บ</div><div class="treasure-ops">' +
+      '<button class="op-btn" onclick="treasureAddOp(\'+\')">+</button>' +
+      '<button class="op-btn" onclick="treasureAddOp(\'−\')">−</button>' +
+      '<button class="op-btn" onclick="treasureAddOp(\'×\')">×</button>' +
+      '<button class="op-btn" onclick="treasureAddOp(\'÷\')">÷</button>' +
+      '<button class="op-btn" onclick="treasureAddOp(\'(\')">(</button>' +
+      '<button class="op-btn" onclick="treasureAddOp(\')\')">)</button>' +
+      '<button class="op-btn" onclick="treasureUndo()" style="grid-column:span 2;font-size:14px">⌫ ลบ</button>' +
+    '</div></div>' +
+    '<div class="flex-row" style="gap:6px"><button class="btn btn-green" style="flex:1" onclick="treasureSubmit()">✓ ตรวจ</button><button class="btn btn-red" onclick="treasureSkip()">⏭ ข้าม</button><button class="btn btn-outline" onclick="treasureExit()">✖ ออก</button></div>';
+  contentEl.scrollTop = 0;
+}
+function treasurePickNum(id) {
+  if (!treasure || treasure.dead) return;
+  const h = treasure.hand.find(x => x.id === id);
+  if (!h || h.used) return;
+  const last = treasure.equation[treasure.equation.length - 1];
+  if (last && last.type === 'num') { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้องใส่ตัวดำเนินการก่อน', 'miss'); return; }
+  h.used = true;
+  treasure.equation.push({ type:'num', id:h.id, value:h.value });
+  Audio.sfx.click();
+  renderTreasure();
+}
+function treasurePickCoin(id) {
+  if (!treasure || treasure.dead) return;
+  const c = treasure.coins.find(x => x.id === id);
+  if (!c || c.used) return;
+  const numsInEq = treasure.equation.filter(x => x.type === 'num');
+  if (numsInEq.length === 0) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้องเลือกตัวเลขก่อน', 'miss'); return; }
+  const last = numsInEq[numsInEq.length - 1];
+  c.used = true;
+  const h = treasure.hand.find(x => x.id === last.id);
+  if (h) h.value += c.delta;
+  last.value += c.delta;
+  Audio.sfx.gold();
+  renderTreasure();
+}
+function treasureAddOp(op) {
+  if (!treasure || treasure.dead) return;
+  const eq = treasure.equation;
+  const last = eq[eq.length - 1];
+  if (op === '(') {
+    if (last && last.type === 'num') return;
+    if (last && last.value === ')') return;
+    eq.push({ type:'op', value:'(' });
+  } else if (op === ')') {
+    let opens = 0, closes = 0;
+    for (let i = 0; i < eq.length; i++) { if (eq[i].value === '(') opens++; else if (eq[i].value === ')') closes++; }
+    if (closes >= opens) return;
+    if (!last || (last.type !== 'num' && last.value !== ')')) return;
+    eq.push({ type:'op', value:')' });
+  } else {
+    if (!last) return;
+    if (last.type !== 'num' && last.value !== ')') return;
+    eq.push({ type:'op', value:op });
+  }
+  Audio.sfx.click();
+  renderTreasure();
+}
+function treasureUndo() {
+  if (!treasure || treasure.dead) return;
+  const removed = treasure.equation.pop();
+  if (!removed) return;
+  if (removed.type === 'num') { const h = treasure.hand.find(x => x.id === removed.id); if (h) h.used = false; }
+  Audio.sfx.click();
+  renderTreasure();
+}
+function evalTreasureExpr(eq) {
+  if (!eq || eq.length === 0) return null;
+  const tokens = eq.map(x => x.value);
+  const expr = tokens.join('').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+  if (!/^[\d\.\+\-\*\/\(\)]+$/.test(expr)) return null;
+  let d = 0;
+  for (let i = 0; i < expr.length; i++) { if (expr[i] === '(') d++; else if (expr[i] === ')') { d--; if (d < 0) return null; } }
+  if (d !== 0) return null;
+  try {
+    const r = Function('"use strict";return (' + expr + ')')();
+    if (typeof r !== 'number' || !isFinite(r)) return null;
+    return Math.round(r * 1e10) / 1e10;
+  } catch (e) { return null; }
+}
+function treasureSubmit() {
+  if (!treasure || treasure.dead) return;
+  if (treasure.equation.length < 3) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้อง ≥2 ตัวเลข + 1 เครื่องหมาย', 'critdmg'); Audio.sfx.buttonError(); return; }
+  const numsUsed = treasure.equation.filter(x => x.type === 'num').length;
+  const opsUsed = treasure.equation.filter(x => x.type === 'op').length;
+  if (numsUsed < 2 || opsUsed < 1) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้อง ≥2 ตัวเลข + เครื่องหมาย', 'critdmg'); Audio.sfx.buttonError(); return; }
+  let opens = 0, closes = 0;
+  treasure.equation.forEach(x => { if (x.value === '(') opens++; if (x.value === ')') closes++; });
+  if (opens !== closes) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'วงเล็บไม่ครบ', 'critdmg'); Audio.sfx.buttonError(); return; }
+  const result = evalTreasureExpr(treasure.equation);
+  const expr = treasure.equation.map(x => x.value).join('');
+  if (result === null) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'สมการไม่ถูกต้อง', 'miss'); return; }
+  if (Math.abs(result - treasure.target) < 0.001) {
+    Audio.sfx.correct();
+    Particles.burst(window.innerWidth/2, window.innerHeight/2, { count:35, speed:7, colors:['#39ff14','#ffe600','#00f0ff','#ff006e'] });
+    floatText(window.innerWidth/2, window.innerHeight*0.4, '✅ ' + expr + ' = ' + result, 'heal');
+    treasureWin();
+  } else {
+    Audio.sfx.wrong();
+    floatText(window.innerWidth/2, window.innerHeight*0.4, '❌ ' + expr + ' = ' + result + ' ≠ ' + treasure.target, 'critdmg');
+  }
+}
+function treasureWin() {
+  if (!treasure) return;
+  if (treasure.mode === 'solo') {
+    treasure.round++;
+    if (treasure.round > 5) {
+      showModal('🎉 ชนะ!', '<div class="text-center"><div style="font-size:56px">🏆</div><div>ผ่านครบ 5 รอบ!</div></div>', [{ label:'เยี่ยม!', cls:'btn-green', action:"closeModal();go('modes')" }]);
+      return;
+    }
+    if (treasure.round > 3) treasure.level = Math.min(5, treasure.level + 1);
+    setTimeout(() => { generateTreasureRound(); renderTreasure(); }, 800);
+  } else {
+    if (treasure.currentPlayer === 1) treasure.p1Score++;
+    else treasure.p2Score++;
+    if (treasure.p1Score >= 5 || treasure.p2Score >= 5) {
+      const winner = treasure.p1Score >= 5 ? 'P1' : 'P2';
+      treasure.dead = true;
+      showModal('🏆 จบเกม!', '<div class="text-center"><div style="font-size:56px">👑</div><div><b>' + winner + '</b> ชนะ!</div><div class="mt-2">P1: ' + treasure.p1Score + ' · P2: ' + treasure.p2Score + '</div></div>', [{ label:'เล่นใหม่', cls:'btn-green', action:"closeModal();startTreasure('pvp',1)" }, { label:'กลับ', cls:'btn-outline', action:"closeModal();go('modes')" }]);
+      return;
+    }
+    treasure.currentPlayer = treasure.currentPlayer === 1 ? 2 : 1;
+    treasure.round++;
+    setTimeout(() => { generateTreasureRound(); renderTreasure(); }, 800);
+  }
+}
+function treasureSkip() {
+  if (!treasure || treasure.dead) return;
+  if (treasure.mode === 'pvp') treasure.currentPlayer = treasure.currentPlayer === 1 ? 2 : 1;
+  treasure.round++;
+  Audio.sfx.click();
+  generateTreasureRound();
+  renderTreasure();
+}
+function treasureExit() {
+  if (!confirm('ออกจากโหมด?')) return;
+  treasure = null;
+  go('modes');
+}
+    </script><script>
+"use strict";
+let amathState = null;
+const AMATH_SIZE = 15;
+const AMATH_VAL = { '0':1,'1':1,'2':1,'3':1,'4':1,'5':1,'6':1,'7':1,'8':1,'9':1,'+':1,'−':1,'×':1,'÷':1,'=':0 };
+const AMATH_NUMS = ['0','1','2','3','4','5','6','7','8','9'];
+const AMATH_OPS = ['+','−','×','÷'];
+
+function buildAmathLayout() {
+  const L = [];
+  for (let r = 0; r < AMATH_SIZE; r++) {
+    L.push([]);
+    for (let c = 0; c < AMATH_SIZE; c++) L[r].push({ m:1, t:'n' });
+  }
+  L[7][7] = { m:2, t:'center' };
+  const stars = [[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]];
+  stars.forEach(p => { L[p[0]][p[1]] = { m:3, t:'tw' }; });
+  const dl = [[3,0],[11,0],[6,2],[8,2],[0,3],[14,3],[7,3],[3,7],[11,7],[2,6],[2,8],[12,6],[12,8],[6,11],[8,11],[0,11],[14,11],[3,14],[11,14],[7,11]];
+  dl.forEach(p => { if (L[p[0]][p[1]].t === 'n') L[p[0]][p[1]] = { m:2, t:'dl' }; });
+  const tl = [[5,1],[9,1],[1,5],[13,5],[5,5],[9,5],[1,9],[13,9],[5,9],[9,9],[5,13],[9,13]];
+  tl.forEach(p => { if (L[p[0]][p[1]].t === 'n') L[p[0]][p[1]] = { m:3, t:'tl' }; });
+  const dw = [[1,1],[13,1],[1,13],[13,13],[3,3],[11,3],[3,11],[11,11]];
+  dw.forEach(p => { if (L[p[0]][p[1]].t === 'n') L[p[0]][p[1]] = { m:2, t:'dw' }; });
+  return L;
+}
+const AMATH_LAYOUT = buildAmathLayout();
+
+function blankAmathGrid() {
+  const g = [];
+  for (let r = 0; r < AMATH_SIZE; r++) {
+    g.push([]);
+    for (let c = 0; c < AMATH_SIZE; c++) g[r].push(null);
+  }
+  return g;
+}
+function makeAmathRack() {
+  const rack = ['='];
+  for (let i = 0; i < 4; i++) rack.push(AMATH_NUMS[R(0, AMATH_NUMS.length - 1)]);
+  for (let j = 0; j < 2; j++) rack.push(AMATH_OPS[R(0, AMATH_OPS.length - 1)]);
+  for (let k = rack.length - 1; k > 0; k--) {
+    const s = Math.floor(Math.random() * (k + 1));
+    const tmp = rack[k]; rack[k] = rack[s]; rack[s] = tmp;
+  }
+  return rack;
+}
+function startAMath(mode) {
+  amathState = {
+    mode,
+    grid: blankAmathGrid(),
+    racks: { p1: makeAmathRack(), p2: makeAmathRack() },
+    scores: { p1:0, p2:0 },
+    cur: 'p1',
+    sel: null,
+    pending: [],
+    dead: false
+  };
+  currentScreen = 'amath';
+  Audio.sfx.win();
+  renderAMath();
+}
+function amathIsFirstMove() {
+  for (let r = 0; r < AMATH_SIZE; r++) for (let c = 0; c < AMATH_SIZE; c++) if (amathState.grid[r][c] !== null) return false;
+  return true;
+}
+function amathIsCollinear(cells) {
+  if (cells.length <= 1) return true;
+  const sameRow = cells.every(x => x.r === cells[0].r);
+  const sameCol = cells.every(x => x.c === cells[0].c);
+  if (!sameRow && !sameCol) return false;
+  const s = cells.slice().sort((a, b) => sameRow ? a.c - b.c : a.r - b.r);
+  for (let i = 1; i < s.length; i++) {
+    const d = sameRow ? s[i].c - s[i - 1].c : s[i].r - s[i - 1].r;
+    if (d !== 1) return false;
+  }
+  return true;
+}
+function amathValidPlacement(pending) {
+  if (amathIsFirstMove()) return pending.some(p => p.r === 7 && p.c === 7);
+  const set = {};
+  pending.forEach(p => { set[p.r + ',' + p.c] = true; });
+  for (let i = 0; i < pending.length; i++) {
+    const r = pending[i].r, c = pending[i].c;
+    const ns = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for (let j = 0; j < ns.length; j++) {
+      const nr = ns[j][0], nc = ns[j][1];
+      if (nr < 0 || nr >= AMATH_SIZE || nc < 0 || nc >= AMATH_SIZE) continue;
+      if (set[nr + ',' + nc]) continue;
+      if (amathState.grid[nr][nc] !== null) return true;
+    }
+  }
+  return false;
+}
+function amathEvalExpr(s) {
+  if (!s) return null;
+  s = s.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+  if (!/^[\d\.\+\-\*\/]+$/.test(s)) return null;
+  if (/^[\+\*\/]/.test(s) || /[\+\-\*\/]$/.test(s)) return null;
+  if (/[\+\-\*\/]{2,}/.test(s)) return null;
+  try {
+    const r = Function('"use strict";return (' + s + ')')();
+    if (typeof r !== 'number' || !isFinite(r)) return null;
+    return r;
+  } catch (e) { return null; }
+}
+function amathCollectLine(r, c, dr, dc) {
+  let sr = r, sc = c;
+  while (sr - dr >= 0 && sc - dc >= 0 && amathState.grid[sr - dr][sc - dc] !== null) { sr -= dr; sc -= dc; }
+  const out = [];
+  let cr = sr, cc = sc;
+  while (cr < AMATH_SIZE && cc < AMATH_SIZE && amathState.grid[cr][cc] !== null) {
+    out.push({ r: cr, c: cc });
+    cr += dr; cc += dc;
+  }
+  return out;
+}
+function amathGetLines(pending) {
+  const lines = [], seen = {};
+  pending.forEach(cell => {
+    const h = amathCollectLine(cell.r, cell.c, 0, 1);
+    const v = amathCollectLine(cell.r, cell.c, 1, 0);
+    if (h.length >= 2) {
+      const k = 'h' + cell.r + '_' + h[0].c + '_' + h[h.length - 1].c;
+      if (!seen[k]) { seen[k] = true; lines.push(h); }
+    }
+    if (v.length >= 2) {
+      const k2 = 'v' + cell.c + '_' + v[0].r + '_' + v[v.length - 1].r;
+      if (!seen[k2]) { seen[k2] = true; lines.push(v); }
+    }
+  });
+  return lines;
+}
+function amathValidate(lines) {
+  if (!lines.length) return { ok:false, why:'ต้องวางต่อกัน' };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.length < 2) continue;
+    const s = line.map(x => amathState.grid[x.r][x.c]).join('');
+    const hasEq = line.some(x => amathState.grid[x.r][x.c] === '=');
+    if (hasEq) {
+      const parts = s.split('=');
+      if (parts.length !== 2) return { ok:false, why:'ต้องมี = ตัวเดียว' };
+      if (!parts[0] || !parts[1]) return { ok:false, why:'สมการไม่สมบูรณ์' };
+      const L = amathEvalExpr(parts[0]);
+      const R2 = amathEvalExpr(parts[1]);
+      if (L === null || R2 === null) return { ok:false, why:'สมการไม่ถูกต้อง: ' + s };
+      if (Math.abs(L - R2) > 0.001) return { ok:false, why:L + ' ≠ ' + R2 };
+    } else {
+      if (!/^\d+$/.test(s)) return { ok:false, why:s + ' ต้องเป็นสมการหรือตัวเลขล้วน' };
+    }
+  }
+  return { ok:true };
+}
+function amathScoreLine(cells) {
+  let sc = 0, wm = 1;
+  const bingo = cells.length === 7;
+  for (let i = 0; i < cells.length; i++) {
+    const r = cells[i].r, c = cells[i].c;
+    const v = amathState.grid[r][c];
+    const lm = AMATH_LAYOUT[r][c];
+    sc += (AMATH_VAL[v] || 0) * lm.m;
+    if (lm.t === 'dw' || lm.t === 'center') wm *= 2;
+    if (lm.t === 'tw') wm *= 3;
+  }
+  sc *= wm;
+  if (bingo) sc += 50;
+  return sc;
+}
+function renderAMath() {
+  if (!amathState) return;
+  const s = amathState;
+  const isPvp = s.mode === 'pvp';
+  const header = '<div class="amath-info"><span class="pvp-badge pvp-p1">P1 ' + s.scores.p1 + '</span>' +
+    (isPvp ? '<span class="pvp-turn ' + (s.cur === 'p1' ? 'p1' : 'p2') + '" style="display:inline-block;padding:4px 10px;font-size:11px;border-radius:8px;">' + (s.cur === 'p1' ? '🔵 P1' : '🔴 P2') + ' ตา</span>' : '<span class="badge badge-blue">Solo</span>') +
+    '<span class="pvp-badge pvp-p2">P2 ' + s.scores.p2 + '</span></div>';
+
+  let board = '<div class="amath-board"><div class="amath-grid">';
+  for (let r = 0; r < AMATH_SIZE; r++) {
+    for (let c = 0; c < AMATH_SIZE; c++) {
+      const lay = AMATH_LAYOUT[r][c];
+      const val = s.grid[r][c];
+      let cls = 'amath-cell';
+      if (lay.t === 'center') cls += ' center';
+      else if (lay.t === 'dl') cls += ' dl';
+      else if (lay.t === 'tl') cls += ' tl';
+      else if (lay.t === 'dw') cls += ' dw';
+      else if (lay.t === 'tw') cls += ' star';
+      if (val !== null) {
+        cls += ' tile';
+        if ('+−×÷='.indexOf(val) !== -1) cls += ' op';
+        if (s.pending.some(p => p.r === r && p.c === c)) cls += ' preview';
+        cls += ' locked';
+      }
+      const label = val !== null ? val : (lay.t === 'center' ? '★' : '');
+      board += '<div class="' + cls + '" onclick="__amathCellClick(' + r + ',' + c + ')">' + label + '</div>';
+    }
+  }
+  board += '</div></div>';
+
+  const rack = s.racks[s.cur];
+  let rackHtml = '<div class="amath-rack">';
+  rack.forEach((t, idx) => {
+    const sel = s.sel === idx;
+    const op = '+−×÷='.indexOf(t) !== -1;
+    rackHtml += '<button class="amath-tile ' + (sel ? 'selected' : '') + ' ' + (op ? 'op' : '') + '" onclick="__amathTileClick(' + idx + ')"><span class="val">' + t + '</span><span class="pts">' + (AMATH_VAL[t] || 0) + '</span></button>';
+  });
+  rackHtml += '</div>';
+
+  const controls = '<div class="amath-controls"><button class="btn btn-green" onclick="__amathSubmit()">✓ ยืนยัน</button><button class="btn btn-yellow" onclick="__amathUndo()">↶ ถอย</button><button class="btn btn-pink" onclick="__amathSwap()">🔁 สลับ</button></div><button class="btn btn-red w-full mt-2" onclick="__amathPass()">⏭ ผ่านตา</button><button class="btn btn-outline w-full mt-2" onclick="__amathExit()">✖ ออก</button>';
+
+  contentEl.innerHTML = '<h3>🧮 A-Math</h3>' + header + board + rackHtml + controls;
+  contentEl.scrollTop = 0;
+}
+function __amathTileClick(idx) {
+  if (!amathState || amathState.dead) return;
+  amathState.sel = amathState.sel === idx ? null : idx;
+  Audio.sfx.click();
+  renderAMath();
+}
+function __amathCellClick(r, c) {
+  if (!amathState || amathState.dead) return;
+  if (amathState.grid[r][c] !== null) return;
+  if (amathState.sel === null) {
+    const idx = amathState.pending.findIndex(p => p.r === r && p.c === c);
+    if (idx !== -1) { amathState.pending.splice(idx, 1); Audio.sfx.click(); renderAMath(); }
+    return;
+  }
+  const t = amathState.racks[amathState.cur][amathState.sel];
+  if (amathState.pending.length > 0) {
+    const test = amathState.pending.concat([{ r, c }]);
+    if (!amathIsCollinear(test)) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้องเรียงเป็นแนวเดียว', 'miss'); Audio.sfx.buttonError(); return; }
+    const s = test.slice().sort((a, b) => a.r === b.r ? a.c - b.c : a.r - b.r);
+    for (let i = 1; i < s.length; i++) {
+      const d = s[i].r === s[i - 1].r ? s[i].c - s[i - 1].c : s[i].r - s[i - 1].r;
+      if (d !== 1) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ต้องติดกันไม่มีช่องว่าง', 'miss'); Audio.sfx.buttonError(); return; }
+    }
+  }
+  amathState.grid[r][c] = t;
+  amathState.pending.push({ r, c, tileIdx: amathState.sel, value: t });
+  amathState.racks[amathState.cur].splice(amathState.sel, 1);
+  amathState.sel = null;
+  Audio.sfx.click();
+  renderAMath();
+}
+function __amathUndo() {
+  if (!amathState || !amathState.pending.length) return;
+  const last = amathState.pending.pop();
+  amathState.grid[last.r][last.c] = null;
+  amathState.racks[amathState.cur].push(last.value);
+  Audio.sfx.click();
+  renderAMath();
+}
+function __amathSwap() {
+  if (!amathState) return;
+  if (amathState.pending.length) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ยกเลิกการวางก่อน', 'miss'); return; }
+  amathState.racks[amathState.cur] = makeAmathRack();
+  Audio.sfx.click();
+  renderAMath();
+}
+function __amathSubmit() {
+  if (!amathState) return;
+  if (!amathState.pending.length) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'วางกระเบื้องก่อน', 'miss'); return; }
+  if (!amathValidPlacement(amathState.pending)) {
+    const msg = amathIsFirstMove() ? '❗ ครั้งแรกต้องผ่าน ★ กลางกระดาน' : '❗ ต้องติดกับตัวที่มีอยู่';
+    floatText(window.innerWidth/2, window.innerHeight*0.5, msg, 'critdmg');
+    Audio.sfx.buttonError();
+    return;
+  }
+  const lines = amathGetLines(amathState.pending);
+  const v = amathValidate(lines);
+  if (!v.ok) { floatText(window.innerWidth/2, window.innerHeight*0.5, v.why, 'critdmg'); Audio.sfx.wrong(); return; }
+  let total = 0;
+  lines.forEach(line => { total += amathScoreLine(line); });
+  amathState.scores[amathState.cur] += total;
+  Audio.sfx.correct();
+  Particles.burst(window.innerWidth/2, window.innerHeight/2, { count:30, speed:6, colors:['#39ff14','#ffe600','#00f0ff'] });
+  floatText(window.innerWidth/2, window.innerHeight*0.4, '+' + total + ' คะแนน!', 'heal');
+  amathState.racks[amathState.cur] = makeAmathRack();
+  amathState.pending = [];
+  amathState.sel = null;
+  if (amathState.mode === 'pvp') amathState.cur = amathState.cur === 'p1' ? 'p2' : 'p1';
+  else { amathState.racks.p2 = makeAmathRack(); amathState.scores.p2 += R(5, 25); }
+  setTimeout(renderAMath, 400);
+}
+function __amathPass() {
+  if (!amathState) return;
+  if (amathState.pending.length) { floatText(window.innerWidth/2, window.innerHeight*0.5, 'ยกเลิกการวางก่อน', 'miss'); return; }
+  if (amathState.mode === 'pvp') amathState.cur = amathState.cur === 'p1' ? 'p2' : 'p1';
+  Audio.sfx.click();
+  renderAMath();
+}
+function __amathExit() {
+  if (!confirm('ออกจาก A-Math?')) return;
+  amathState = null;
+  go('modes');
+}
+  </script><script>
+"use strict";
+let chessState = null;
+const CHESS_SZ = 8;
+const CHESS_START = [
+  ['♜','♞','♝','♛','♚','♝','♞','♜'],
+  ['♟','♟','♟','♟','♟','♟','♟','♟'],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  ['♙','♙','♙','♙','♙','♙','♙','♙'],
+  ['♖','♘','♗','♕','♔','♗','♘','♖']
+];
+const CHESS_PUZZLE_CELLS_TOTAL = 4;
+
+function chessSideOf(p) { return !p ? null : ('♙♖♘♗♕♔'.indexOf(p) !== -1 ? 'w' : 'b'); }
+function chessTypeOf(p) { return !p ? null : ({'♜':'r','♞':'n','♝':'b','♛':'q','♚':'k','♟':'p','♖':'r','♘':'n','♗':'b','♕':'q','♔':'k','♙':'p'})[p]; }
+function chessOther(s) { return s === 'w' ? 'b' : 'w'; }
+function chessInB(r, c) { return r >= 0 && r < CHESS_SZ && c >= 0 && c < CHESS_SZ; }
+function chessClone(b) { return b.map(r => r.slice()); }
+function chessPieceValue(p) {
+  const t = chessTypeOf(p);
+  return t === 'p' ? 1 : t === 'n' || t === 'b' ? 3 : t === 'r' ? 5 : t === 'q' ? 9 : 100;
+}
+
+function startChess(mode) {
+  chessState = {
+    mode,
+    board: chessClone(CHESS_START),
+    turn: 'w',
+    sel: null,
+    hints: [],
+    moved: {},
+    puzzleCells: {},
+    score: { w:0, b:0 },
+    pending: null,
+    lastDouble: null,
+    dead: false
+  };
+  spawnChessPuzzles(CHESS_PUZZLE_CELLS_TOTAL);
+  currentScreen = 'chess';
+  Audio.sfx.win();
+  renderChess();
+}
+function spawnChessPuzzles(n) {
+  let placed = 0, tries = 0;
+  while (placed < n && tries < 200) {
+    tries++;
+    const r = R(2, 5), c = R(0, CHESS_SZ - 1);
+    const k = r + ',' + c;
+    if (chessState.puzzleCells[k]) continue;
+    if (chessState.board[r][c]) continue;
+    chessState.puzzleCells[k] = true;
+    placed++;
+  }
+}
+function chessPseudoMoves(r, c, ignoreKing) {
+  const p = chessState.board[r][c];
+  if (!p) return [];
+  const t = chessTypeOf(p);
+  const side = chessSideOf(p);
+  const moves = [];
+  const add = (nr, nc) => {
+    if (!chessInB(nr, nc)) return false;
+    const tgt = chessState.board[nr][nc];
+    if (tgt) {
+      if (chessSideOf(tgt) === side) return false;
+    }
+    moves.push({ r:nr, c:nc });
+    return !tgt;
+  };
+
+  if (t === 'p') {
+    const dir = side === 'w' ? -1 : 1;
+    const startRow = side === 'w' ? 6 : 1;
+    if (chessInB(r + dir, c) && !chessState.board[r + dir][c]) {
+      moves.push({ r:r + dir, c });
+      if (r === startRow && !chessState.board[r + 2 * dir][c]) moves.push({ r:r + 2 * dir, c, double:true });
+    }
+    [[dir,-1],[dir,1]].forEach(d => {
+      const nr = r + d[0], nc = c + d[1];
+      if (!chessInB(nr, nc)) return;
+      const tgt = chessState.board[nr][nc];
+      if (tgt && chessSideOf(tgt) !== side) moves.push({ r:nr, c:nc });
+      else if (!tgt && chessState.lastDouble && chessState.lastDouble.r === r && chessState.lastDouble.c === nc) moves.push({ r:nr, c:nc, enPassant:true });
+    });
+  } else if (t === 'n') {
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(d => add(r + d[0], c + d[1]));
+  } else if (t === 'b' || t === 'r' || t === 'q') {
+    let dirs = [];
+    if (t === 'b' || t === 'q') dirs = dirs.concat([[-1,-1],[-1,1],[1,-1],[1,1]]);
+    if (t === 'r' || t === 'q') dirs = dirs.concat([[-1,0],[1,0],[0,-1],[0,1]]);
+    dirs.forEach(d => {
+      let nr = r + d[0], nc = c + d[1];
+      while (add(nr, nc)) { nr += d[0]; nc += d[1]; }
+    });
+  } else if (t === 'k') {
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(d => add(r + d[0], c + d[1]));
+    if (!ignoreKing) {
+      const home = side === 'w' ? 7 : 0;
+      if (r === home && c === 4 && !chessState.moved[r + ',' + c] && !chessInCheck(side)) {
+        const rk = chessState.board[home][7], rq = chessState.board[home][0];
+        if (rk && chessTypeOf(rk) === 'r' && chessSideOf(rk) === side && !chessState.moved[home + ',7'] &&
+            !chessState.board[home][5] && !chessState.board[home][6] &&
+            !chessSquareAttacked(home, 5, chessOther(side)) && !chessSquareAttacked(home, 6, chessOther(side))) {
+          moves.push({ r:home, c:6, castle:'K' });
+        }
+        if (rq && chessTypeOf(rq) === 'r' && chessSideOf(rq) === side && !chessState.moved[home + ',0'] &&
+            !chessState.board[home][1] && !chessState.board[home][2] && !chessState.board[home][3] &&
+            !chessSquareAttacked(home, 3, chessOther(side)) && !chessSquareAttacked(home, 2, chessOther(side))) {
+          moves.push({ r:home, c:2, castle:'Q' });
+        }
+      }
+    }
+  }
+  return moves;
+}
+function chessSquareAttacked(r, c, bySide) {
+  for (let rr = 0; rr < CHESS_SZ; rr++) {
+    for (let cc = 0; cc < CHESS_SZ; cc++) {
+      const p = chessState.board[rr][cc];
+      if (!p || chessSideOf(p) !== bySide) continue;
+      const ms = chessPseudoMoves(rr, cc, true);
+      for (let i = 0; i < ms.length; i++) if (ms[i].r === r && ms[i].c === c) return true;
+    }
+  }
+  return false;
+}
+function chessFindKing(side) {
+  for (let r = 0; r < CHESS_SZ; r++) for (let c = 0; c < CHESS_SZ; c++) {
+    const p = chessState.board[r][c];
+    if (p && chessTypeOf(p) === 'k' && chessSideOf(p) === side) return { r, c };
+  }
+  return null;
+}
+function chessInCheck(side) {
+  const k = chessFindKing(side);
+  if (!k) return false;
+  return chessSquareAttacked(k.r, k.c, chessOther(side));
+}
+function chessApplyMove(from, to, opts) {
+  const snap = {
+    from: { r:from.r, c:from.c },
+    to: { r:to.r, c:to.c },
+    piece: chessState.board[from.r][from.c],
+    captured: chessState.board[to.r][to.c],
+    capPos: { r:to.r, c:to.c },
+    oldLastDouble: chessState.lastDouble,
+    castle: null
+  };
+  const side = chessSideOf(snap.piece);
+  if (opts && opts.enPassant) {
+    const capR = side === 'w' ? to.r + 1 : to.r - 1;
+    snap.captured = chessState.board[capR][to.c];
+    snap.capPos = { r:capR, c:to.c };
+    chessState.board[capR][to.c] = null;
+  }
+  if (opts && opts.castle) {
+    const home = side === 'w' ? 7 : 0;
+    if (opts.castle === 'K') {
+      chessState.board[home][5] = chessState.board[home][7];
+      chessState.board[home][7] = null;
+      snap.castle = { from:{ r:home, c:7 }, to:{ r:home, c:5 } };
+    } else {
+      chessState.board[home][3] = chessState.board[home][0];
+      chessState.board[home][0] = null;
+      snap.castle = { from:{ r:home, c:0 }, to:{ r:home, c:3 } };
+    }
+  }
+  chessState.board[to.r][to.c] = chessState.board[from.r][from.c];
+  chessState.board[from.r][from.c] = null;
+  chessState.moved[from.r + ',' + from.c] = true;
+  const np = chessState.board[to.r][to.c];
+  if (chessTypeOf(np) === 'p' && (to.r === 0 || to.r === 7)) {
+    chessState.board[to.r][to.c] = chessSideOf(np) === 'w' ? '♕' : '♛';
+  }
+  if (opts && opts.double) {
+    chessState.lastDouble = { r: to.r + (side === 'w' ? 1 : -1), c: to.c, fromRow: from.r };
+  } else {
+    chessState.lastDouble = null;
+  }
+  return snap;
+}
+function chessUndo(snap) {
+  chessState.board[snap.from.r][snap.from.c] = snap.piece;
+  chessState.board[snap.to.r][snap.to.c] = null;
+  if (snap.captured) chessState.board[snap.capPos.r][snap.capPos.c] = snap.captured;
+  if (snap.castle) {
+    chessState.board[snap.castle.from.r][snap.castle.from.c] = chessState.board[snap.castle.to.r][snap.castle.to.c];
+    chessState.board[snap.castle.to.r][snap.castle.to.c] = null;
+  }
+  delete chessState.moved[snap.from.r + ',' + snap.from.c];
+  chessState.lastDouble = snap.oldLastDouble;
+}
+function chessLegalMoves(r, c) {
+  const p = chessState.board[r][c];
+  if (!p) return [];
+  const side = chessSideOf(p);
+  return chessPseudoMoves(r, c).filter(m => {
+    const snap = chessApplyMove({ r, c }, m, m);
+    const ok = !chessInCheck(side);
+    chessUndo(snap);
+    return ok;
+  });
+}
+function chessAnyLegal(side) {
+  for (let r = 0; r < CHESS_SZ; r++) for (let c = 0; c < CHESS_SZ; c++) {
+    const p = chessState.board[r][c];
+    if (!p || chessSideOf(p) !== side) continue;
+    if (chessLegalMoves(r, c).length > 0) return true;
+  }
+  return false;
+}
+function renderChess() {
+  if (!chessState) return;
+  const s = chessState;
+  const header = '<div class="chess-info"><span>♙ ขาว: ' + s.score.w + '</span><span class="badge ' + (s.turn === 'w' ? 'badge-green' : 'badge-red') + '">' + (s.turn === 'w' ? '⬜ ขาว' : '⬛ ดำ') + ' ตา</span><span>♟ ดำ: ' + s.score.b + '</span></div>';
+  let puzzleHtml = '';
+  if (s.pending) {
+    puzzleHtml = '<div class="chess-puzzle"><div class="chess-puzzle-q">' + s.pending.q + '</div><div class="chess-puzzle-ans"><input type="text" id="chessAnsInput" placeholder="?" inputmode="none" autocomplete="off"><button class="btn btn-green btn-sm" onclick="__chessSubmit()">✓</button></div></div>';
+  }
+  const checkWarn = chessInCheck(s.turn) ? '<div class="text-center mt-2" style="color:var(--neon-pink);font-weight:700">⚠️ CHECK!</div>' : '';
+  let board = '<div class="chess-board"><div class="chess-grid">';
+  for (let r = 0; r < CHESS_SZ; r++) {
+    for (let c = 0; c < CHESS_SZ; c++) {
+      const p = s.board[r][c];
+      let cls = 'chess-cell ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+      if (s.sel && s.sel.r === r && s.sel.c === c) cls += ' selected';
+      if (s.hints.some(m => m.r === r && m.c === c)) cls += p ? ' capture-hint' : ' move-hint';
+      if (s.puzzleCells[r + ',' + c]) cls += ' puzzle';
+      board += '<div class="' + cls + '" onclick="__chessClick(' + r + ',' + c + ')">' + (p || '') + '</div>';
+    }
+  }
+  board += '</div></div>';
+  const controls = '<div class="flex-row" style="gap:6px"><button class="btn btn-yellow" style="flex:1" onclick="__chessUndo()">↶ เริ่มใหม่</button></div><button class="btn btn-outline w-full mt-2" onclick="__chessExit()">✖ ออก</button>';
+  contentEl.innerHTML = '<h3>♟️ Math Chess 8×8</h3>' + header + puzzleHtml + checkWarn + board + controls;
+  contentEl.scrollTop = 0;
+  const inp = document.getElementById('chessAnsInput');
+  if (inp) inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9\.\-\/]/g, ''); });
+}
+function __chessClick(r, c) {
+  if (!chessState || chessState.pending || chessState.dead) return;
+  const s = chessState;
+  const p = s.board[r][c];
+  if (s.sel) {
+    const mv = s.hints.find(m => m.r === r && m.c === c);
+    if (mv) {
+      const key = r + ',' + c;
+      if (s.puzzleCells[key]) {
+        const pz = chessGenPuzzle();
+        s.pending = { q:pz.q, a:pz.a, from:s.sel, to:{ r, c }, opts:mv };
+        delete s.puzzleCells[key];
+        renderChess();
+        return;
+      }
+      chessExecuteMove(s.sel, { r, c }, mv);
+      return;
+    }
+    s.sel = null;
+    s.hints = [];
+  }
+  if (p) {
+    if (chessSideOf(p) !== s.turn) { Audio.sfx.buttonError(); renderChess(); return; }
+    s.sel = { r, c };
+    s.hints = chessLegalMoves(r, c);
+    Audio.sfx.click();
+  }
+  renderChess();
+}
+function chessExecuteMove(from, to, opts) {
+  const s = chessState;
+  const piece = s.board[from.r][from.c];
+  const side = chessSideOf(piece);
+  const snap = chessApplyMove(from, to, opts || {});
+  if (snap.captured) s.score[side] += chessPieceValue(snap.captured);
+  if (opts && opts.castle) s.score[side] += 2;
+  s.sel = null;
+  s.hints = [];
+  s.turn = chessOther(s.turn);
+  const oppSide = s.turn;
+  if (!chessAnyLegal(oppSide)) {
+    const msg = chessInCheck(oppSide) ? '🏆 CHECKMATE! ' + (oppSide === 'w' ? 'ดำ' : 'ขาว') + ' ชนะ!' : '🤝 STALEMATE เสมอ';
+    setTimeout(() => {
+      showModal('จบเกม', '<div class="text-center"><div style="font-size:56px">♚</div><div>' + msg + '</div><div class="mt-2">ขาว: ' + s.score.w + ' · ดำ: ' + s.score.b + '</div></div>', [
+        { label:'เล่นใหม่', cls:'btn-green', action: "closeModal();startChess('" + s.mode + "')" },
+        { label:'กลับ', cls:'btn-outline', action: "closeModal();go('modes')" }
+      ]);
+    }, 300);
+    renderChess();
+    return;
+  }
+  if (s.mode === 'solo' && s.turn === 'b') setTimeout(chessAIMove, 500);
+  renderChess();
+}
+function chessGenPuzzle() {
+  const g = [
+    () => { const a = R(10, 40), b = R(2, 15); return { q: a + '+' + b + ' = ?', a: String(a + b) }; },
+    () => { const a = R(15, 50), b = R(2, 15); return { q: a + '−' + b + ' = ?', a: String(a - b) }; },
+    () => { const a = R(2, 9), b = R(2, 9); return { q: a + '×' + b + ' = ?', a: String(a * b) }; },
+    () => { const b = R(2, 9), r = R(2, 9); return { q: (b * r) + '÷' + b + ' = ?', a: String(r) }; },
+    () => { const x = R(2, 12), c = R(2, 9); return { q: 'x+' + c + ' = ' + (x + c) + ' → x = ?', a: String(x) }; },
+    () => { const n = R(2, 10); return { q: n + '² = ?', a: String(n * n) }; }
+  ];
+  return g[R(0, g.length - 1)]();
+}
+function __chessSubmit() {
+  if (!chessState || !chessState.pending) return;
+  const inp = document.getElementById('chessAnsInput');
+  if (!inp) return;
+  const ua = inp.value.trim();
+  if (!ua) return;
+  const ok = answersMatch(ua, chessState.pending.a);
+  if (ok) {
+    Audio.sfx.correct();
+    Particles.burst(window.innerWidth/2, window.innerHeight/2, { count:25, speed:6, colors:['#39ff14','#ffe600'] });
+    const p = chessState.pending;
+    chessState.pending = null;
+    chessExecuteMove(p.from, p.to, p.opts);
+  } else {
+    Audio.sfx.wrong();
+    floatText(window.innerWidth/2, window.innerHeight*0.5, '❌ ผิด! เฉลย: ' + chessState.pending.a, 'critdmg');
+    chessState.pending = null;
+    chessState.sel = null;
+    chessState.hints = [];
+    chessState.turn = chessOther(chessState.turn);
+    if (chessState.mode === 'solo' && chessState.turn === 'b') setTimeout(chessAIMove, 500);
+    renderChess();
+  }
+}
+function chessAIMove() {
+  if (!chessState || chessState.turn !== 'b' || chessState.mode !== 'solo' || chessState.dead) return;
+  const s = chessState;
+  const all = [];
+  for (let r = 0; r < CHESS_SZ; r++) for (let c = 0; c < CHESS_SZ; c++) {
+    const p = s.board[r][c];
+    if (!p || chessSideOf(p) !== 'b') continue;
+    const lm = chessLegalMoves(r, c);
+    lm.forEach(m => all.push({ from:{ r, c }, to:m, opts:m }));
+  }
+  if (!all.length) return;
+  all.sort((a, b) => {
+    let va = s.board[a.to.r][a.to.c] ? chessPieceValue(s.board[a.to.r][a.to.c]) : 0;
+    let vb = s.board[b.to.r][b.to.c] ? chessPieceValue(s.board[b.to.r][b.to.c]) : 0;
+    va += (3.5 - Math.abs(a.to.r - 3.5)) * 0.15;
+    vb += (3.5 - Math.abs(b.to.r - 3.5)) * 0.15;
+    return vb - va;
+  });
+  const best = all[0];
+  const key = best.to.r + ',' + best.to.c;
+  if (s.puzzleCells[key]) {
+    const pz = chessGenPuzzle();
+    s.pending = { q:pz.q, a:pz.a, from:best.from, to:best.to, opts:best.opts };
+    delete s.puzzleCells[key];
+    renderChess();
+    return;
+  }
+  chessExecuteMove(best.from, best.to, best.opts);
+}
+function __chessUndo() {
+  if (!chessState) return;
+  if (!confirm('เริ่มใหม่?')) return;
+  startChess(chessState.mode);
+}
+function __chessExit() {
+  if (!confirm('ออกจาก Chess?')) return;
+  chessState = null;
+  go('modes');
+}
+
+function renderSpecialStats() {
+  const KEY = 'mq_special_v1';
+  let d;
+  try {
+    const raw = localStorage.getItem(KEY);
+    d = raw ? JSON.parse(raw) : null;
+  } catch (e) { d = null; }
+  if (!d || typeof d !== 'object') d = { treasure:{solo:0,pvp:0}, amath:{solo:0,pvp:0}, chess:{solo:0,pvp:0}, total:0 };
+  if (!d.treasure) d.treasure = { solo:0, pvp:0 };
+  if (!d.amath) d.amath = { solo:0, pvp:0 };
+  if (!d.chess) d.chess = { solo:0, pvp:0 };
+  if (typeof d.total !== 'number') d.total = 0;
+  contentEl.innerHTML = '<h3>📊 สถิติโหมดพิเศษ</h3>' +
+    '<div class="stats-bar"><span>💯 คะแนนรวม <span class="stat-value">' + d.total + '</span></span></div>' +
+    '<div class="stat-card"><div><div style="font-weight:700">💎 Speed Treasure</div><div class="label">Solo: ' + (d.treasure.solo || 0) + ' · PvP: ' + (d.treasure.pvp || 0) + '</div></div></div>' +
+    '<div class="stat-card"><div><div style="font-weight:700">🧮 A-Math</div><div class="label">Solo: ' + (d.amath.solo || 0) + ' · PvP: ' + (d.amath.pvp || 0) + '</div></div></div>' +
+    '<div class="stat-card"><div><div style="font-weight:700">♟️ Math Chess</div><div class="label">Solo: ' + (d.chess.solo || 0) + ' · PvP: ' + (d.chess.pvp || 0) + '</div></div></div>' +
+    '<button class="btn btn-red w-full mt-3" onclick="clearSpecialStats()">🗑️ ล้างสถิติ</button>' +
+    '<button class="btn btn-outline w-full mt-2" onclick="go(\'menu\')">🔙 กลับ</button>';
+  contentEl.scrollTop = 0;
+}
+function clearSpecialStats() {
+  if (!confirm('ล้างสถิติ?')) return;
+  try { localStorage.removeItem('mq_special_v1'); } catch (e) {}
+  renderSpecialStats();
+}
+
+function bootGame() {
+  const loaded = Save.load();
+  if (loaded) {
+    state = loaded;
+    if (!state.wrongLog) state.wrongLog = [];
+  }
+  state.player.maxHp = getMaxHp();
+  if (state.player.hp > state.player.maxHp) state.player.hp = state.player.maxHp;
+  Particles.start();
+  Audio.init();
+  Audio.setEnabled(state.soundOn !== false);
+  const sToggle = $('soundToggle');
+  sToggle.textContent = state.soundOn !== false ? '🔊' : '🔇';
+  sToggle.addEventListener('click', () => {
+    state.soundOn = !state.soundOn;
+    Audio.setEnabled(state.soundOn);
+    if (state.soundOn) { Audio.resume(); Audio.sfx.click(); }
+    sToggle.textContent = state.soundOn ? '🔊' : '🔇';
+    Save.write(state);
+  });
+  setInterval(() => Save.write(state), 15000);
+  const overlay = $('startOverlay');
+  const startBtn = $('startBtn');
+  startBtn.addEventListener('click', () => {
+    try { Audio.resume(); Audio.init(); Audio.sfx.win(); } catch (e) {}
+    Particles.burst(window.innerWidth/2, window.innerHeight/2, { count: 50, speed: 7, colors: ['#00f0ff','#39ff14','#ffe600','#ff006e','#b537f2'] });
+    overlay.classList.add('hide');
+    setTimeout(() => { try { overlay.remove(); } catch (e) {} }, 500);
+    setTimeout(() => { if (currentScreen === 'menu' && state.soundOn) Audio.startMusic(100); }, 300);
+    go('menu');
+  });
+  document.addEventListener('keydown', e => {
+    const inp = $('ansInp');
+    if (inp && !inp.disabled && document.activeElement === inp) {
+      if (e.key === 'Enter') { e.preventDefault(); submitAnswer(); }
+    }
+    if (e.key === 'Escape' && modalContainer.innerHTML) {
+      if (currentScreen === 'battle' && currentQuest && currentQuest.h) modalNextQuestion();
+      else closeModal();
+    }
+  });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      if (e.target.closest('button, .btn, input, .numpad-btn')) e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive:false });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) Audio.stopMusic();
+    else {
+      Audio.resume();
+      if (currentScreen === 'menu' && state.soundOn) Audio.startMusic(100);
+    }
+  });
+  window.addEventListener('beforeunload', () => { try { Save.write(state); } catch (e) {} });
+}
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('.numpad-btn, .btn, .level-btn, .pet-card, .class-card, .amath-tile, .chess-cell, .op-btn, .tile')) e.preventDefault();
+});
+bootGame();
+</script>
+</body>
+</html>
