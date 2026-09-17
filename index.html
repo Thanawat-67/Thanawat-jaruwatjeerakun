@@ -3854,5 +3854,43 @@ console.info('✅ EXTRA v20 MEGA loaded');
 console.info('   Daily + Ach + Login + PetEvo + CM + Sets + 4 Modes + บท ม.1/ม.3');
 })();
   </script>
+  <script>
+"use strict";
+/* DEDUPE MENU — ลบปุ่มซ้ำออกอัตโนมัติ */
+(function(){
+function dedupe(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var btns=el.querySelectorAll('button.btn');
+  var seen={};
+  btns.forEach(function(b){
+    var key=(b.textContent||'').replace(/\s+/g,'').trim();
+    /* ข้ามปุ่มที่ไม่มีข้อความ (logo ฯลฯ) */
+    if(!key)return;
+    if(seen[key]){
+      /* เจอซ้ำ → ลบ */
+      try{b.remove();}catch(e){}
+    }else{
+      seen[key]=true;
+    }
+  });
+}
+/* hook ทุกครั้งที่ renderMenu ถูกเรียก */
+try{
+  if(typeof renderMenu==='function'){
+    var _o=renderMenu;
+    window.renderMenu=function(){
+      _o.apply(this,arguments);
+      setTimeout(dedupe,50);
+      setTimeout(dedupe,150);
+      setTimeout(dedupe,300);
+    };
+  }
+}catch(e){}
+/* รันตลอดเวลา (กันกรณีอื่น) */
+setInterval(dedupe,1000);
+console.info('✅ Menu dedupe active');
+})();
+  </script>
 </body>
   </html>
