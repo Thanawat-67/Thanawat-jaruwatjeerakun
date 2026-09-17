@@ -2815,5 +2815,3679 @@ console.info('   Leaderboard + Report + 4 Modes + Geometry + Tutorial + Detail')
 console.info('   Safety + Back + Help · สร้างโดย ธนวัฒน์');
 })();
   </script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 1: CORE MODULE
+   คลังโจทย์ ม.ต้น (คณิต + วิทย์) — Framework
+   วางต่อจากสคริปต์สุดท้ายของเกม
+   ============================================================ */
+(function(){
+if(window.MQEX && window.MQEX.ready){
+  console.warn('MQ-EX Core already loaded');
+  return;
+}
+
+/* ============================================================
+   [1] NAMESPACE
+   ============================================================ */
+window.MQEX = window.MQEX || {
+  version:'1.0',
+  ready:false,
+  chapters:{},   /* บทเรียนทั้งหมด (เพิ่มใน Part 2-6) */
+  progress:{},   /* บทที่อ่านแล้ว/ทำแล้ว */
+  storage:{
+    progressKey:'mqex_progress_v1'
+  },
+  config:{
+    readBonus:20,      /* ทองจากการอ่านครั้งแรก */
+    quizPerQuestion:15, /* ทองต่อข้อตอบถูก */
+    quizPassBonus:100  /* โบนัสทำ quiz ผ่าน */
+  }
+};
+
+var MQEX = window.MQEX;
+
+/* ============================================================
+   [2] HELPERS
+   ============================================================ */
+function gs(){try{return (typeof state!=='undefined')?state:null;}catch(e){return null;}}
+function save(){try{var s=gs();if(s&&typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}}
+function sfx(n){try{if(typeof Audio!=='undefined'&&Audio.sfx&&Audio.sfx[n])Audio.sfx[n]();}catch(e){}}
+function ft(x,y,t,c){try{if(typeof floatText==='function')floatText(x,y,t,c);}catch(e){}}
+function modal(t,b,btns){try{if(typeof showModal==='function'){showModal(t,b,btns);return true;}}catch(e){}return false;}
+function closeM(){try{if(typeof closeModal==='function')closeModal();}catch(e){}}
+function goS(s){try{if(typeof go==='function')go(s);}catch(e){}}
+function addGold(n){
+  try{
+    var s=gs();if(!s||!s.player)return 0;
+    var m=1;try{if(typeof getGoldMul==='function')m=getGoldMul();}catch(e){}
+    var g=Math.round(n*m);
+    s.player.gold+=g;save();return g;
+  }catch(e){return 0;}
+}
+
+/* ============================================================
+   [3] PROGRESS STORAGE
+   ============================================================ */
+function loadProgress(){
+  try{
+    var d=JSON.parse(localStorage.getItem(MQEX.storage.progressKey)||'{}');
+    if(d&&typeof d==='object'){
+      MQEX.progress={
+        read:d.read||{},     /* {chapterId: timestamp} */
+        quiz:d.quiz||{},     /* {chapterId: {score, total, at}} */
+        stats:d.stats||{read:0,quizDone:0,correct:0,wrong:0}
+      };
+    }
+  }catch(e){
+    MQEX.progress={read:{},quiz:{},stats:{read:0,quizDone:0,correct:0,wrong:0}};
+  }
+}
+function saveProgress(){
+  try{localStorage.setItem(MQEX.storage.progressKey,JSON.stringify(MQEX.progress));}catch(e){}
+}
+function markRead(chId){
+  var p=MQEX.progress;
+  if(!p.read[chId]){
+    p.read[chId]=Date.now();
+    p.stats.read=(p.stats.read||0)+1;
+    saveProgress();
+    return true;   /* ครั้งแรก */
+  }
+  return false;
+}
+function markQuiz(chId,score,total){
+  var p=MQEX.progress;
+  var prev=p.quiz[chId];
+  if(!prev || score>prev.score){
+    p.quiz[chId]={score:score,total:total,at:Date.now()};
+  }
+  if(!prev)p.stats.quizDone=(p.stats.quizDone||0)+1;
+  saveProgress();
+}
+function isRead(chId){return !!MQEX.progress.read[chId];}
+function isQuizDone(chId){return !!MQEX.progress.quiz[chId];}
+function getQuizBest(chId){return MQEX.progress.quiz[chId]||null;}
+loadProgress();
+
+/* ============================================================
+   [4] CHAPTER REGISTRY
+   ============================================================ */
+/* ใช้ลงทะเบียนบทเรียนจาก Part 2-6 */
+MQEX.registerChapter = function(ch){
+  if(!ch||!ch.id)return false;
+  MQEX.chapters[ch.id]=ch;
+  return true;
+};
+MQEX.registerChapters = function(arr){
+  if(!Array.isArray(arr))return 0;
+  var n=0;
+  arr.forEach(function(ch){if(MQEX.registerChapter(ch))n++;});
+  return n;
+};
+MQEX.getChapters = function(subject,grade){
+  var out=[];
+  for(var id in MQEX.chapters){
+    var ch=MQEX.chapters[id];
+    if(subject && ch.subject!==subject)continue;
+    if(grade && ch.grade!==grade)continue;
+    out.push(ch);
+  }
+  out.sort(function(a,b){
+    if(a.grade!==b.grade)return a.grade-b.grade;
+    if(a.term!==b.term)return a.term-b.term;
+    return (a.number||0)-(b.number||0);
+  });
+  return out;
+};
+
+/* ============================================================
+   [5] UI — SCREENS
+   ============================================================ */
+var _screen='';  /* 'subject' | 'grade' | 'list' | 'reader' | 'quiz' */
+var _ctx={subject:'',grade:0,chId:'',qIdx:0,score:0,answers:[]};
+
+function getEl(){
+  try{return document.getElementById('gameContent');}catch(e){return null;}
+}
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ---------- SCREEN: วิชา ---------- */
+function showSubjectMenu(subject){
+  _screen='list';_ctx.subject=subject;_ctx.grade=0;
+  var el=getEl();if(!el)return;
+  var title=subject==='math'?'📐 คณิตศาสตร์ ม.ต้น':'🔬 วิทยาศาสตร์ ม.ต้น';
+  var subj=subject==='math'?'math':'sci';
+  var h='<h3>'+title+'</h3>';
+  h+='<div class="ts mb2" style="color:#b0b0d0">เลือกชั้นปีเพื่อดูบทเรียน</div>';
+
+  /* stats bar */
+  var st=MQEX.progress.stats||{};
+  h+='<div class="sbar"><span>📖 อ่านแล้ว <span class="sv">'+(st.read||0)+'</span></span>'+
+     '<span>🎯 ทำ quiz <span class="sv">'+(st.quizDone||0)+'</span></span></div>';
+
+  /* grades */
+  for(var g=1;g<=3;g++){
+    var chs=MQEX.getChapters(subject,g);
+    var total=chs.length;
+    var readCount=0,quizCount=0;
+    chs.forEach(function(c){if(isRead(c.id))readCount++;if(isQuizDone(c.id))quizCount++;});
+    var pct=total>0?Math.round(readCount/total*100):0;
+    h+='<div class="si col" onclick="window.__mqexGrade(\''+subject+'\','+g+')" style="cursor:pointer;margin-bottom:10px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<div><b style="font-size:16px">ม.'+g+'</b>';
+    h+='<div class="ts" style="color:#b0b0d0">'+total+' บท · อ่าน '+readCount+' · quiz '+quizCount+'</div></div>';
+    h+='<div style="font-size:24px;color:#00f0ff">▶</div>';
+    h+='</div>';
+    h+='<div class="pb" style="margin-top:8px"><div class="pbf" style="width:'+pct+'%"></div></div>';
+    h+='</div>';
+  }
+
+  h+='<div class="mt3" style="display:flex;gap:8px">';
+  h+='<button class="btn btn-o wf" onclick="window.__mqexMain()">◀ เปลี่ยนวิชา</button>';
+  h+='<button class="btn btn-o wf" onclick="window.__mqexHome()">🔙 เมนูหลัก</button>';
+  h+='</div>';
+  el.innerHTML=h;
+  el.scrollTop=0;
+  sfx('click');
+}
+
+/* ---------- SCREEN: เลือกระดับ → list บท ---------- */
+function showGradeChapters(subject,grade){
+  _screen='list';_ctx.subject=subject;_ctx.grade=grade;
+  var el=getEl();if(!el)return;
+  var title=subject==='math'?'📐 คณิต':'🔬 วิทย์';
+  var h='<h3>'+title+' ม.'+grade+'</h3>';
+
+  var chs=MQEX.getChapters(subject,grade);
+  if(!chs.length){
+    h+='<div class="si tc" style="padding:30px;color:#b0b0d0">ยังไม่มีบทเรียน<br><span class="ts">รอ Part ถัดไป</span></div>';
+  }else{
+    /* group by term */
+    [1,2].forEach(function(term){
+      var list=chs.filter(function(c){return c.term===term;});
+      if(!list.length)return;
+      h+='<div class="mt3" style="font-weight:700;color:#ffe600;font-size:14px">📅 เทอม '+term+'</div>';
+      list.forEach(function(ch){
+        var read=isRead(ch.id);
+        var qz=getQuizBest(ch.id);
+        var badge=read?'<span class="bdg bdg-g">✅</span>':'<span class="bdg bdg-b">ใหม่</span>';
+        var qbadge=qz?'<span class="bdg bdg-gold">🎯 '+qz.score+'/'+qz.total+'</span>':'';
+        h+='<div class="si" onclick="window.__mqexOpen(\''+ch.id+'\')" style="cursor:pointer;margin-top:6px">';
+        h+='<div style="min-width:36px;text-align:center;font-size:22px">'+(ch.icon||'📖')+'</div>';
+        h+='<div style="flex:1;min-width:0">';
+        h+='<div style="font-weight:700;font-size:13px">บท '+(ch.number||'?')+': '+esc(ch.title)+'</div>';
+        h+='<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">'+badge+' '+qbadge+'</div>';
+        h+='</div>';
+        h+='<div style="color:#00f0ff;font-size:18px">▶</div>';
+        h+='</div>';
+      });
+    });
+  }
+  h+='<div class="mt3" style="display:flex;gap:8px">';
+  h+='<button class="btn btn-o wf" onclick="window.__mqexSubject(\''+subject+'\')">◀ กลับ</button>';
+  h+='<button class="btn btn-o wf" onclick="window.__mqexHome()">🔙 เมนูหลัก</button>';
+  h+='</div>';
+  el.innerHTML=h;
+  el.scrollTop=0;
+  sfx('click');
+}
+
+/* ---------- SCREEN: อ่านบท ---------- */
+function showChapter(chId){
+  var ch=MQEX.chapters[chId];
+  if(!ch){alert('ไม่พบบท');return;}
+  _screen='reader';_ctx.chId=chId;
+  var el=getEl();if(!el)return;
+
+  var firstRead=markRead(chId);
+  if(firstRead){
+    var g=addGold(MQEX.config.readBonus);
+    sfx('gold');
+    ft(window.innerWidth/2,window.innerHeight*0.35,'📖 +'+g+'🪙','gold');
+  }
+
+  var h='<h3>'+(ch.icon||'📖')+' บท '+(ch.number||'')+': '+esc(ch.title)+'</h3>';
+  h+='<div class="sbar"><span>📐 '+esc(ch.subject==='math'?'คณิต':'วิทย์')+' ม.'+ch.grade+'</span><span>📅 เทอม '+ch.term+'</span></div>';
+
+  /* นิยาม */
+  if(ch.def){
+    h+='<div class="tp"><div style="font-weight:700;color:#00f0ff;margin-bottom:6px">📖 นิยาม</div>';
+    h+='<div style="font-size:13px;line-height:1.7;color:#e0e0f0">'+ch.def+'</div></div>';
+  }
+
+  /* สูตร */
+  if(ch.formulas && ch.formulas.length){
+    h+='<div class="tp"><div style="font-weight:700;color:#b537f2;margin-bottom:6px">📐 สูตรสำคัญ ('+ch.formulas.length+')</div>';
+    h+='<div style="background:rgba(181,55,242,0.08);border-radius:8px;padding:10px;font-family:monospace;font-size:12px;line-height:1.9">';
+    ch.formulas.forEach(function(f,i){
+      h+='<div>'+(i+1)+'. '+esc(f)+'</div>';
+    });
+    h+='</div></div>';
+  }
+
+  /* ตัวอย่าง */
+  if(ch.examples && ch.examples.length){
+    h+='<div class="tp"><div style="font-weight:700;color:#39ff14;margin-bottom:6px">📝 ตัวอย่าง ('+ch.examples.length+')</div>';
+    ch.examples.forEach(function(ex,i){
+      h+='<div style="padding:8px;background:rgba(57,255,20,0.05);border-left:3px solid #39ff14;border-radius:6px;margin-bottom:6px">';
+      h+='<div style="font-size:13px;font-weight:600;color:#e0e0f0">'+(i+1)+') '+esc(ex.q)+'</div>';
+      if(ex.h)h+='<div style="font-size:11px;color:#b0b0d0;margin-top:4px;padding-left:12px">💡 '+esc(ex.h)+'</div>';
+      h+='<div style="font-size:13px;color:#39ff14;margin-top:4px">= <b>'+esc(ex.a)+'</b></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  /* ข้อผิดพลาด */
+  if(ch.mistakes && ch.mistakes.length){
+    h+='<div class="tp"><div style="font-weight:700;color:#ff006e;margin-bottom:6px">⚠️ ข้อผิดพลาดบ่อย</div>';
+    h+='<ul style="padding-left:20px;font-size:12px;line-height:1.8;color:#e0e0f0">';
+    ch.mistakes.forEach(function(m){h+='<li>'+esc(m)+'</li>';});
+    h+='</ul></div>';
+  }
+
+  /* quiz info */
+  var best=getQuizBest(chId);
+  var totalQ=ch.problems?ch.problems.length:0;
+  h+='<div class="tp" style="background:rgba(255,230,0,0.08);border-color:rgba(255,230,0,0.4)">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+  h+='<div><b style="color:#ffe600">🎯 แบบทดสอบ</b><div class="ts" style="color:#b0b0d0">'+totalQ+' ข้อ · ทำได้หลายครั้ง</div></div>';
+  if(best)h+='<div class="bdg bdg-gold">ดีสุด '+best.score+'/'+best.total+'</div>';
+  h+='</div></div>';
+
+  h+='<div class="mt3" style="display:flex;gap:8px">';
+  h+='<button class="btn btn-y wf" style="flex:2" onclick="window.__mqexStartQuiz(\''+chId+'\')">🎯 ทำแบบทดสอบ</button>';
+  h+='<button class="btn btn-o" style="flex:1" onclick="window.__mqexSubject(\''+ch.subject+'\')">◀ กลับ</button>';
+  h+='</div>';
+  h+='<button class="btn btn-o wf mt2" onclick="window.__mqexHome()">🔙 เมนูหลัก</button>';
+
+  el.innerHTML=h;
+  el.scrollTop=0;
+  sfx('click');
+}
+
+/* ---------- SCREEN: Quiz ---------- */
+function startQuiz(chId){
+  var ch=MQEX.chapters[chId];
+  if(!ch||!ch.problems||!ch.problems.length){alert('บทนี้ไม่มีแบบทดสอบ');return;}
+  _screen='quiz';
+  _ctx.chId=chId;
+  _ctx.qIdx=0;
+  _ctx.score=0;
+  _ctx.answers=[];
+  showQuizQuestion();
+}
+
+function showQuizQuestion(){
+  var el=getEl();if(!el)return;
+  var ch=MQEX.chapters[_ctx.chId];
+  if(!ch)return;
+
+  if(_ctx.qIdx>=ch.problems.length){
+    showQuizResult();
+    return;
+  }
+
+  var p=ch.problems[_ctx.qIdx];
+  var h='<h3>🎯 '+esc(ch.title)+'</h3>';
+  h+='<div class="sbar"><span>ข้อ <span class="sv">'+(_ctx.qIdx+1)+'/'+ch.problems.length+'</span></span>'+
+     '<span>ถูก <span class="sg">'+_ctx.score+'</span></span></div>';
+
+  h+='<div class="qp">';
+  h+='<div class="qd">'+esc(p.q)+'</div>';
+  h+='<div class="air">';
+  h+='<input class="ai" id="mqexAns" placeholder="พิมพ์คำตอบ" autocomplete="off" inputmode="text">';
+  h+='<button class="btn btn-g" onclick="window.__mqexSubmit()" style="min-width:60px">✓</button>';
+  h+='</div>';
+  h+='<div class="fbm" id="mqexFb"></div>';
+  h+='</div>';
+
+  h+='<div style="display:flex;gap:6px">';
+  h+='<button class="btn btn-y" style="flex:1" onclick="window.__mqexHint()">💡 คำใบ้</button>';
+  h+='<button class="btn btn-r" style="flex:1" onclick="window.__mqexSkip()">⏭ ข้าม</button>';
+  h+='<button class="btn btn-o" style="flex:1" onclick="window.__mqexExitQuiz()">✖ ออก</button>';
+  h+='</div>';
+
+  el.innerHTML=h;
+  el.scrollTop=0;
+
+  setTimeout(function(){
+    var i=document.getElementById('mqexAns');
+    if(i){
+      i.focus();
+      i.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){e.preventDefault();window.__mqexSubmit();}
+      });
+    }
+  },100);
+}
+
+function matchAnswer(user,correct){
+  try{
+    if(typeof answersMatch==='function')return answersMatch(user,correct);
+  }catch(e){}
+  var u=String(user||'').trim().toLowerCase().replace(/\s+/g,'');
+  var c=String(correct||'').trim().toLowerCase().replace(/\s+/g,'');
+  return u===c;
+}
+
+function submitQuizAnswer(){
+  if(_screen!=='quiz')return;
+  var inp=document.getElementById('mqexAns');
+  if(!inp||inp.disabled)return;
+  var v=inp.value.trim();
+  if(!v)return;
+
+  var ch=MQEX.chapters[_ctx.chId];
+  var p=ch.problems[_ctx.qIdx];
+  var ok=matchAnswer(v,p.a);
+  inp.disabled=true;
+
+  var fb=document.getElementById('mqexFb');
+  if(ok){
+    _ctx.score++;
+    _ctx.answers.push({ok:true,user:v});
+    var g=addGold(MQEX.config.quizPerQuestion);
+    sfx('correct');
+    if(fb){fb.textContent='✅ ถูก! +'+g+'🪙';fb.style.color='var(--ng)';}
+    try{if(typeof Particles!=='undefined'&&Particles.burst)
+      Particles.burst(window.innerWidth/2,window.innerHeight*0.4,{count:15,speed:5});
+    }catch(e){}
+  }else{
+    _ctx.answers.push({ok:false,user:v,correct:p.a});
+    sfx('wrong');
+    if(fb){fb.textContent='❌ เฉลย: '+p.a+(p.h?' ('+p.h+')':'');fb.style.color='var(--np)';}
+  }
+
+  /* track stats */
+  try{
+    var s=gs();
+    if(s&&s.player){
+      if(ok)s.player.tc=(s.player.tc||0)+1;
+      else s.player.tw=(s.player.tw||0)+1;
+      save();
+    }
+  }catch(e){}
+
+  setTimeout(function(){
+    _ctx.qIdx++;
+    showQuizQuestion();
+  },ok?700:1600);
+}
+
+function skipQuizQuestion(){
+  if(_screen!=='quiz')return;
+  var ch=MQEX.chapters[_ctx.chId];
+  var p=ch.problems[_ctx.qIdx];
+  _ctx.answers.push({ok:false,skip:true,correct:p.a});
+  sfx('click');
+  _ctx.qIdx++;
+  showQuizQuestion();
+}
+
+function hintQuiz(){
+  if(_screen!=='quiz')return;
+  var ch=MQEX.chapters[_ctx.chId];
+  var p=ch.problems[_ctx.qIdx];
+  if(p.h){
+    ft(window.innerWidth/2,window.innerHeight*0.3,'💡 '+p.h,'heal');
+  }else{
+    ft(window.innerWidth/2,window.innerHeight*0.3,'💡 ไม่มีคำใบ้','miss');
+  }
+}
+
+function exitQuiz(){
+  if(!confirm('ออกจากแบบทดสอบ?'))return;
+  _screen='';
+  showChapter(_ctx.chId);
+}
+
+function showQuizResult(){
+  var el=getEl();if(!el)return;
+  var ch=MQEX.chapters[_ctx.chId];
+  if(!ch)return;
+
+  var total=ch.problems.length;
+  var score=_ctx.score;
+  var pct=Math.round(score/total*100);
+
+  markQuiz(_ctx.chId,score,total);
+
+  /* bonus if pass */
+  var bonusMsg='';
+  if(pct>=70){
+    var g=addGold(MQEX.config.quizPassBonus);
+    bonusMsg='<div style="color:#ffe600;margin-top:6px">🎁 โบนัสผ่าน: +'+g+'🪙</div>';
+    sfx('win');
+  }else{
+    sfx('lose');
+  }
+
+  var grade=pct>=90?'S':pct>=80?'A':pct>=70?'B':pct>=60?'C':pct>=50?'D':'F';
+  var gradeColor=pct>=80?'#39ff14':pct>=60?'#ffe600':'#ff006e';
+
+  var h='<h3>🎯 ผลสอบ</h3>';
+  h+='<div class="gc2" style="background:var(--g);border:2px solid var(--ny);border-radius:16px;padding:24px;text-align:center">';
+  h+='<div style="font-size:72px;font-weight:900;color:'+gradeColor+';font-family:Orbitron,sans-serif">'+grade+'</div>';
+  h+='<div style="font-size:32px;font-weight:900;margin:12px 0">'+score+'/'+total+'</div>';
+  h+='<div style="font-size:14px;color:#b0b0d0">'+pct+'%</div>';
+  h+=bonusMsg;
+  h+='</div>';
+
+  /* answer breakdown */
+  h+='<div class="tp mt3"><div style="font-weight:700;color:#00f0ff;margin-bottom:6px">📋 รายละเอียด</div>';
+  _ctx.answers.forEach(function(a,i){
+    var icon=a.ok?'✅':a.skip?'⏭':'❌';
+    var color=a.ok?'#39ff14':a.skip?'#b0b0d0':'#ff006e';
+    var q=ch.problems[i]?ch.problems[i].q:'?';
+    h+='<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-size:12px">';
+    h+='<span style="color:'+color+'">'+icon+'</span> '+(i+1)+'. '+esc(q);
+    if(!a.ok&&a.correct)h+='<span style="color:#39ff14;margin-left:6px">→ '+esc(a.correct)+'</span>';
+    h+='</div>';
+  });
+  h+='</div>';
+
+  h+='<div class="mt3" style="display:flex;gap:8px">';
+  h+='<button class="btn btn-g wf" onclick="window.__mqexStartQuiz(\''+ch.id+'\')">🔄 ทำใหม่</button>';
+  h+='<button class="btn btn-o wf" onclick="window.__mqexOpen(\''+ch.id+'\')">📖 อ่านทบทวน</button>';
+  h+='</div>';
+  h+='<button class="btn btn-o wf mt2" onclick="window.__mqexSubject(\''+ch.subject+'\')">◀ กลับ</button>';
+
+  el.innerHTML=h;
+  el.scrollTop=0;
+}
+
+/* ---------- MAIN MENU ---------- */
+function showMainMenu(){
+  _screen='subject';
+  var el=getEl();if(!el)return;
+
+  var st=MQEX.progress.stats||{};
+  var chs=Object.keys(MQEX.chapters).length;
+
+  var h='<h3>📚 คลังโจทย์ ม.ต้น</h3>';
+  h+='<div class="sbar"><span>📖 บททั้งหมด <span class="sv">'+chs+'</span></span>'+
+     '<span>🎯 ทำแล้ว <span class="sg">'+(st.quizDone||0)+'</span></span></div>';
+
+  if(chs===0){
+    h+='<div class="si tc" style="padding:30px;color:#b0b0d0">⚠️ ยังไม่มีบทเรียน<br><span class="ts">กรุณาโหลด Part 2-6</span></div>';
+  }else{
+    /* two subjects */
+    ['math','sci'].forEach(function(subj){
+      var isMath=subj==='math';
+      var subjChs=MQEX.getChapters(subj);
+      var readCount=0,quizCount=0;
+      subjChs.forEach(function(c){if(isRead(c.id))readCount++;if(isQuizDone(c.id))quizCount++;});
+      var pct=subjChs.length>0?Math.round(readCount/subjChs.length*100):0;
+
+      h+='<div class="tp" onclick="window.__mqexSubject(\''+subj+'\')" style="cursor:pointer">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      h+='<div style="font-size:32px">'+(isMath?'📐':'🔬')+'</div>';
+      h+='<div style="flex:1;margin-left:10px">';
+      h+='<div style="font-weight:700;font-size:16px">'+(isMath?'คณิตศาสตร์':'วิทยาศาสตร์')+' ม.ต้น</div>';
+      h+='<div class="ts" style="color:#b0b0d0">'+subjChs.length+' บท · อ่าน '+readCount+' · quiz '+quizCount+'</div>';
+      h+='</div>';
+      h+='<div style="font-size:24px;color:#00f0ff">▶</div>';
+      h+='</div>';
+      h+='<div class="pb" style="margin-top:8px"><div class="pbf" style="width:'+pct+'%"></div></div>';
+      h+='</div>';
+    });
+  }
+
+  /* stats detail */
+  if(chs>0){
+    h+='<div class="tp mt3"><div style="font-weight:700;color:#b537f2;margin-bottom:6px">📊 สถิติของคุณ</div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0"><span>📖 อ่านบทเรียน</span><b>'+(st.read||0)+' บท</b></div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0"><span>🎯 ทำ quiz</span><b>'+(st.quizDone||0)+' บท</b></div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0"><span>✅ ตอบถูก</span><b style="color:#39ff14">'+(st.correct||0)+'</b></div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0"><span>❌ ตอบผิด</span><b style="color:#ff006e">'+(st.wrong||0)+'</b></div>';
+    h+='</div>';
+  }
+
+  h+='<button class="btn btn-o wf mt3" onclick="window.__mqexHome()">🔙 เมนูหลักเกม</button>';
+
+  el.innerHTML=h;
+  el.scrollTop=0;
+}
+
+function goHome(){
+  _screen='';
+  _ctx={};
+  try{if(typeof go==='function')go('menu');}catch(e){}
+}
+
+/* ============================================================
+   [6] PUBLIC API
+   ============================================================ */
+window.__mqexHome = goHome;
+window.__mqexMain = function(){showMainMenu();};
+window.__mqexSubject = function(subj){showSubjectMenu(subj);};
+window.__mqexGrade = function(subj,grade){showGradeChapters(subj,grade);};
+window.__mqexOpen = function(chId){showChapter(chId);};
+window.__mqexStartQuiz = function(chId){startQuiz(chId);};
+window.__mqexSubmit = submitQuizAnswer;
+window.__mqexSkip = skipQuizQuestion;
+window.__mqexHint = hintQuiz;
+window.__mqexExitQuiz = exitQuiz;
+
+/* ============================================================
+   [7] MENU INJECTION — เพิ่ม 2 ปุ่ม (dedup)
+   ============================================================ */
+function injectMenu(){
+  var el=getEl();if(!el)return;
+  if(typeof currentScreen!=='undefined' && currentScreen!=='menu')return;
+
+  /* ตรวจว่ามีปุ่มเก่าอยู่ไหม — ถ้ามีข้าม (ห้ามซ้ำ) */
+  if(el.querySelector('#mqexBtnMath'))return;
+
+  /* หาปุ่ม back ของเมนู (ตัวสุดท้าย) */
+  var back=el.querySelector('button:last-of-type');
+
+  function addBtn(id,txt,cls,fn){
+    if(document.getElementById(id))return;
+    var b=document.createElement('button');
+    b.id=id;
+    b.className='btn '+cls+' wf mt2';
+    b.textContent=txt;
+    b.onclick=fn;
+    if(back && back.parentNode===el)el.insertBefore(b,back);
+    else el.appendChild(b);
+  }
+
+  /* ตรวจว่ามีบทหรือยัง */
+  var chs=Object.keys(MQEX.chapters).length;
+  var suffix=chs===0?'':(' ('+chs+' บท)');
+
+  addBtn('mqexBtnMath','📐 คณิต ม.ต้น'+suffix,'btn-g',function(){showSubjectMenu('math');});
+  addBtn('mqexBtnSci','🔬 วิทย์ ม.ต้น'+suffix,'btn-g',function(){showSubjectMenu('sci');});
+}
+
+/* Hook renderMenu — wrap ครั้งเดียว */
+try{
+  if(typeof renderMenu==='function'){
+    if(!window.__mqexMenuHooked){
+      window.__mqexMenuHooked=true;
+      var _orig=renderMenu;
+      window.renderMenu=function(){
+        _orig.apply(this,arguments);
+        setTimeout(injectMenu,80);
+        setTimeout(injectMenu,300);
+      };
+    }
+  }
+}catch(e){}
+
+/* Safety net — รันทุก 2 วิ (กันกรณี renderMenu ไม่ทำงาน) */
+setInterval(injectMenu,2000);
+
+/* ============================================================
+   [8] BOOT
+   ============================================================ */
+MQEX.ready=true;
+
+console.info('✅ MQ-EX Part 1: Core Module loaded');
+console.info('   Namespace: MQEX · Storage: mqex_progress_v1');
+console.info('   Registered chapters: '+Object.keys(MQEX.chapters).length);
+console.info('   API: __mqexMain(), __mqexSubject(), __mqexOpen()');
+})();
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 2: คณิต ม.1 (11 บท)
+   ต้องโหลด Part 1 ก่อน
+   ============================================================ */
+(function(){
+if(!window.MQEX || !window.MQEX.ready){
+  console.error('❌ ต้องโหลด MQ-EX Part 1 ก่อน');
+  return;
+}
+if(window.__MQEX_P2__){console.warn('Part 2 already loaded');return;}
+window.__MQEX_P2__=true;
+
+var MQEX = window.MQEX;
+
+/* ============================================================
+   DATA — 11 บท คณิต ม.1
+   ============================================================ */
+var chapters = [
+
+/* ---------- บท 1: จำนวนเต็ม ---------- */
+{
+  id:'math1_01',
+  subject:'math', grade:1, term:1, number:1,
+  title:'จำนวนเต็ม',
+  icon:'🔢',
+  def:'จำนวนเต็มคือจำนวนที่ไม่มีเศษส่วนหรือทศนิยม ประกอบด้วย <b>จำนวนเต็มบวก</b> (1,2,3,...), <b>จำนวนเต็มลบ</b> (-1,-2,-3,...) และ <b>ศูนย์</b> (0) เขียนบนเส้นจำนวนได้',
+  formulas:[
+    'a + (-b) = a - b',
+    'a - (-b) = a + b',
+    '(-a) + (-b) = -(a + b)',
+    '(-a) × b = -(a × b)',
+    '(-a) × (-b) = a × b',
+    'a × 0 = 0',
+    'a ÷ (-b) = -(a ÷ b) เมื่อ b ≠ 0',
+    '(-a) ÷ (-b) = a ÷ b เมื่อ b ≠ 0',
+    '|a| = a ถ้า a ≥ 0, |a| = -a ถ้า a < 0',
+    'a - b = a + (-b)'
+  ],
+  examples:[
+    {q:'5 + (-3) = ?',a:'2',h:'บวกจำนวนลบ = ลบ'},
+    {q:'(-7) + (-4) = ?',a:'-11',h:'ลบ+ลบ = ลบมากขึ้น'},
+    {q:'8 - (-5) = ?',a:'13',h:'ลบจำนวนลบ = บวก'},
+    {q:'(-6) × 4 = ?',a:'-24',h:'ลบ×บวก = ลบ'},
+    {q:'(-3) × (-9) = ?',a:'27',h:'ลบ×ลบ = บวก'},
+    {q:'(-20) ÷ 4 = ?',a:'-5',h:'ลบ÷บวก = ลบ'},
+    {q:'|-15| = ?',a:'15',h:'ค่าสัมบูรณ์เป็นบวกเสมอ'},
+    {q:'(-2)³ = ?',a:'-8',h:'(-2)×(-2)×(-2) = -8'}
+  ],
+  mistakes:[
+    'ลืมเครื่องหมาย: (-5) + 3 = 8 (ผิด ต้องเป็น -2)',
+    'คิดว่า (-a) × (-b) = -ab (ผิด ต้องเป็น +ab)',
+    'สับสน |a| กับ -a'
+  ],
+  problems:[
+    {q:'12 + (-8) = ?',a:'4',h:'= 12 - 8'},
+    {q:'(-15) + 7 = ?',a:'-8',h:'ลบ+บวก'},
+    {q:'(-9) + (-6) = ?',a:'-15',h:'ลบ+ลบ'},
+    {q:'25 - (-10) = ?',a:'35',h:'= 25 + 10'},
+    {q:'(-12) - 8 = ?',a:'-20',h:'= -12 - 8'},
+    {q:'(-7) × 6 = ?',a:'-42',h:'ลบ×บวก'},
+    {q:'(-8) × (-5) = ?',a:'40',h:'ลบ×ลบ = บวก'},
+    {q:'(-48) ÷ 6 = ?',a:'-8',h:'ลบ÷บวก'},
+    {q:'|-25| = ?',a:'25',h:'ค่าสัมบูรณ์'},
+    {q:'(-3) × 4 + (-5) = ?',a:'-17',h:'= -12 - 5'}
+  ]
+},
+
+/* ---------- บท 2: การสร้างทางเรขาคณิต ---------- */
+{
+  id:'math1_02',
+  subject:'math', grade:1, term:1, number:2,
+  title:'การสร้างทางเรขาคณิต',
+  icon:'📐',
+  def:'การสร้างทางเรขาคณิตคือการวาดรูปโดยใช้ <b>วงเวียน</b> และ <b>สันตรง</b> เท่านั้น ห้ามวัดขนาดด้วยไม้บรรทัด',
+  formulas:[
+    'วงกลม: จุดทุกจุดห่างจากจุดศูนย์กลาง r เท่ากัน',
+    'ส่วนของเส้นตรง: ระยะห่างระหว่าง 2 จุด',
+    'มุมฉาก = 90°',
+    'มุมตรง = 180°',
+    'มุมกลับ = 360°',
+    'การแบ่งครึ่งส่วนของเส้นตรงด้วยวงเวียน',
+    'การสร้างมุม 60° = สร้างสามเหลี่ยมด้านเท่า',
+    'การแบ่งครึ่งมุม',
+    'การสร้างเส้นตั้งฉาก',
+    'การสร้างเส้นขนาน'
+  ],
+  examples:[
+    {q:'มุมตรงมีขนาดกี่องศา?',a:'180',h:'ครึ่งวงกลม'},
+    {q:'การสร้างมุม 60° ใช้อะไร?',a:'สามเหลี่ยมด้านเท่า',h:'ทุกด้านเท่ากัน'},
+    {q:'วงเวียนใช้ทำอะไร?',a:'วาดวงกลม',h:'หรือวัดระยะ'},
+    {q:'สันตรงมีไว้ทำอะไร?',a:'ลากเส้นตรง',h:'ห้ามวัด'},
+    {q:'มุม 90° เรียกว่า?',a:'มุมฉาก',h:'L-shape'},
+    {q:'จุดทุกจุดบนวงกลมมีสมบัติ?',a:'ห่างจากจุดศูนย์กลางเท่ากัน',h:'รัศมีเท่ากัน'},
+    {q:'การแบ่งครึ่งมุมต้องใช้อะไร?',a:'วงเวียน+สันตรง',h:'2 เครื่องมือ'},
+    {q:'มุมกลับมีขนาดเท่าไร?',a:'360',h:'เต็มวงกลม'}
+  ],
+  mistakes:[
+    'ใช้ไม้บรรทัดวัดขนาด (ผิดกติกา)',
+    'สับสนส่วนโค้งกับส่วนของเส้นตรง'
+  ],
+  problems:[
+    {q:'มุมตรงกี่องศา?',a:'180',h:'ครึ่งวงกลม'},
+    {q:'มุมฉากกี่องศา?',a:'90',h:'L'},
+    {q:'การสร้างมุม 60° ใช้รูปอะไร?',a:'สามเหลี่ยมด้านเท่า',h:'3 ด้านเท่า'},
+    {q:'วงเวียนวาดอะไร?',a:'วงกลม',h:'วง'},
+    {q:'สันตรงใช้ทำอะไร?',a:'ลากเส้นตรง',h:'ลาก'},
+    {q:'เครื่องมือ 2 อย่างในเรขาคณิต?',a:'วงเวียน,สันตรง',h:'ห้ามใช้ไม้บรรทัดวัด'},
+    {q:'มุมกลับกี่องศา?',a:'360',h:'เต็มวง'},
+    {q:'เส้นตั้งฉากทำมุมเท่าไร?',a:'90',h:'มุมฉาก'},
+    {q:'การสร้างมุม 30° ต้องแบ่งครึ่งมุมเท่าไร?',a:'60',h:'ครึ่งหนึ่ง'},
+    {q:'การสร้างมุม 120° = 2 × มุมเท่าไร?',a:'60',h:'60×2'}
+  ]
+},
+
+/* ---------- บท 3: เลขยกกำลัง ---------- */
+{
+  id:'math1_03',
+  subject:'math', grade:1, term:1, number:3,
+  title:'เลขยกกำลัง',
+  icon:'ⁿ',
+  def:'เลขยกกำลัง <b>aⁿ</b> หมายถึง <b>a</b> คูณกัน <b>n</b> ตัว โดย a = ฐาน, n = เลขชี้กำลัง',
+  formulas:[
+    'aⁿ = a × a × ... × a (n ตัว)',
+    'aᵐ × aⁿ = aᵐ⁺ⁿ',
+    'aᵐ ÷ aⁿ = aᵐ⁻ⁿ (a ≠ 0)',
+    '(aᵐ)ⁿ = aᵐˣⁿ',
+    'a⁰ = 1 (a ≠ 0)',
+    'a⁻ⁿ = 1/aⁿ',
+    '(ab)ⁿ = aⁿ × bⁿ',
+    '(a/b)ⁿ = aⁿ/bⁿ',
+    'a¹ = a',
+    '(-a)ⁿ = aⁿ ถ้า n เป็นคู่, = -aⁿ ถ้า n เป็นคี่'
+  ],
+  examples:[
+    {q:'2³ = ?',a:'8',h:'2×2×2'},
+    {q:'5² = ?',a:'25',h:'5×5'},
+    {q:'2³ × 2⁴ = ?',a:'128',h:'= 2⁷'},
+    {q:'3⁵ ÷ 3² = ?',a:'27',h:'= 3³'},
+    {q:'(4²)³ = ?',a:'4096',h:'= 4⁶'},
+    {q:'7⁰ = ?',a:'1',h:'อะไรยกกำลัง 0 = 1'},
+    {q:'2⁻³ = ?',a:'1/8',h:'= 1/2³'},
+    {q:'(-2)⁴ = ?',a:'16',h:'คู่ → บวก'}
+  ],
+  mistakes:[
+    '2³ = 6 (ผิด ต้องเป็น 8)',
+    '2³ × 2⁴ = 4⁷ (ผิด ต้องเป็น 2⁷)',
+    'a⁰ = 0 (ผิด ต้องเป็น 1)'
+  ],
+  problems:[
+    {q:'3³ = ?',a:'27',h:'3×3×3'},
+    {q:'4² = ?',a:'16',h:'4×4'},
+    {q:'2⁵ = ?',a:'32',h:'2×2×2×2×2'},
+    {q:'3² × 3³ = ?',a:'243',h:'= 3⁵'},
+    {q:'5⁴ ÷ 5² = ?',a:'25',h:'= 5²'},
+    {q:'(2³)² = ?',a:'64',h:'= 2⁶'},
+    {q:'9⁰ = ?',a:'1',h:'a⁰=1'},
+    {q:'3⁻² = ?',a:'1/9',h:'= 1/3²'},
+    {q:'(-3)² = ?',a:'9',h:'คู่ → บวก'},
+    {q:'(-2)³ = ?',a:'-8',h:'คี่ → ลบ'}
+  ]
+},
+
+/* ---------- บท 4: ทศนิยมและเศษส่วน ---------- */
+{
+  id:'math1_04',
+  subject:'math', grade:1, term:1, number:4,
+  title:'ทศนิยมและเศษส่วน',
+  icon:'➗',
+  def:'ทศนิยมคือเศษส่วนที่มีส่วนเป็น 10, 100, 1000 ... และเขียนในรูปจุดทศนิยม',
+  formulas:[
+    'a/b + c/d = (ad + bc)/bd',
+    'a/b - c/d = (ad - bc)/bd',
+    'a/b × c/d = ac/bd',
+    'a/b ÷ c/d = a/b × d/c = ad/bc',
+    'ทศนิยม → เศษส่วน: 0.5 = 5/10 = 1/2',
+    '0.a̅ = a/9',
+    '0.ab̅ = (ab-a)/90',
+    'เศษส่วน → ทศนิยม: หารตัวเศษด้วยตัวส่วน',
+    'คูณเศษส่วนด้วยจำนวนเต็ม: a × b/c = ab/c',
+    'ทศนิยมซ้ำแบบ 3 หลัก: 0.abc̅ = (abc-ab)/900'
+  ],
+  examples:[
+    {q:'1/2 + 1/3 = ?',a:'5/6',h:'ส่วน ค.ร.น. = 6'},
+    {q:'3/4 - 1/2 = ?',a:'1/4',h:'= 3/4 - 2/4'},
+    {q:'2/3 × 3/5 = ?',a:'2/5',h:'เศษ×เศษ ส่วน×ส่วน'},
+    {q:'1/2 ÷ 2/3 = ?',a:'3/4',h:'= 1/2 × 3/2'},
+    {q:'0.25 = ?',a:'1/4',h:'= 25/100'},
+    {q:'0.5 + 0.75 = ?',a:'1.25',h:'บวกทศนิยม'},
+    {q:'0.333... = ?',a:'1/3',h:'= 3/9'},
+    {q:'3/8 = ? (ทศนิยม)',a:'0.375',h:'3÷8'}
+  ],
+  mistakes:[
+    'บวกเศษส่วนโดยบวกเศษ+เศษ ส่วน+ส่วน',
+    '0.3 = 1/3 (ผิด 0.3 = 3/10)',
+    'หารเศษส่วนไม่กลับส่วน'
+  ],
+  problems:[
+    {q:'1/4 + 1/4 = ?',a:'1/2',h:'= 2/4'},
+    {q:'2/5 + 1/5 = ?',a:'3/5',h:'ส่วนเท่า'},
+    {q:'3/4 - 1/4 = ?',a:'1/2',h:'= 2/4'},
+    {q:'1/2 + 1/4 = ?',a:'3/4',h:'= 2/4 + 1/4'},
+    {q:'2/3 × 3/4 = ?',a:'1/2',h:'= 6/12'},
+    {q:'1/3 ÷ 1/6 = ?',a:'2',h:'= 1/3 × 6'},
+    {q:'0.5 = เศษส่วน?',a:'1/2',h:'= 5/10'},
+    {q:'0.75 = เศษส่วน?',a:'3/4',h:'= 75/100'},
+    {q:'1/4 = ทศนิยม?',a:'0.25',h:'1÷4'},
+    {q:'0.5 + 0.25 = ?',a:'0.75',h:'บวก'}
+  ]
+},
+
+/* ---------- บท 5: รูปเรขาคณิต 2D-3D ---------- */
+{
+  id:'math1_05',
+  subject:'math', grade:1, term:1, number:5,
+  title:'รูปเรขาคณิต 2 มิติ และ 3 มิติ',
+  icon:'🔷',
+  def:'รูป 2 มิติ มีความกว้าง+ความยาว รูป 3 มิติ มีความกว้าง+ความยาว+ความสูง',
+  formulas:[
+    'สี่เหลี่ยมผืนผ้า: พื้นที่ = ก × ย',
+    'สี่เหลี่ยมจัตุรัส: พื้นที่ = ด้าน²',
+    'สามเหลี่ยม: พื้นที่ = ½ × ฐาน × สูง',
+    'วงกลม: พื้นที่ = πr²',
+    'วงกลม: เส้นรอบ = 2πr',
+    'สี่เหลี่ยมคางหมู: พื้นที่ = ½ × (a+b) × สูง',
+    'สี่เหลี่ยมด้านขนาน: พื้นที่ = ฐาน × สูง',
+    'ปริซึม: ปริมาตร = พื้นที่ฐาน × สูง',
+    'ทรงกระบอก: ปริมาตร = πr²h',
+    'ลูกบาศก์: ปริมาตร = ด้าน³'
+  ],
+  examples:[
+    {q:'สี่เหลี่ยม 5×3 พื้นที่?',a:'15',h:'ก×ย'},
+    {q:'จัตุรัสด้าน 4 พื้นที่?',a:'16',h:'4²'},
+    {q:'สามเหลี่ยม ฐาน 6 สูง 4 พื้นที่?',a:'12',h:'½×6×4'},
+    {q:'วงกลม r=3 พื้นที่ (π=3.14)?',a:'28.26',h:'3.14×9'},
+    {q:'ลูกบาศก์ด้าน 3 ปริมาตร?',a:'27',h:'3³'},
+    {q:'ปริซึม ฐาน 10 สูง 5 ปริมาตร?',a:'50',h:'10×5'},
+    {q:'ทรงกระบอก r=2 h=5 (π=3.14)?',a:'62.8',h:'3.14×4×5'},
+    {q:'สี่เหลี่ยมคางหมู a=4 b=6 h=3?',a:'15',h:'½×(4+6)×3'}
+  ],
+  mistakes:[
+    'ลืมหาร 2 ของสามเหลี่ยม',
+    'สับสนพื้นที่กับปริมาตร',
+    'ใช้ πr แทน πr²'
+  ],
+  problems:[
+    {q:'สี่เหลี่ยม 8×5 พื้นที่?',a:'40',h:'ก×ย'},
+    {q:'จัตุรัสด้าน 7 พื้นที่?',a:'49',h:'7²'},
+    {q:'สามเหลี่ยม ฐาน 10 สูง 6 พื้นที่?',a:'30',h:'½×10×6'},
+    {q:'วงกลม r=5 (π=3.14)?',a:'78.5',h:'3.14×25'},
+    {q:'ลูกบาศก์ด้าน 4 ปริมาตร?',a:'64',h:'4³'},
+    {q:'ปริซึม ฐาน 12 สูง 5?',a:'60',h:'ฐาน×สูง'},
+    {q:'เส้นรอบวง r=4 (π=3.14)?',a:'25.12',h:'2×3.14×4'},
+    {q:'สี่เหลี่ยมด้านขนาน ฐาน 8 สูง 3?',a:'24',h:'ฐาน×สูง'},
+    {q:'สี่เหลี่ยมคางหมู a=5 b=7 h=4?',a:'24',h:'½×(5+7)×4'},
+    {q:'ทรงกระบอก r=3 h=4 (π=3.14)?',a:'113.04',h:'3.14×9×4'}
+  ]
+},
+
+/* ---------- บท 6: จำนวนและตัวเลข ---------- */
+{
+  id:'math1_06',
+  subject:'math', grade:1, term:1, number:6,
+  title:'จำนวนและตัวเลข',
+  icon:'🔢',
+  def:'ศึกษาเรื่องจำนวนนับ จำนวนเฉพาะ ตัวประกอบ ห.ร.ม. ค.ร.น. และเลขยกกำลัง',
+  formulas:[
+    'จำนวนเฉพาะ: หารด้วย 1 และตัวเองเท่านั้น',
+    'ตัวประกอบของ n = จำนวนที่หาร n ลงตัว',
+    'ห.ร.ม. = ตัวหารร่วมที่มากที่สุด',
+    'ค.ร.น. = ตัวคูณร่วมที่น้อยที่สุด',
+    'ห.ร.ม.(a,b) × ค.ร.น.(a,b) = a × b',
+    'จำนวนเฉพาะตัวแรก: 2, 3, 5, 7, 11, 13, 17, 19',
+    'จำนวนคู่: หาร 2 ลงตัว',
+    'จำนวนคี่: หาร 2 ไม่ลงตัว',
+    'จำนวนเต็มบวกนับ 1, 2, 3, ...',
+    'จำนวนเฉพาะที่มากสุด < 30 คือ 29'
+  ],
+  examples:[
+    {q:'ห.ร.ม. ของ 12 และ 18?',a:'6',h:'ตัวหารร่วมมากสุด'},
+    {q:'ค.ร.น. ของ 4 และ 6?',a:'12',h:'ตัวคูณร่วมน้อยสุด'},
+    {q:'8 เป็นจำนวนเฉพาะ?',a:'ไม่',h:'8 = 2×4'},
+    {q:'7 เป็นจำนวนเฉพาะ?',a:'ใช่',h:'หารด้วย 1,7'},
+    {q:'ตัวประกอบของ 12 มีกี่ตัว?',a:'6',h:'1,2,3,4,6,12'},
+    {q:'ห.ร.ม. ของ 15 และ 25?',a:'5',h:'5 หารทั้งคู่'},
+    {q:'ค.ร.น. ของ 3 และ 5?',a:'15',h:'3×5'},
+    {q:'จำนวนเฉพาะที่น้อยสุด?',a:'2',h:'ตัวแรก'}
+  ],
+  mistakes:[
+    'คิดว่า 1 เป็นจำนวนเฉพาะ (ไม่ใช่)',
+    'คิดว่า 2 เป็นจำนวนเฉพาะคี่ (เป็นคู่)',
+    'สับสน ห.ร.ม. กับ ค.ร.น.'
+  ],
+  problems:[
+    {q:'ห.ร.ม. ของ 8 และ 12?',a:'4',h:'ตัวหารร่วม'},
+    {q:'ห.ร.ม. ของ 15 และ 20?',a:'5',h:'5 หาร'},
+    {q:'ค.ร.น. ของ 4 และ 6?',a:'12',h:'คูณน้อยสุด'},
+    {q:'ค.ร.น. ของ 3 และ 4?',a:'12',h:'3×4'},
+    {q:'11 เป็นจำนวนเฉพาะ?',a:'ใช่',h:'1,11'},
+    {q:'9 เป็นจำนวนเฉพาะ?',a:'ไม่',h:'3×3'},
+    {q:'จำนวนเฉพาะ 5 ตัวแรก?',a:'2,3,5,7,11',h:'นับจาก 2'},
+    {q:'ตัวประกอบของ 8 มีกี่ตัว?',a:'4',h:'1,2,4,8'},
+    {q:'ห.ร.ม. ของ 6 และ 9?',a:'3',h:'3 หาร'},
+    {q:'ค.ร.น. ของ 6 และ 8?',a:'24',h:'คูณน้อยสุด'}
+  ]
+},
+
+/* ---------- บท 7: สมการเชิงเส้นตัวแปรเดียว ---------- */
+{
+  id:'math1_07',
+  subject:'math', grade:1, term:2, number:7,
+  title:'สมการเชิงเส้นตัวแปรเดียว',
+  icon:'⚖️',
+  def:'สมการที่ตัวแปรมีกำลังสูงสุดเป็น 1 และมีตัวแปรเดียว เป้าหมายคือหาค่าตัวแปร',
+  formulas:[
+    'ax + b = 0 → x = -b/a',
+    'ax + b = c → x = (c-b)/a',
+    'ax + b = cx + d → x = (d-b)/(a-c)',
+    'ย้ายข้าง → เปลี่ยนเครื่องหมาย',
+    'คูณ/หารทั้ง 2 ข้างด้วยค่าเดียวกันได้',
+    'a(x+b) = c → ax + ab = c',
+    'ตรวจคำตอบโดยแทนกลับ',
+    'a/x = b → x = a/b',
+    'x/a = b → x = ab',
+    'a - x = b → x = a - b'
+  ],
+  examples:[
+    {q:'2x + 3 = 7 → x = ?',a:'2',h:'2x = 4'},
+    {q:'5x = 25 → x = ?',a:'5',h:'x = 25/5'},
+    {q:'x/3 = 4 → x = ?',a:'12',h:'x = 4×3'},
+    {q:'3x - 5 = 10 → x = ?',a:'5',h:'3x = 15'},
+    {q:'2x + 1 = x + 5 → x = ?',a:'4',h:'x = 4'},
+    {q:'4(x-1) = 12 → x = ?',a:'4',h:'x-1 = 3'},
+    {q:'x + 5 = 3 → x = ?',a:'-2',h:'x = 3-5'},
+    {q:'-2x = 8 → x = ?',a:'-4',h:'x = 8/-2'}
+  ],
+  mistakes:[
+    'ย้ายข้างไม่เปลี่ยนเครื่องหมาย',
+    'ลืมคูณทั้งสองข้าง',
+    'หารผิดทิศ'
+  ],
+  problems:[
+    {q:'x + 5 = 12 → x = ?',a:'7',h:'x = 12-5'},
+    {q:'x - 3 = 8 → x = ?',a:'11',h:'x = 8+3'},
+    {q:'2x = 14 → x = ?',a:'7',h:'x = 14/2'},
+    {q:'3x + 2 = 11 → x = ?',a:'3',h:'3x = 9'},
+    {q:'5x - 3 = 22 → x = ?',a:'5',h:'5x = 25'},
+    {q:'2x + 5 = x + 9 → x = ?',a:'4',h:'x = 4'},
+    {q:'3(x+1) = 12 → x = ?',a:'3',h:'x+1 = 4'},
+    {q:'x/2 = 6 → x = ?',a:'12',h:'x = 12'},
+    {q:'-3x = 15 → x = ?',a:'-5',h:'x = -5'},
+    {q:'4x - 8 = 2x + 2 → x = ?',a:'5',h:'2x = 10'}
+  ]
+},
+
+/* ---------- บท 8: อัตราส่วน สัดส่วน ร้อยละ ---------- */
+{
+  id:'math1_08',
+  subject:'math', grade:1, term:2, number:8,
+  title:'อัตราส่วน สัดส่วน และร้อยละ',
+  icon:'📊',
+  def:'อัตราส่วนเปรียบเทียบ 2 ปริมาณ ร้อยละคือการเทียบต่อ 100',
+  formulas:[
+    'อัตราส่วน a:b = a/b',
+    'a:b = ka:kb',
+    'สัดส่วน: a/b = c/d → ad = bc',
+    '% = (ส่วน/ทั้งหมด) × 100',
+    'x% ของ n = (x/100) × n',
+    'ลด x% → จ่าย (100-x)%',
+    'กำไร% = (ขาย-ทุน)/ทุน × 100',
+    'ขาดทุน% = (ทุน-ขาย)/ทุน × 100',
+    'ดอกเบี้ย = ต้น × อัตรา × เวลา',
+    'ราคาขาย = ราคาทุน + กำไร'
+  ],
+  examples:[
+    {q:'20% ของ 150 = ?',a:'30',h:'= 20/100 × 150'},
+    {q:'3:5 = ? : 20',a:'12',h:'3×4 : 5×4'},
+    {q:'สินค้า 500 ลด 20% จ่าย?',a:'400',h:'= 80% ของ 500'},
+    {q:'ทุน 200 ขาย 250 กำไรกี่%?',a:'25',h:'= 50/200 × 100'},
+    {q:'x:4 = 6:8 → x = ?',a:'3',h:'x = 3'},
+    {q:'15% ของ 200 = ?',a:'30',h:'= 15/100 × 200'},
+    {q:'40% เขียนเป็นเศษส่วน?',a:'2/5',h:'= 40/100 = 2/5'},
+    {q:'ฝาก 1000 ดอก 5% 1 ปีได้?',a:'50',h:'= 1000 × 5/100'}
+  ],
+  mistakes:[
+    'สลับ a:b เป็น b:a',
+    'คำนวณ % จากราคาเต็มแทนราคาที่ลดแล้ว',
+    'ลืมหาร 100'
+  ],
+  problems:[
+    {q:'10% ของ 200 = ?',a:'20',h:'= 10/100 × 200'},
+    {q:'25% ของ 80 = ?',a:'20',h:'= 25/100 × 80'},
+    {q:'50% ของ 60 = ?',a:'30',h:'= ครึ่ง'},
+    {q:'2:3 = ? : 15',a:'10',h:'2×5 : 3×5'},
+    {q:'x:5 = 4:10 → x = ?',a:'2',h:'x = 2'},
+    {q:'สินค้า 1000 ลด 10% → ?',a:'900',h:'= 90% × 1000'},
+    {q:'ทุน 500 ขาย 600 กำไร%?',a:'20',h:'= 100/500×100'},
+    {q:'30% = เศษส่วน?',a:'3/10',h:'= 30/100'},
+    {q:'40% ของ 250 = ?',a:'100',h:'= 100'},
+    {q:'1:4 = ? : 20',a:'5',h:'1×5 : 4×5'}
+  ]
+},
+
+/* ---------- บท 9: กราฟและความสัมพันธ์เชิงเส้น ---------- */
+{
+  id:'math1_09',
+  subject:'math', grade:1, term:2, number:9,
+  title:'กราฟและความสัมพันธ์เชิงเส้น',
+  icon:'📈',
+  def:'กราฟแสดงความสัมพันธ์ระหว่าง 2 ตัวแปร ในระบบพิกัดฉาก (x, y)',
+  formulas:[
+    'พิกัดจุด: (x, y)',
+    'แกน x = แนวนอน, แกน y = แนวตั้ง',
+    'จุดกำเนิด = (0, 0)',
+    'y = ax + b → กราฟเส้นตรง',
+    'ความชัน m = (y₂-y₁)/(x₂-x₁)',
+    'y = mx + b (m = ความชัน, b = จุดตัดแกน y)',
+    'ความชัน 0 → เส้นนอน',
+    'ความชันไม่นิยาม → เส้นตั้ง',
+    'ระยะห่าง 2 จุด: d = √((x₂-x₁)² + (y₂-y₁)²)',
+    'จุดกึ่งกลาง = ((x₁+x₂)/2, (y₁+y₂)/2)'
+  ],
+  examples:[
+    {q:'จุด (3, 4) อยู่ quadrant ไหน?',a:'1',h:'+,+'},
+    {q:'y = 2x + 1, x = 3 → y = ?',a:'7',h:'= 2(3)+1'},
+    {q:'ความชันของ (0,0),(2,4)?',a:'2',h:'= 4/2'},
+    {q:'จุด (-3, 5) อยู่ quadrant?',a:'2',h:'-,+'},
+    {q:'จุดกำเนิดพิกัด?',a:'(0,0)',h:'ตัดแกน'},
+    {q:'y = -x, x = 4 → y = ?',a:'-4',h:'= -4'},
+    {q:'ระยะห่าง (0,0) ถึง (3,4)?',a:'5',h:'√(9+16)'},
+    {q:'จุดกึ่งกลาง (1,2) ถึง (5,6)?',a:'(3,4)',h:'เฉลี่ย'}
+  ],
+  mistakes:[
+    'สลับ (x,y) กับ (y,x)',
+    'คำนวณความชันกลับทิศ',
+    'ลืมใส่เครื่องหมายลบ'
+  ],
+  problems:[
+    {q:'จุด (5, 2) อยู่ quadrant?',a:'1',h:'+,+'},
+    {q:'y = 3x, x = 4 → y = ?',a:'12',h:'= 3×4'},
+    {q:'y = x + 5, x = 2 → y = ?',a:'7',h:'= 2+5'},
+    {q:'ความชัน (0,0),(3,6)?',a:'2',h:'= 6/3'},
+    {q:'y = 2x - 3, x = 5 → y = ?',a:'7',h:'= 10-3'},
+    {q:'ระยะห่าง (0,0) ถึง (6,8)?',a:'10',h:'√100'},
+    {q:'จุด (-2, 3) quadrant?',a:'2',h:'-,+'},
+    {q:'y = -2x, x = 3 → y = ?',a:'-6',h:'= -6'},
+    {q:'จุดกึ่งกลาง (2,4) ถึง (6,8)?',a:'(4,6)',h:'เฉลี่ย'},
+    {q:'y = 4, ค่าคงที่ — ความชัน?',a:'0',h:'เส้นนอน'}
+  ]
+},
+
+/* ---------- บท 10: สถิติ (1) ---------- */
+{
+  id:'math1_10',
+  subject:'math', grade:1, term:2, number:10,
+  title:'สถิติ (1)',
+  icon:'📊',
+  def:'สถิติคือการเก็บรวบรวม วิเคราะห์ และนำเสนอข้อมูล',
+  formulas:[
+    'ค่าเฉลี่ย = ผลรวม / จำนวน',
+    'มัธยฐาน = ค่ากลางเมื่อเรียงข้อมูล',
+    'ฐานนิยม = ค่าที่ซ้ำมากที่สุด',
+    'พิสัย = ค่าสูงสุด - ค่าต่ำสุด',
+    'ค่าเฉลี่ยถ่วงน้ำหนัก = Σ(wx)/Σw',
+    'ถ้าข้อมูลคู่ → มัธยฐาน = เฉลี่ย 2 ตัวกลาง',
+    'ข้อมูลไม่ซ้ำ → ไม่มีฐานนิยม',
+    'ข้อมูลซ้ำหลายตัว → มีหลายฐานนิยม',
+    'ผลรวมของส่วนเบี่ยงเบนจากค่าเฉลี่ย = 0',
+    'การนับ: จำนวนข้อมูล = n'
+  ],
+  examples:[
+    {q:'ค่าเฉลี่ยของ 2,4,6,8?',a:'5',h:'= 20/4'},
+    {q:'มัธยฐานของ 3,1,4,2,5?',a:'3',h:'เรียง 1,2,3,4,5'},
+    {q:'ฐานนิยมของ 1,2,2,3,3,3?',a:'3',h:'ซ้ำ 3 ครั้ง'},
+    {q:'พิสัยของ 5,10,15?',a:'10',h:'= 15-5'},
+    {q:'ค่าเฉลี่ย 5,5,5?',a:'5',h:'ทั้งหมดเท่ากัน'},
+    {q:'มัธยฐาน 1,2,3,4?',a:'2.5',h:'เฉลี่ย 2,3'},
+    {q:'ค่าเฉลี่ย 10,20,30,40?',a:'25',h:'= 100/4'},
+    {q:'ฐานนิยม 1,1,2,2,3?',a:'1,2',h:'มี 2 ตัว'}
+  ],
+  mistakes:[
+    'ลืมเรียงข้อมูลก่อนหามัธยฐาน',
+    'สับสนระหว่าง mean/median/mode',
+    'คิดว่าฐานนิยมมีตัวเดียวเสมอ'
+  ],
+  problems:[
+    {q:'ค่าเฉลี่ย 1,3,5,7?',a:'4',h:'= 16/4'},
+    {q:'ค่าเฉลี่ย 10,20,30?',a:'20',h:'= 60/3'},
+    {q:'มัธยฐาน 5,2,8,1,9?',a:'5',h:'เรียง 1,2,5,8,9'},
+    {q:'มัธยฐาน 1,2,3,4?',a:'2.5',h:'เฉลี่ย 2,3'},
+    {q:'ฐานนิยม 1,2,2,3?',a:'2',h:'ซ้ำ'},
+    {q:'ฐานนิยม 5,5,5,6?',a:'5',h:'ซ้ำมาก'},
+    {q:'พิสัย 10,20,30?',a:'20',h:'= 30-10'},
+    {q:'ค่าเฉลี่ย 2,4,6?',a:'4',h:'= 12/3'},
+    {q:'ค่าเฉลี่ย 5,10,15,20?',a:'12.5',h:'= 50/4'},
+    {q:'พิสัย 3,8,15?',a:'12',h:'= 15-3'}
+  ]
+},
+
+/* ---------- บท 11: เอกนามและพหุนาม ---------- */
+{
+  id:'math1_11',
+  subject:'math', grade:1, term:2, number:11,
+  title:'เอกนามและพหุนาม',
+  icon:'📐',
+  def:'เอกนามคือผลคูณของจำนวนกับตัวแปร พหุนามคือผลบวกของเอกนาม',
+  formulas:[
+    'เอกนาม: axⁿ (a = สปส., n = ดีกรี)',
+    'ดีกรีของเอกนาม = ผลบวกกำลังตัวแปร',
+    'บวก/ลบเอกนาม: รวมพจน์ที่เหมือนกัน',
+    'คูณเอกนาม: คูณ สปส. และบวกเลขยกกำลัง',
+    'หารเอกนาม: หาร สปส. และลบเลขยกกำลัง',
+    'เอกนาม × เอกนาม: (axᵐ)(bxⁿ) = abxᵐ⁺ⁿ',
+    'พหุนามดีกรี 1 = เชิงเส้น',
+    'พหุนามดีกรี 2 = กำลังสอง',
+    'พจน์ที่เหมือนกัน = ตัวแปรและกำลังเท่ากัน',
+    'พหุนาม 2 พจน์ = ทวินาม'
+  ],
+  examples:[
+    {q:'3x + 2x = ?',a:'5x',h:'พจน์เดียวกัน'},
+    {q:'(2x)(3x) = ?',a:'6x²',h:'คูณ'},
+    {q:'5x² + 3x - 2x² = ?',a:'3x² + 3x',h:'รวม x²'},
+    {q:'ดีกรีของ 4x³?',a:'3',h:'กำลังสูงสุด'},
+    {q:'(x)(x²) = ?',a:'x³',h:'บวกกำลัง'},
+    {q:'6x³ ÷ 2x = ?',a:'3x²',h:'ลบกำลัง'},
+    {q:'x + 5 - (2x - 3) = ?',a:'-x + 8',h:'แจกแจง'},
+    {q:'ดีกรีของ 3x² + 2x + 1?',a:'2',h:'สูงสุด'}
+  ],
+  mistakes:[
+    'รวมพจน์ที่ไม่เหมือน: 2x + 3y = 5xy (ผิด)',
+    'คูณเลขยกกำลัง: (x²)(x³) = x⁶ (ผิด ต้องเป็น x⁵)',
+    'ลืมแจกแจงเมื่อลบพหุนาม'
+  ],
+  problems:[
+    {q:'4x + 3x = ?',a:'7x',h:'รวม'},
+    {q:'5y - 2y = ?',a:'3y',h:'ลบ'},
+    {q:'(3x)(2x) = ?',a:'6x²',h:'คูณ'},
+    {q:'(x²)(x³) = ?',a:'x⁵',h:'บวกกำลัง'},
+    {q:'8x⁴ ÷ 2x = ?',a:'4x³',h:'ลบกำลัง'},
+    {q:'ดีกรีของ 5x⁴?',a:'4',h:'สูงสุด'},
+    {q:'2x + 3 + x - 1 = ?',a:'3x + 2',h:'รวม'},
+    {q:'(2x)² = ?',a:'4x²',h:'= 4x²'},
+    {q:'x² + x² + x = ?',a:'2x² + x',h:'ต่างพจน์'},
+    {q:'6x - (2x + 1) = ?',a:'4x - 1',h:'แจกแจง'}
+  ]
+}
+
+];
+
+/* ============================================================
+   REGISTER
+   ============================================================ */
+var registered = MQEX.registerChapters(chapters);
+
+console.info('✅ MQ-EX Part 2: คณิต ม.1 loaded');
+console.info('   Registered: '+registered+' chapters');
+console.info('   Total chapters now: '+Object.keys(MQEX.chapters).length);
+})();
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 3: คณิต ม.2 (13 บท)
+   ต้องโหลด Part 1 + 2 ก่อน
+   ============================================================ */
+(function(){
+if(!window.MQEX || !window.MQEX.ready){
+  console.error('❌ ต้องโหลด MQ-EX Part 1 ก่อน');
+  return;
+}
+if(window.__MQEX_P3__){console.warn('Part 3 already loaded');return;}
+window.__MQEX_P3__=true;
+
+var MQEX = window.MQEX;
+
+var chapters = [
+
+/* ---------- บท 12: ทฤษฎีพีทาโกรัส ---------- */
+{
+  id:'math2_01',
+  subject:'math', grade:2, term:1, number:1,
+  title:'ทฤษฎีพีทาโกรัส',
+  icon:'📏',
+  def:'ใน<b>สามเหลี่ยมมุมฉาก</b> กำลังสองของด้านตรงข้ามมุมฉาก (ด้านที่ยาวสุด) เท่ากับผลบวกของกำลังสองของอีกสองด้าน',
+  formulas:[
+    'c² = a² + b²',
+    'a² = c² - b²',
+    'b² = c² - a²',
+    'c = √(a² + b²)',
+    'a = √(c² - b²)',
+    'ตรวจมุมฉาก: a² + b² = c²',
+    'ตรวจมุมป้าน: a² + b² < c²',
+    'ตรวจมุมแหลม: a² + b² > c²',
+    'ระยะห่าง 2 จุด: d = √((x₂-x₁)² + (y₂-y₁)²)',
+    'Pythagorean Triples: 3-4-5, 5-12-13, 8-15-17, 7-24-25'
+  ],
+  examples:[
+    {q:'ด้าน 3, 4 → c = ?',a:'5',h:'√(9+16) = 5'},
+    {q:'ด้าน 5, 12 → c = ?',a:'13',h:'√(25+144) = 13'},
+    {q:'c = 10, a = 6 → b = ?',a:'8',h:'√(100-36)'},
+    {q:'ด้าน 8, 15 → c = ?',a:'17',h:'√(64+225)'},
+    {q:'ตรวจ 6, 8, 10 มุมฉาก?',a:'ใช่',h:'36+64 = 100'},
+    {q:'ระยะ (0,0) ถึง (3,4)?',a:'5',h:'√25'},
+    {q:'c = 13, b = 12 → a = ?',a:'5',h:'√(169-144)'},
+    {q:'ด้าน 7, 24 → c = ?',a:'25',h:'√(49+576)'}
+  ],
+  mistakes:[
+    'ใช้ a²+b²=c² กับสามเหลี่ยมไม่ฉาก',
+    'ลืมถอดรากที่สอง',
+    'สับสนด้านตรงข้ามมุมฉาก'
+  ],
+  problems:[
+    {q:'ด้าน 6, 8 → c = ?',a:'10',h:'√100'},
+    {q:'ด้าน 5, 12 → c = ?',a:'13',h:'√169'},
+    {q:'ด้าน 9, 12 → c = ?',a:'15',h:'√225'},
+    {q:'c = 17, a = 8 → b = ?',a:'15',h:'√225'},
+    {q:'c = 25, a = 7 → b = ?',a:'24',h:'√576'},
+    {q:'ด้าน 8, 15 → c = ?',a:'17',h:'√289'},
+    {q:'ระยะ (0,0) ถึง (6,8)?',a:'10',h:'√100'},
+    {q:'ระยะ (1,1) ถึง (4,5)?',a:'5',h:'√(9+16)'},
+    {q:'ตรวจ 5, 12, 13 มุมฉาก?',a:'ใช่',h:'25+144=169'},
+    {q:'c = 10, b = 8 → a = ?',a:'6',h:'√36'}
+  ]
+},
+
+/* ---------- บท 13: จำนวนจริง ---------- */
+{
+  id:'math2_02',
+  subject:'math', grade:2, term:1, number:2,
+  title:'จำนวนจริง',
+  icon:'√',
+  def:'จำนวนจริง = ตรรกยะ + อตรรกยะ ตรรกยะเขียนเป็น p/q ได้ อตรรกยะเขียนไม่ได้',
+  formulas:[
+    '√(a²) = |a|',
+    '√a × √b = √(ab)',
+    '√a ÷ √b = √(a/b)',
+    '√(a²b) = a√b (a ≥ 0)',
+    '√a + √a = 2√a',
+    'a√x + b√x = (a+b)√x',
+    '1/√a = √a/a',
+    'a/(√b) = a√b/b',
+    'ตรรกยะ = จำนวนเต็ม + เศษส่วน + ทศนิยมซ้ำ',
+    'อตรรกยะ = √2, √3, π, e'
+  ],
+  examples:[
+    {q:'√18 = ?',a:'3√2',h:'= √(9×2)'},
+    {q:'√50 = ?',a:'5√2',h:'= √(25×2)'},
+    {q:'√8 + √18 = ?',a:'5√2',h:'= 2√2 + 3√2'},
+    {q:'√12 × √3 = ?',a:'6',h:'= √36'},
+    {q:'√20 / √5 = ?',a:'2',h:'= √4'},
+    {q:'√(5²) = ?',a:'5',h:'ค่าสัมบูรณ์'},
+    {q:'√2 × √8 = ?',a:'4',h:'= √16'},
+    {q:'2√3 + 4√3 = ?',a:'6√3',h:'รวม สปส.'}
+  ],
+  mistakes:[
+    '√2 + √3 = √5 (ผิด)',
+    '√(a²) = a (ผิด ต้องเป็น |a|)',
+    '√(a+b) = √a + √b (ผิด)'
+  ],
+  problems:[
+    {q:'√16 = ?',a:'4',h:'4²'},
+    {q:'√25 = ?',a:'5',h:'5²'},
+    {q:'√(3²) = ?',a:'3',h:'|3|'},
+    {q:'√12 = ?',a:'2√3',h:'√(4×3)'},
+    {q:'√27 = ?',a:'3√3',h:'√(9×3)'},
+    {q:'√32 = ?',a:'4√2',h:'√(16×2)'},
+    {q:'√8 + √2 = ?',a:'3√2',h:'2√2+√2'},
+    {q:'√3 × √12 = ?',a:'6',h:'√36'},
+    {q:'√(a²) เมื่อ a = -4?',a:'4',h:'|-4|'},
+    {q:'√48 = ?',a:'4√3',h:'√(16×3)'}
+  ]
+},
+
+/* ---------- บท 14: ปริซึมและทรงกระบอก ---------- */
+{
+  id:'math2_03',
+  subject:'math', grade:2, term:1, number:3,
+  title:'ปริซึมและทรงกระบอก',
+  icon:'🧊',
+  def:'ปริซึม = รูป 3 มิติ ที่มีฐาน 2 หน้าเท่ากัน ทรงกระบอก = ฐานเป็นวงกลม',
+  formulas:[
+    'ปริมาตรปริซึม = พื้นที่ฐาน × สูง',
+    'พื้นที่ผิวข้างปริซึม = เส้นรอบฐาน × สูง',
+    'พื้นที่ผิวรวม = ผิวข้าง + 2 × พื้นที่ฐาน',
+    'ปริมาตรทรงกระบอก = πr²h',
+    'พื้นที่ผิวข้างทรงกระบอก = 2πrh',
+    'พื้นที่ผิวรวมทรงกระบอก = 2πr(r+h)',
+    'ปริมาตรลูกบาศก์ = ด้าน³',
+    'ปริมาตรสี่เหลี่ยม = ก×ย×ส',
+    'π ≈ 3.14 หรือ 22/7',
+    'หน่วยปริมาตร = ลูกบาศก์หน่วย'
+  ],
+  examples:[
+    {q:'ปริซึม ฐาน 20 สูง 5 → ปริมาตร?',a:'100',h:'= 20×5'},
+    {q:'สี่เหลี่ยม 4×3×5 ปริมาตร?',a:'60',h:'= 60'},
+    {q:'ทรงกระบอก r=3 h=7 (π=3.14)?',a:'197.82',h:'3.14×9×7'},
+    {q:'ผิวข้างทรงกระบอก r=2 h=10?',a:'125.6',h:'2×3.14×2×10'},
+    {q:'ลูกบาศก์ด้าน 4 ปริมาตร?',a:'64',h:'4³'},
+    {q:'สี่เหลี่ยม 5×6×2 ปริมาตร?',a:'60',h:'= 60'},
+    {q:'ทรงกระบอก r=4 h=5?',a:'251.2',h:'3.14×16×5'},
+    {q:'ปริซึม ฐานสามเหลี่ยม 12 สูง 8?',a:'96',h:'= 12×8'}
+  ],
+  mistakes:[
+    'ใช้สูตรผิด (ปนพื้นที่/ปริมาตร)',
+    'ใช้ r กับ d สลับ',
+    'ลืมคูณ 2 ของฐาน'
+  ],
+  problems:[
+    {q:'ปริซึม ฐาน 15 สูง 4 → ปริมาตร?',a:'60',h:'ฐาน×สูง'},
+    {q:'สี่เหลี่ยม 6×4×3 ปริมาตร?',a:'72',h:'= 72'},
+    {q:'ลูกบาศก์ด้าน 3 ปริมาตร?',a:'27',h:'3³'},
+    {q:'ลูกบาศก์ด้าน 5 ปริมาตร?',a:'125',h:'5³'},
+    {q:'ทรงกระบอก r=2 h=5 (π=3.14)?',a:'62.8',h:'3.14×4×5'},
+    {q:'ทรงกระบอก r=3 h=4 (π=3.14)?',a:'113.04',h:'3.14×9×4'},
+    {q:'ผิวข้างทรงกระบอก r=1 h=10?',a:'62.8',h:'2πrh'},
+    {q:'สี่เหลี่ยม 8×2×5 ปริมาตร?',a:'80',h:'= 80'},
+    {q:'ปริซึม ฐาน 25 สูง 6?',a:'150',h:'ฐาน×สูง'},
+    {q:'ทรงกระบอก r=5 h=2 (π=3.14)?',a:'157',h:'3.14×25×2'}
+  ]
+},
+
+/* ---------- บท 15: การแปลงทางเรขาคณิต ---------- */
+{
+  id:'math2_04',
+  subject:'math', grade:2, term:1, number:4,
+  title:'การแปลงทางเรขาคณิต',
+  icon:'🔄',
+  def:'การแปลงทางเรขาคณิตมี 4 แบบ: เลื่อนขนาน สะท้อน หมุน ย่อ/ขยาย',
+  formulas:[
+    'เลื่อนขนาน: (x,y) → (x+a, y+b)',
+    'สะท้อนแกน x: (x,y) → (x,-y)',
+    'สะท้อนแกน y: (x,y) → (-x,y)',
+    'สะท้อนจุดกำเนิด: (x,y) → (-x,-y)',
+    'สะท้อน y=x: (x,y) → (y,x)',
+    'สะท้อน y=-x: (x,y) → (-y,-x)',
+    'หมุน 90° CCW: (x,y) → (-y,x)',
+    'หมุน 180°: (x,y) → (-x,-y)',
+    'หมุน 90° CW: (x,y) → (y,-x)',
+    'ย่อ/ขยาย (0,0) k: (x,y) → (kx, ky)'
+  ],
+  examples:[
+    {q:'(3,5) เลื่อน (2,-1)?',a:'(5,4)',h:'บวกทีละตัว'},
+    {q:'(4,6) สะท้อนแกน x?',a:'(4,-6)',h:'y เปลี่ยนเครื่องหมาย'},
+    {q:'(2,3) หมุน 90° CCW?',a:'(-3,2)',h:'(-y,x)'},
+    {q:'(3,5) สะท้อน y=x?',a:'(5,3)',h:'สลับ'},
+    {q:'(4,6) หมุน 180°?',a:'(-4,-6)',h:'(-x,-y)'},
+    {q:'(2,3) k=2?',a:'(4,6)',h:'คูณ 2'},
+    {q:'(6,4) k=1/2?',a:'(3,2)',h:'หาร 2'},
+    {q:'(5,7) สะท้อนจุดกำเนิด?',a:'(-5,-7)',h:'(-x,-y)'}
+  ],
+  mistakes:[
+    'สลับการหมุน CW/CCW',
+    'สะท้อนแล้วไม่เปลี่ยนเครื่องหมาย',
+    'ลืมทิศของ k'
+  ],
+  problems:[
+    {q:'(1,2) เลื่อน (3,4)?',a:'(4,6)',h:'บวก'},
+    {q:'(5,3) สะท้อนแกน x?',a:'(5,-3)',h:'y กลับ'},
+    {q:'(4,2) สะท้อนแกน y?',a:'(-4,2)',h:'x กลับ'},
+    {q:'(3,5) หมุน 90° CCW?',a:'(-5,3)',h:'(-y,x)'},
+    {q:'(3,5) หมุน 180°?',a:'(-3,-5)',h:'กลับทั้งคู่'},
+    {q:'(2,4) k=3?',a:'(6,12)',h:'คูณ 3'},
+    {q:'(8,4) k=1/4?',a:'(2,1)',h:'หาร 4'},
+    {q:'(5,5) สะท้อนจุดกำเนิด?',a:'(-5,-5)',h:'กลับทั้งคู่'},
+    {q:'(4,6) หมุน 90° CW?',a:'(6,-4)',h:'(y,-x)'},
+    {q:'(3,2) สะท้อน y=x?',a:'(2,3)',h:'สลับ'}
+  ]
+},
+
+/* ---------- บท 16: สมบัติเลขยกกำลัง ---------- */
+{
+  id:'math2_05',
+  subject:'math', grade:2, term:1, number:5,
+  title:'สมบัติของเลขยกกำลัง',
+  icon:'ⁿ',
+  def:'สมบัติของเลขยกกำลังสำหรับฐานเดียวกัน และการดำเนินการต่างๆ',
+  formulas:[
+    'aᵐ × aⁿ = aᵐ⁺ⁿ',
+    'aᵐ ÷ aⁿ = aᵐ⁻ⁿ',
+    '(aᵐ)ⁿ = aᵐˣⁿ',
+    'a⁰ = 1 (a ≠ 0)',
+    'a⁻ⁿ = 1/aⁿ',
+    '(ab)ⁿ = aⁿ × bⁿ',
+    '(a/b)ⁿ = aⁿ/bⁿ',
+    '(a/b)⁻ⁿ = (b/a)ⁿ',
+    'a^(m/n) = ⁿ√(aᵐ)',
+    '(-a)²ⁿ = a²ⁿ, (-a)²ⁿ⁺¹ = -a²ⁿ⁺¹'
+  ],
+  examples:[
+    {q:'2⁵ × 2³ = ?',a:'256',h:'= 2⁸'},
+    {q:'3⁷ ÷ 3⁴ = ?',a:'27',h:'= 3³'},
+    {q:'(5²)³ = ?',a:'15625',h:'= 5⁶'},
+    {q:'8⁰ = ?',a:'1',h:'a⁰ = 1'},
+    {q:'2⁻⁴ = ?',a:'1/16',h:'= 1/2⁴'},
+    {q:'(2x)³ = ?',a:'8x³',h:'= 2³x³'},
+    {q:'(3/4)² = ?',a:'9/16',h:'เศษ²/ส่วน²'},
+    {q:'(2/3)⁻¹ = ?',a:'3/2',h:'กลับเศษส่วน'}
+  ],
+  mistakes:[
+    '(a+b)² = a² + b² (ผิด)',
+    'aᵐ × aⁿ = aᵐⁿ (ผิด ต้องบวก)',
+    'a⁻ⁿ = -aⁿ (ผิด)'
+  ],
+  problems:[
+    {q:'3⁴ × 3² = ?',a:'729',h:'= 3⁶'},
+    {q:'5⁶ ÷ 5³ = ?',a:'125',h:'= 5³'},
+    {q:'(4²)³ = ?',a:'4096',h:'= 4⁶'},
+    {q:'10⁰ = ?',a:'1',h:'a⁰=1'},
+    {q:'2⁻³ = ?',a:'1/8',h:'= 1/8'},
+    {q:'(3x)² = ?',a:'9x²',h:'= 9x²'},
+    {q:'(2/5)² = ?',a:'4/25',h:'เศษ²/ส่วน²'},
+    {q:'(3/4)⁻¹ = ?',a:'4/3',h:'กลับ'},
+    {q:'(2³)² ÷ 2⁴ = ?',a:'4',h:'= 2⁶ ÷ 2⁴ = 2²'},
+    {q:'a⁵ × a⁻³ = ?',a:'a²',h:'บวกกำลัง'}
+  ]
+},
+
+/* ---------- บท 17: พหุนามและแยกตัวประกอบ ---------- */
+{
+  id:'math2_06',
+  subject:'math', grade:2, term:1, number:6,
+  title:'พหุนามและแยกตัวประกอบ',
+  icon:'📐',
+  def:'พหุนามคือผลบวกของเอกนาม การแยกตัวประกอบคือการเขียนพหุนามเป็นผลคูณ',
+  formulas:[
+    '(a+b)² = a² + 2ab + b²',
+    '(a-b)² = a² - 2ab + b²',
+    '(a+b)(a-b) = a² - b²',
+    'a² + 2ab + b² = (a+b)²',
+    'a² - 2ab + b² = (a-b)²',
+    'a² - b² = (a+b)(a-b)',
+    'x² + (p+q)x + pq = (x+p)(x+q)',
+    '(a+b)³ = a³ + 3a²b + 3ab² + b³',
+    'a³ + b³ = (a+b)(a² - ab + b²)',
+    'a³ - b³ = (a-b)(a² + ab + b²)'
+  ],
+  examples:[
+    {q:'(x+3)² = ?',a:'x²+6x+9',h:'a²+2ab+b²'},
+    {q:'(x-4)² = ?',a:'x²-8x+16',h:'a²-2ab+b²'},
+    {q:'(x+5)(x-5) = ?',a:'x²-25',h:'a²-b²'},
+    {q:'x²+7x+12 = ?',a:'(x+3)(x+4)',h:'p+q=7, pq=12'},
+    {q:'x²-9 = ?',a:'(x+3)(x-3)',h:'a²-b²'},
+    {q:'x²+10x+25 = ?',a:'(x+5)²',h:'กำลังสองสมบูรณ์'},
+    {q:'x²-6x+9 = ?',a:'(x-3)²',h:'(a-b)²'},
+    {q:'x²+5x+6 = ?',a:'(x+2)(x+3)',h:'p+q=5, pq=6'}
+  ],
+  mistakes:[
+    '(a+b)² = a²+b² (ผิด ต้องมี 2ab)',
+    'แยกตัวประกอบ p+q ไม่ถูก',
+    'ลืมตรวจคำตอบ'
+  ],
+  problems:[
+    {q:'(x+2)² = ?',a:'x²+4x+4',h:'2ab=4x'},
+    {q:'(x-5)² = ?',a:'x²-10x+25',h:'2ab=-10x'},
+    {q:'(x+4)(x-4) = ?',a:'x²-16',h:'a²-b²'},
+    {q:'x²+9x+20 = ?',a:'(x+4)(x+5)',h:'4+5=9, 4×5=20'},
+    {q:'x²-16 = ?',a:'(x+4)(x-4)',h:'a²-b²'},
+    {q:'x²+6x+9 = ?',a:'(x+3)²',h:'กำลังสองสมบูรณ์'},
+    {q:'x²-8x+16 = ?',a:'(x-4)²',h:'(a-b)²'},
+    {q:'x²+7x+10 = ?',a:'(x+2)(x+5)',h:'2+5=7, 2×5=10'},
+    {q:'x²-3x-10 = ?',a:'(x-5)(x+2)',h:'-5+2=-3, -5×2=-10'},
+    {q:'x²+8x+15 = ?',a:'(x+3)(x+5)',h:'3+5=8, 3×5=15'}
+  ]
+},
+
+/* ---------- บท 18: สถิติ (2) ---------- */
+{
+  id:'math2_07',
+  subject:'math', grade:2, term:2, number:7,
+  title:'สถิติ (2)',
+  icon:'📊',
+  def:'สถิติเชิงพรรณนา: การหาค่ากลาง การกระจาย และการนำเสนอข้อมูล',
+  formulas:[
+    'ค่าเฉลี่ย (mean) = Σx / n',
+    'มัธยฐาน (median) = ค่ากลางเมื่อเรียง',
+    'ฐานนิยม (mode) = ค่าที่ซ้ำมากสุด',
+    'พิสัย (range) = max - min',
+    'ค่าเฉลี่ยถ่วงน้ำหนัก = Σ(w·x) / Σw',
+    'ส่วนเบี่ยงเบน = x - x̄',
+    'ผลรวมส่วนเบี่ยงเบน = 0',
+    'ควอร์ไทล์ Q1 = มัธยฐานครึ่งล่าง',
+    'Q3 = มัธยฐานครึ่งบน',
+    'IQR = Q3 - Q1'
+  ],
+  examples:[
+    {q:'ค่าเฉลี่ย 5, 10, 15?',a:'10',h:'= 30/3'},
+    {q:'มัธยฐาน 1,3,5,7,9?',a:'5',h:'ตัวกลาง'},
+    {q:'มัธยฐาน 2,4,6,8?',a:'5',h:'เฉลี่ย 4,6'},
+    {q:'ฐานนิยม 1,2,2,3,3,3?',a:'3',h:'ซ้ำ 3 ครั้ง'},
+    {q:'พิสัย 3,8,15?',a:'12',h:'= 15-3'},
+    {q:'ค่าเฉลี่ย 10,20,30,40?',a:'25',h:'= 100/4'},
+    {q:'ค่าเฉลี่ยถ่วงน้ำหนัก 3(2)+5(4)?',a:'3.5',h:'= 26/8'},
+    {q:'IQR ถ้า Q1=3, Q3=8?',a:'5',h:'= 8-3'}
+  ],
+  mistakes:[
+    'ลืมเรียงข้อมูลก่อนหามัธยฐาน',
+    'คิดว่ามัธยฐาน = ค่าเฉลี่ย',
+    'ลืมคูณน้ำหนัก'
+  ],
+  problems:[
+    {q:'ค่าเฉลี่ย 2,4,6,8?',a:'5',h:'= 20/4'},
+    {q:'ค่าเฉลี่ย 1,2,3,4,5?',a:'3',h:'= 15/5'},
+    {q:'มัธยฐาน 4,2,6,8,3?',a:'4',h:'เรียง 2,3,4,6,8'},
+    {q:'มัธยฐาน 1,3,5,7?',a:'4',h:'เฉลี่ย 3,5'},
+    {q:'ฐานนิยม 1,2,2,4?',a:'2',h:'ซ้ำ'},
+    {q:'ฐานนิยม 5,5,5,6,7?',a:'5',h:'ซ้ำ 3'},
+    {q:'พิสัย 10,50,20?',a:'40',h:'= 50-10'},
+    {q:'พิสัย 5,15,25?',a:'20',h:'= 25-5'},
+    {q:'ค่าเฉลี่ย 5,10,15,20?',a:'12.5',h:'= 50/4'},
+    {q:'IQR ถ้า Q1=2, Q3=9?',a:'7',h:'= 9-2'}
+  ]
+},
+
+/* ---------- บท 19: ความเท่ากันทุกประการ ---------- */
+{
+  id:'math2_08',
+  subject:'math', grade:2, term:2, number:8,
+  title:'ความเท่ากันทุกประการ',
+  icon:'🔷',
+  def:'สามเหลี่ยม 2 รูปเท่ากันทุกประการ เมื่อมีด้าน/มุม เท่ากันครบ 3 คู่',
+  formulas:[
+    'SSS = ด้าน-ด้าน-ด้าน (3 ด้านเท่า)',
+    'SAS = ด้าน-มุม-ด้าน',
+    'ASA = มุม-ด้าน-มุม',
+    'RHS = ฉาก-ด้านตรงข้าม-ด้าน',
+    'มุมในสามเหลี่ยมรวม = 180°',
+    'มุมภายนอก = ผลบวกมุมในตรงข้าม',
+    'ด้านเท่า มุมตรงข้ามเท่า',
+    'มุมเท่า ด้านตรงข้ามเท่า',
+    'สามเหลี่ยมด้านเท่า: มุมละ 60°',
+    'สามเหลี่ยมหน้าจั่ว: มุมฐานเท่า'
+  ],
+  examples:[
+    {q:'มุม A=50° B=60° → C = ?',a:'70°',h:'= 180-50-60'},
+    {q:'หน้าจั่ว มุมยอด 40° → มุมฐาน?',a:'70°',h:'(180-40)/2'},
+    {q:'ด้านเท่า มุมละ?',a:'60',h:'180/3'},
+    {q:'SSS ต้องมีกี่ด้านเท่า?',a:'3',h:'3 ด้าน'},
+    {q:'SAS ต้องมีอะไร?',a:'ด้าน-มุม-ด้าน',h:'เรียงลำดับ'},
+    {q:'มุม A=90° B=45° → C = ?',a:'45°',h:'= 45'},
+    {q:'มุมภายนอก A=120° มุมใน B=40° → A?',a:'80°',h:'= 120-40'},
+    {q:'สามเหลี่ยมด้านเท่ามีมุม?',a:'60,60,60',h:'เท่ากัน'}
+  ],
+  mistakes:[
+    'ใช้ AAA เป็นการพิสูจน์ (ไม่พอ)',
+    'สลับด้าน/มุมใน SAS กับ ASA',
+    'ลืมมุมรวม 180°'
+  ],
+  problems:[
+    {q:'มุม A=60° B=70° → C = ?',a:'50',h:'= 180-130'},
+    {q:'มุม A=90° B=30° → C = ?',a:'60',h:'= 60'},
+    {q:'มุม A=45° B=45° → C = ?',a:'90',h:'= 90'},
+    {q:'หน้าจั่ว มุมยอด 100° มุมฐาน?',a:'40',h:'(180-100)/2'},
+    {q:'หน้าจั่ว มุมยอด 60° มุมฐาน?',a:'60',h:'(180-60)/2'},
+    {q:'ด้านเท่า มุมละ?',a:'60',h:'60'},
+    {q:'มุมภายนอก 100° มุมใน A=40 → B?',a:'60',h:'= 100-40'},
+    {q:'SSS มีกี่ด้านเท่า?',a:'3',h:'3'},
+    {q:'SAS ย่อมาจาก?',a:'ด้าน-มุม-ด้าน',h:'Side-Angle-Side'},
+    {q:'มุมฉาก = กี่องศา?',a:'90',h:'90'}
+  ]
+},
+
+/* ---------- บท 20: เปอร์เซ็นต์ ---------- */
+{
+  id:'math2_09',
+  subject:'math', grade:2, term:2, number:9,
+  title:'เปอร์เซ็นต์',
+  icon:'💯',
+  def:'เปอร์เซ็นต์ (%) คือการเทียบต่อ 100',
+  formulas:[
+    'x% ของ n = (x/100) × n',
+    'x = (ส่วน/ทั้งหมด) × 100%',
+    'ลด x% → จ่าย (100-x)%',
+    'กำไร% = (ขาย-ทุน)/ทุน × 100',
+    'ขาดทุน% = (ทุน-ขาย)/ทุน × 100',
+    'ราคาขาย = ทุน + กำไร',
+    'ราคาทุน = ขาย × 100/(100+กำไร%)',
+    'ดอกเบี้ย = ต้น × อัตรา × เวลา',
+    'ราคาขึ้น x% → จ่าย (100+x)%',
+    'x% = x/100'
+  ],
+  examples:[
+    {q:'20% ของ 250 = ?',a:'50',h:'= 20/100 × 250'},
+    {q:'สินค้า 800 ลด 25%?',a:'600',h:'= 75% × 800'},
+    {q:'ทุน 400 ขาย 500 กำไร%?',a:'25%',h:'= 100/400 × 100'},
+    {q:'15% ของ 200 = ?',a:'30',h:'= 30'},
+    {q:'ขาย 120 ทุน 100 กำไร%?',a:'20%',h:'= 20%'},
+    {q:'ราคา 500 เพิ่ม 10%?',a:'550',h:'= 110% × 500'},
+    {q:'30% = เศษส่วน?',a:'3/10',h:'= 3/10'},
+    {q:'5% ของ 1000 = ?',a:'50',h:'= 50'}
+  ],
+  mistakes:[
+    'คำนวณกำไร% จากราคาขาย (ต้องใช้ทุน)',
+    'ลดแล้วคิด % จากราคาเดิม',
+    'สับสน กำไร% กับราคาที่เพิ่ม'
+  ],
+  problems:[
+    {q:'10% ของ 500 = ?',a:'50',h:'= 50'},
+    {q:'25% ของ 400 = ?',a:'100',h:'= 100'},
+    {q:'50% ของ 300 = ?',a:'150',h:'= ครึ่ง'},
+    {q:'สินค้า 1000 ลด 20%?',a:'800',h:'= 80%×1000'},
+    {q:'สินค้า 500 ลด 10%?',a:'450',h:'= 450'},
+    {q:'ทุน 200 ขาย 250 กำไร%?',a:'25',h:'= 25%'},
+    {q:'ทุน 500 ขาย 600 กำไร%?',a:'20',h:'= 20%'},
+    {q:'ราคา 200 เพิ่ม 50%?',a:'300',h:'= 150%×200'},
+    {q:'40% = เศษส่วน?',a:'2/5',h:'= 2/5'},
+    {q:'75% = ทศนิยม?',a:'0.75',h:'= 0.75'}
+  ]
+},
+
+/* ---------- บท 21: การใช้พีทาโกรัส ---------- */
+{
+  id:'math2_10',
+  subject:'math', grade:2, term:2, number:10,
+  title:'การนำไปใช้ของพีทาโกรัส',
+  icon:'📐',
+  def:'ประยุกต์พีทาโกรัสกับสถานการณ์จริง เช่น บันได เสาเงา เส้นทแยง',
+  formulas:[
+    'c² = a² + b²',
+    'เส้นทแยงสี่เหลี่ยม = √(กว้าง² + ยาว²)',
+    'เส้นทแยงลูกบาศก์ = √(ก²+ย²+ส²)',
+    'ระยะห่าง 2 จุด = √((x₂-x₁)² + (y₂-y₁)²)',
+    'ความสูง = √(ด้านตรงข้าม² - ฐาน²)',
+    'ตรวจ 3-4-5, 5-12-13, 8-15-17, 7-24-25',
+    'ด้านตรงข้ามมุมฉาก = ด้านที่ยาวสุด',
+    'สามเหลี่ยมด้านเท่า สูง = (√3/2) × ด้าน',
+    'c = a√2 (สี่เหลี่ยมจัตุรัสด้าน a)',
+    'ทรงกลมผ่าน = √(a²+b²+c²)'
+  ],
+  examples:[
+    {q:'สี่เหลี่ยม 6×8 ทแยง?',a:'10',h:'√100'},
+    {q:'บันไดยาว 5 ม. พิงกำแพง 4 ม. ห่าง?',a:'3',h:'√(25-16)'},
+    {q:'สี่เหลี่ยม 5×12 ทแยง?',a:'13',h:'√169'},
+    {q:'ระยะ (0,0) ถึง (8,6)?',a:'10',h:'√100'},
+    {q:'สี่เหลี่ยม 3×4 ทแยง?',a:'5',h:'√25'},
+    {q:'ลูกบาศก์ด้าน 3 ทแยง?',a:'3√3',h:'√27'},
+    {q:'เสาสูง 12 เงา 5 → ไกล?',a:'13',h:'√169'},
+    {q:'ระยะ (1,2) ถึง (4,6)?',a:'5',h:'√(9+16)'}
+  ],
+  mistakes:[
+    'ลืมบวกราก',
+    'ใช้ด้านผิด',
+    'สับสนระหว่างสูงกับทแยง'
+  ],
+  problems:[
+    {q:'สี่เหลี่ยม 3×4 ทแยง?',a:'5',h:'√25'},
+    {q:'สี่เหลี่ยม 5×12 ทแยง?',a:'13',h:'√169'},
+    {q:'สี่เหลี่ยม 8×15 ทแยง?',a:'17',h:'√289'},
+    {q:'บันไดยาว 13 พิง 12 ห่าง?',a:'5',h:'√(169-144)'},
+    {q:'เสาสูง 9 เงา 12 ไกล?',a:'15',h:'√225'},
+    {q:'ระยะ (0,0)-(6,8)?',a:'10',h:'√100'},
+    {q:'ระยะ (2,3)-(5,7)?',a:'5',h:'√(9+16)'},
+    {q:'สี่เหลี่ยมจัตุรัสด้าน 5 ทแยง?',a:'5√2',h:'a√2'},
+    {q:'ลูกบาศก์ด้าน 2 ทแยง?',a:'2√3',h:'√12'},
+    {q:'บันได 10 พิง 6 ห่าง?',a:'8',h:'√64'}
+  ]
+},
+
+/* ---------- บท 22: แยกตัวประกอบดีกรีสอง ---------- */
+{
+  id:'math2_11',
+  subject:'math', grade:2, term:2, number:11,
+  title:'การแยกตัวประกอบพหุนามดีกรีสอง',
+  icon:'🧩',
+  def:'แยก ax² + bx + c ให้เป็นผลคูณของพหุนามดีกรี 1',
+  formulas:[
+    'x² + (p+q)x + pq = (x+p)(x+q)',
+    'a² - b² = (a+b)(a-b)',
+    'a² + 2ab + b² = (a+b)²',
+    'a² - 2ab + b² = (a-b)²',
+    'x² + bx + c: หา 2 จำนวน บวก=b คูณ=c',
+    'ax² + bx + c: หา 2 จำนวน บวก=b คูณ=ac',
+    'จัดกลุ่ม (grouping)',
+    'ตรวจคำตอบด้วยการคูณกลับ',
+    'พหุนาม 4 พจน์ จัดกลุ่ม 2 คู่',
+    'x² + x - 6 = (x+3)(x-2)'
+  ],
+  examples:[
+    {q:'x²+7x+12 = ?',a:'(x+3)(x+4)',h:'3+4=7, 3×4=12'},
+    {q:'x²+5x+6 = ?',a:'(x+2)(x+3)',h:'2+3=5, 2×3=6'},
+    {q:'x²-9 = ?',a:'(x+3)(x-3)',h:'a²-b²'},
+    {q:'x²-6x+9 = ?',a:'(x-3)²',h:'a²-2ab+b²'},
+    {q:'x²+x-6 = ?',a:'(x+3)(x-2)',h:'3+(-2)=1, 3×(-2)=-6'},
+    {q:'x²-5x+6 = ?',a:'(x-2)(x-3)',h:'-2+(-3)=-5'},
+    {q:'x²+8x+15 = ?',a:'(x+3)(x+5)',h:'3+5=8'},
+    {q:'2x²+7x+3 = ?',a:'(2x+1)(x+3)',h:'grouping'}
+  ],
+  mistakes:[
+    'หา p+q กับ pq ผิด',
+    'ลืมเครื่องหมายลบ',
+    'x²-9 แยกเป็น (x-9)(x-1) ผิด'
+  ],
+  problems:[
+    {q:'x²+6x+8 = ?',a:'(x+2)(x+4)',h:'2+4=6, 2×4=8'},
+    {q:'x²+8x+7 = ?',a:'(x+1)(x+7)',h:'1+7=8'},
+    {q:'x²-16 = ?',a:'(x+4)(x-4)',h:'a²-b²'},
+    {q:'x²+10x+25 = ?',a:'(x+5)²',h:'(a+b)²'},
+    {q:'x²-8x+16 = ?',a:'(x-4)²',h:'(a-b)²'},
+    {q:'x²+3x-10 = ?',a:'(x+5)(x-2)',h:'5+(-2)=3'},
+    {q:'x²-7x+12 = ?',a:'(x-3)(x-4)',h:'-3+(-4)=-7'},
+    {q:'x²+9x+20 = ?',a:'(x+4)(x+5)',h:'4+5=9'},
+    {q:'x²-100 = ?',a:'(x+10)(x-10)',h:'a²-b²'},
+    {q:'2x²+5x+3 = ?',a:'(2x+3)(x+1)',h:'grouping'}
+  ]
+},
+
+/* ---------- บท 23: สมการกำลังสอง ---------- */
+{
+  id:'math2_12',
+  subject:'math', grade:2, term:2, number:12,
+  title:'สมการกำลังสอง',
+  icon:'⚖️',
+  def:'สมการที่ตัวแปรมีกำลังสูงสุด 2 รูป ax² + bx + c = 0',
+  formulas:[
+    'ax² + bx + c = 0',
+    'แยกตัวประกอบ: (x-p)(x-q) = 0 → x = p หรือ q',
+    'x² = a → x = ±√a',
+    'x² + bx + c = 0 → (x+p)(x+q) = 0',
+    'x = (-b ± √(b²-4ac)) / 2a',
+    'ผลบวกคำตอบ = -b/a',
+    'ผลคูณคำตอบ = c/a',
+    'Discriminant Δ = b² - 4ac',
+    'Δ > 0 → 2 คำตอบ',
+    'Δ = 0 → 1 คำตอบ'
+  ],
+  examples:[
+    {q:'x² - 5x + 6 = 0 → x = ?',a:'2, 3',h:'(x-2)(x-3)'},
+    {q:'x² = 9 → x = ?',a:'±3',h:'±√9'},
+    {q:'x² - 4 = 0 → x = ?',a:'±2',h:'±2'},
+    {q:'x² + 5x = 0 → x = ?',a:'0, -5',h:'x(x+5)'},
+    {q:'x² + 7x + 12 = 0 → x = ?',a:'-3, -4',h:'(x+3)(x+4)'},
+    {q:'x² - 6x + 9 = 0 → x = ?',a:'3',h:'(x-3)²'},
+    {q:'2x² - 8 = 0 → x = ?',a:'±2',h:'x² = 4'},
+    {q:'x² - x - 6 = 0 → x = ?',a:'3, -2',h:'(x-3)(x+2)'}
+  ],
+  mistakes:[
+    'ลืมกรณี ±',
+    'แยกตัวประกอบผิด',
+    'ลบเครื่องหมายผิด'
+  ],
+  problems:[
+    {q:'x² = 16 → x = ?',a:'±4',h:'±4'},
+    {q:'x² = 25 → x = ?',a:'±5',h:'±5'},
+    {q:'x² - 9 = 0 → x = ?',a:'±3',h:'±3'},
+    {q:'x² - 5x + 6 = 0 → x = ?',a:'2,3',h:'(x-2)(x-3)'},
+    {q:'x² - 7x + 12 = 0 → x = ?',a:'3,4',h:'(x-3)(x-4)'},
+    {q:'x² + 5x + 6 = 0 → x = ?',a:'-2,-3',h:'(x+2)(x+3)'},
+    {q:'x² + 3x = 0 → x = ?',a:'0,-3',h:'x(x+3)'},
+    {q:'x² - x - 12 = 0 → x = ?',a:'4,-3',h:'(x-4)(x+3)'},
+    {q:'x² - 10x + 25 = 0 → x = ?',a:'5',h:'(x-5)²'},
+    {q:'x² + x - 6 = 0 → x = ?',a:'2,-3',h:'(x+3)(x-2)'}
+  ]
+},
+
+/* ---------- บท 24: การแปรผัน ---------- */
+{
+  id:'math2_13',
+  subject:'math', grade:2, term:2, number:13,
+  title:'การแปรผัน',
+  icon:'📈',
+  def:'การแปรผันคือความสัมพันธ์ระหว่าง 2 ปริมาณ ตรง/ผกผัน/แบบผสม',
+  formulas:[
+    'แปรผันตรง: y = kx',
+    'ค่าคงที่ k = y/x',
+    'แปรผกผัน: y = k/x',
+    'k = xy',
+    'แปรผันตรงกับกำลังสอง: y = kx²',
+    'แปรผกผันกับกำลังสอง: y = k/x²',
+    'แปรผันผสม: y = kx/z',
+    'y₁/x₁ = y₂/x₂ (แปรผันตรง)',
+    'x₁y₁ = x₂y₂ (แปรผกผัน)',
+    'y แปรผันตรงกับ x และผกผันกับ z → y = kx/z'
+  ],
+  examples:[
+    {q:'y แปรผันตรง x, y=6 เมื่อ x=2 → k?',a:'3',h:'k = y/x'},
+    {q:'y แปรผกผัน x, y=4 เมื่อ x=3 → k?',a:'12',h:'k = xy'},
+    {q:'y=kx, k=2, x=5 → y?',a:'10',h:'= 2×5'},
+    {q:'y=k/x, k=12, x=4 → y?',a:'3',h:'= 3'},
+    {q:'y แปรผันตรง x, y=8 ที่ x=4, y ที่ x=6?',a:'12',h:'y/x = 2'},
+    {q:'y แปรผกผัน x, y=6 ที่ x=2, y ที่ x=3?',a:'4',h:'xy=12'},
+    {q:'y=kx², k=2, x=3 → y?',a:'18',h:'= 18'},
+    {q:'y แปรผันตรง x, x=3→y=15, k?',a:'5',h:'k=5'}
+  ],
+  mistakes:[
+    'สับสนแปรผันตรง/ผกผัน',
+    'คำนวณ k ผิด',
+    'ลืมยกกำลังสอง'
+  ],
+  problems:[
+    {q:'y=kx, k=3, x=4 → y?',a:'12',h:'= 12'},
+    {q:'y=kx, k=5, x=6 → y?',a:'30',h:'= 30'},
+    {q:'y=k/x, k=20, x=4 → y?',a:'5',h:'= 5'},
+    {q:'y=k/x, k=30, x=5 → y?',a:'6',h:'= 6'},
+    {q:'y ตรง x, y=10 ที่ x=2 → k?',a:'5',h:'k=5'},
+    {q:'y ผกผัน x, y=6 ที่ x=2 → k?',a:'12',h:'k=12'},
+    {q:'y ตรง x, y=9 ที่ x=3 → y ที่ x=7?',a:'21',h:'y=3x'},
+    {q:'y ผกผัน x, y=4 ที่ x=3 → y ที่ x=2?',a:'6',h:'k=12'},
+    {q:'y=kx², k=3, x=2 → y?',a:'12',h:'= 12'},
+    {q:'y ตรง x, x=5→y=25 → k?',a:'5',h:'k=5'}
+  ]
+}
+
+];
+
+var registered = MQEX.registerChapters(chapters);
+
+console.info('✅ MQ-EX Part 3: คณิต ม.2 loaded');
+console.info('   Registered: '+registered+' chapters');
+console.info('   Total chapters now: '+Object.keys(MQEX.chapters).length);
+})();
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 4: คณิต ม.3 (12 บท)
+   ต้องโหลด Part 1 + 2 + 3 ก่อน
+   ============================================================ */
+(function(){
+if(!window.MQEX || !window.MQEX.ready){
+  console.error('❌ ต้องโหลด MQ-EX Part 1 ก่อน');
+  return;
+}
+if(window.__MQEX_P4__){console.warn('Part 4 already loaded');return;}
+window.__MQEX_P4__=true;
+
+var MQEX = window.MQEX;
+
+var chapters = [
+
+/* ---------- บท 25: อสมการเชิงเส้นตัวแปรเดียว ---------- */
+{
+  id:'math3_01',
+  subject:'math', grade:3, term:1, number:1,
+  title:'อสมการเชิงเส้นตัวแปรเดียว',
+  icon:'⚖️',
+  def:'อสมการคือประโยคที่แสดงการไม่เท่ากัน ใช้สัญลักษณ์ &lt; &gt; ≤ ≥',
+  formulas:[
+    'a < b → a น้อยกว่า b',
+    'a > b → a มากกว่า b',
+    'a ≤ b → a น้อยกว่าหรือเท่ากับ b',
+    'a ≥ b → a มากกว่าหรือเท่ากับ b',
+    'บวก/ลบ ทั้ง 2 ข้าง → เครื่องหมายเดิม',
+    'คูณ/หารด้วยจำนวนบวก → เครื่องหมายเดิม',
+    'คูณ/หารด้วยจำนวนลบ → กลับเครื่องหมาย!',
+    'แก้: ย้ายข้าง + หารด้วย สปส.',
+    'กราฟบนเส้นจำนวน: ● = รวม, ○ = ไม่รวม',
+    'ช่วงคำตอบ: a < x < b → (a, b)'
+  ],
+  examples:[
+    {q:'x + 3 > 7 → x > ?',a:'4',h:'x > 4'},
+    {q:'2x < 10 → x < ?',a:'5',h:'x < 5'},
+    {q:'-3x > 12 → x ?',a:'x < -4',h:'กลับเครื่องหมาย!'},
+    {q:'x - 5 ≥ 2 → x ≥ ?',a:'7',h:'x ≥ 7'},
+    {q:'2x + 1 ≤ 9 → x ≤ ?',a:'4',h:'x ≤ 4'},
+    {q:'-x > 3 → x ?',a:'x < -3',h:'กลับ'},
+    {q:'3(x+1) > 12 → x > ?',a:'3',h:'x+1 > 4'},
+    {q:'5 - x ≥ 2 → x ?',a:'x ≤ 3',h:'-x ≥ -3'}
+  ],
+  mistakes:[
+    'คูณ/หารด้วยลบแล้วไม่กลับเครื่องหมาย',
+    'สับสน ● กับ ○ บนเส้นจำนวน'
+  ],
+  problems:[
+    {q:'x + 5 > 8 → x > ?',a:'3',h:'x > 3'},
+    {q:'x - 3 < 4 → x < ?',a:'7',h:'x < 7'},
+    {q:'2x > 14 → x > ?',a:'7',h:'x > 7'},
+    {q:'3x ≤ 12 → x ≤ ?',a:'4',h:'x ≤ 4'},
+    {q:'-2x > 8 → x ?',a:'x < -4',h:'กลับ'},
+    {q:'-x ≥ 5 → x ?',a:'x ≤ -5',h:'กลับ'},
+    {q:'2x + 3 > 11 → x > ?',a:'4',h:'x > 4'},
+    {q:'3x - 2 ≥ 10 → x ≥ ?',a:'4',h:'x ≥ 4'},
+    {q:'5 - x > 2 → x ?',a:'x < 3',h:'-x > -3 → x < 3'},
+    {q:'-4x ≤ 20 → x ?',a:'x ≥ -5',h:'กลับ'}
+  ]
+},
+
+/* ---------- บท 26: แยกตัวประกอบดีกรีสูง ---------- */
+{
+  id:'math3_02',
+  subject:'math', grade:3, term:1, number:2,
+  title:'การแยกตัวประกอบพหุนามดีกรีสูงกว่าสอง',
+  icon:'🧩',
+  def:'แยกพหุนามที่มีดีกรีสูงกว่า 2 เช่น x³, x⁴ ให้เป็นผลคูณ',
+  formulas:[
+    'a³ + b³ = (a+b)(a² - ab + b²)',
+    'a³ - b³ = (a-b)(a² + ab + b²)',
+    'a³ + 3a²b + 3ab² + b³ = (a+b)³',
+    'a³ - 3a²b + 3ab² - b³ = (a-b)³',
+    'x³ + x² = x²(x + 1)',
+    'x⁴ - 1 = (x²+1)(x²-1) = (x²+1)(x+1)(x-1)',
+    'a⁴ - b⁴ = (a²+b²)(a²-b²)',
+    'จัดกลุ่ม (grouping): ax + ay + bx + by = (a+b)(x+y)',
+    'x³ + 27 = (x+3)(x² - 3x + 9)',
+    'x³ - 8 = (x-2)(x² + 2x + 4)'
+  ],
+  examples:[
+    {q:'x³ + 8 = ?',a:'(x+2)(x²-2x+4)',h:'a³+b³'},
+    {q:'x³ - 27 = ?',a:'(x-3)(x²+3x+9)',h:'a³-b³'},
+    {q:'x³ + 5x² = ?',a:'x²(x+5)',h:'ดึงตัวร่วม'},
+    {q:'x³ + 3x² + 3x + 1 = ?',a:'(x+1)³',h:'a³+3a²b+...'},
+    {q:'x⁴ - 16 = ?',a:'(x²+4)(x²-4)',h:'a²-b²'},
+    {q:'x⁴ - 16 ต่อ = ?',a:'(x²+4)(x+2)(x-2)',h:'แยกต่อ'},
+    {q:'x³ - x = ?',a:'x(x+1)(x-1)',h:'ดึงตัวร่วม'},
+    {q:'x³ - 64 = ?',a:'(x-4)(x²+4x+16)',h:'a³-b³'}
+  ],
+  mistakes:[
+    'คิดว่า a³+b³ = (a+b)³ (ผิด)',
+    'แยก a²-ab+b² ต่อไม่ได้ (แยกไม่ได้แล้ว)',
+    'ลืมดึงตัวร่วมก่อน'
+  ],
+  problems:[
+    {q:'x³ + 1 = ?',a:'(x+1)(x²-x+1)',h:'a³+1³'},
+    {q:'x³ - 1 = ?',a:'(x-1)(x²+x+1)',h:'a³-1³'},
+    {q:'x³ + 27 = ?',a:'(x+3)(x²-3x+9)',h:'3³=27'},
+    {q:'x³ - 8 = ?',a:'(x-2)(x²+2x+4)',h:'2³=8'},
+    {q:'x³ + 6x² = ?',a:'x²(x+6)',h:'ดึง'},
+    {q:'x⁴ - 1 = ?',a:'(x²+1)(x²-1)',h:'a²-b²'},
+    {q:'x³ - 125 = ?',a:'(x-5)(x²+5x+25)',h:'5³=125'},
+    {q:'x³ + 2x² + x = ?',a:'x(x+1)²',h:'ดึง x'},
+    {q:'x³ + 3x² + 3x + 1 = ?',a:'(x+1)³',h:'สูตร'},
+    {q:'x⁴ - 81 = ?',a:'(x²+9)(x²-9)',h:'9²=81'}
+  ]
+},
+
+/* ---------- บท 27: สมการกำลังสอง ---------- */
+{
+  id:'math3_03',
+  subject:'math', grade:3, term:1, number:3,
+  title:'สมการกำลังสอง (เชิงลึก)',
+  icon:'⚖️',
+  def:'สมการ ax² + bx + c = 0 (a ≠ 0) หาคำตอบได้ 3 วิธี',
+  formulas:[
+    'ax² + bx + c = 0',
+    'วิธีที่ 1: แยกตัวประกอบ',
+    'วิธีที่ 2: กำลังสองสมบูรณ์',
+    'วิธีที่ 3: สูตร x = (-b ± √(b²-4ac))/2a',
+    'Discriminant Δ = b² - 4ac',
+    'Δ > 0 → 2 คำตอบ',
+    'Δ = 0 → 1 คำตอบ',
+    'Δ < 0 → ไม่มีคำตอบจริง',
+    'ผลบวกคำตอบ x₁+x₂ = -b/a',
+    'ผลคูณ x₁·x₂ = c/a'
+  ],
+  examples:[
+    {q:'x² - 5x + 6 = 0 → x?',a:'2, 3',h:'แยกตัวประกอบ'},
+    {q:'x² + 2x - 3 = 0 → x?',a:'1, -3',h:'(x+3)(x-1)'},
+    {q:'x² - 9 = 0 → x?',a:'±3',h:'±√9'},
+    {q:'x² + 6x + 9 = 0 → x?',a:'-3',h:'(x+3)²'},
+    {q:'2x² - 8 = 0 → x?',a:'±2',h:'x² = 4'},
+    {q:'x² - 3x = 0 → x?',a:'0, 3',h:'x(x-3)'},
+    {q:'x² + 4x + 3 = 0 → x?',a:'-1, -3',h:'(x+1)(x+3)'},
+    {q:'x² - 7x + 12 = 0 → x?',a:'3, 4',h:'(x-3)(x-4)'}
+  ],
+  mistakes:[
+    'แยกตัวประกอบผิด',
+    'ลืมกรณี ±',
+    'ลืม discriminant'
+  ],
+  problems:[
+    {q:'x² - 6x + 8 = 0 → x?',a:'2,4',h:'(x-2)(x-4)'},
+    {q:'x² - 8x + 15 = 0 → x?',a:'3,5',h:'(x-3)(x-5)'},
+    {q:'x² + 5x + 4 = 0 → x?',a:'-1,-4',h:'(x+1)(x+4)'},
+    {q:'x² + 7x + 6 = 0 → x?',a:'-1,-6',h:'(x+1)(x+6)'},
+    {q:'x² - 16 = 0 → x?',a:'±4',h:'±√16'},
+    {q:'x² - 25 = 0 → x?',a:'±5',h:'±√25'},
+    {q:'x² - 4x = 0 → x?',a:'0,4',h:'x(x-4)'},
+    {q:'x² + 3x = 0 → x?',a:'0,-3',h:'x(x+3)'},
+    {q:'x² - 2x - 8 = 0 → x?',a:'4,-2',h:'(x-4)(x+2)'},
+    {q:'x² + 8x + 16 = 0 → x?',a:'-4',h:'(x+4)²'}
+  ]
+},
+
+/* ---------- บท 28: ความคล้าย ---------- */
+{
+  id:'math3_04',
+  subject:'math', grade:3, term:1, number:4,
+  title:'ความคล้าย',
+  icon:'🔷',
+  def:'รูป 2 รูปคล้ายกันเมื่อมีมุมเท่ากันทุกคู่ และด้านคู่ที่สมนัยเป็นสัดส่วน',
+  formulas:[
+    'สามเหลี่ยมคล้าย: AA (มุม-มุม)',
+    'ด้านสมนัยมีอัตราส่วนเท่ากัน',
+    'a/a\' = b/b\' = c/c\' = k',
+    'พื้นที่คล้าย: อัตราส่วน = k²',
+    'ปริมาตรคล้าย: อัตราส่วน = k³',
+    'เส้นรอบรูปคล้าย: อัตราส่วน = k',
+    'ΔABC ~ ΔDEF (สัญลักษณ์)',
+    'สัดส่วนด้าน: AB/DE = BC/EF = AC/DF',
+    'SSS คล้าย: ด้าน 3 คู่เป็นสัดส่วน',
+    'SAS คล้าย: ด้าน 2 คู่เป็นสัดส่วน + มุมระหว่างเท่า'
+  ],
+  examples:[
+    {q:'Δด้าน 3,4,5 คล้าย Δด้าน 6,8,x → x?',a:'10',h:'อัตรา 2×'},
+    {q:'สามเหลี่ยมคล้าย k=2 → พื้นที่ k²?',a:'4',h:'= 2²'},
+    {q:'คล้าย k=3 → ปริมาตร k³?',a:'27',h:'= 27'},
+    {q:'AB=4, DE=6, BC=6, EF=?',a:'9',h:'4/6 = 6/x'},
+    {q:'คล้าย k=1/2 → พื้นที่?',a:'1/4',h:'= (1/2)²'},
+    {q:'เส้นรอบ Δ = 10, k=3 → อีก?',a:'30',h:'= 30'},
+    {q:'AB/DE = 2/3, BC=8 → EF?',a:'12',h:'= 12'},
+    {q:'คล้าย k=4 → ปริมาตร?',a:'64',h:'= 4³'}
+  ],
+  mistakes:[
+    'สลับด้านสมนัย',
+    'ใช้ k แทน k² สำหรับพื้นที่',
+    'สับสนคล้ายกับเท่ากันทุกประการ'
+  ],
+  problems:[
+    {q:'Δ ด้าน 3,4,5 กับ 6,8,x → x?',a:'10',h:'×2'},
+    {q:'Δ ด้าน 5,12,13 กับ 10,24,x → x?',a:'26',h:'×2'},
+    {q:'AB=3, DE=6, BC=4 → EF?',a:'8',h:'k=2'},
+    {q:'คล้าย k=2 → พื้นที่ k²?',a:'4',h:'4 เท่า'},
+    {q:'คล้าย k=3 → ปริมาตร?',a:'27',h:'k³'},
+    {q:'เส้นรอบ 12, k=2 → อีก?',a:'24',h:'×2'},
+    {q:'คล้าย k=1/3 → พื้นที่?',a:'1/9',h:'(1/3)²'},
+    {q:'AB/DE = 1/2, BC=5 → EF?',a:'10',h:'×2'},
+    {q:'คล้าย k=1/2 → ปริมาตร?',a:'1/8',h:'(1/2)³'},
+    {q:'Δ คล้าย k=4 → ด้าน ×?',a:'4',h:'k'}
+  ]
+},
+
+/* ---------- บท 29: กราฟฟังก์ชันกำลังสอง ---------- */
+{
+  id:'math3_05',
+  subject:'math', grade:3, term:1, number:5,
+  title:'กราฟฟังก์ชันกำลังสอง',
+  icon:'📈',
+  def:'y = ax² + bx + c กราฟเป็นพาราโบลา หงายถ้า a > 0 คว่ำถ้า a < 0',
+  formulas:[
+    'y = ax² + bx + c (a ≠ 0)',
+    'a > 0 → พาราโบลาหงาย (จุดต่ำสุด)',
+    'a < 0 → พาราโบลาคว่ำ (จุดสูงสุด)',
+    'จุดยอด (vertex) = (-b/2a, y)',
+    'แกนสมมาตร x = -b/2a',
+    'จุดตัดแกน y = c',
+    'จุดตัดแกน x = แก้ ax²+bx+c = 0',
+    'y = a(x-h)² + k → vertex (h,k)',
+    'y = (x-h)² เลื่อนขวา h',
+    'y = x² + k เลื่อนขึ้น k'
+  ],
+  examples:[
+    {q:'y = x², x=3 → y?',a:'9',h:'= 9'},
+    {q:'y = 2x², x=2 → y?',a:'8',h:'= 8'},
+    {q:'y = -x², x=3 → y?',a:'-9',h:'ติดลบ'},
+    {q:'vertex y = x²+2x+1?',a:'(-1,0)',h:'x=-b/2a=-1'},
+    {q:'จุดตัด y = x²-4?',a:'±2',h:'x²=4'},
+    {q:'y = (x-2)² → vertex?',a:'(2,0)',h:'h=2, k=0'},
+    {q:'y = x²+1 → vertex?',a:'(0,1)',h:'h=0, k=1'},
+    {q:'แกนสมมาตร y=x²-4x?',a:'x=2',h:'= -b/2a'}
+  ],
+  mistakes:[
+    'สับสน a>0 กับ a<0',
+    'คำนวณ vertex ผิด'
+  ],
+  problems:[
+    {q:'y=x², x=5 → y?',a:'25',h:'= 25'},
+    {q:'y=x², x=-4 → y?',a:'16',h:'= 16'},
+    {q:'y=3x², x=2 → y?',a:'12',h:'= 12'},
+    {q:'y=-x², x=4 → y?',a:'-16',h:'ติดลบ'},
+    {q:'y=x²-9, ตัด x?',a:'±3',h:'x²=9'},
+    {q:'y=x²-16, ตัด x?',a:'±4',h:'±4'},
+    {q:'vertex y=(x-3)²?',a:'(3,0)',h:'h=3'},
+    {q:'vertex y=x²+2?',a:'(0,2)',h:'k=2'},
+    {q:'แกนสมมาตร y=x²-6x?',a:'x=3',h:'-b/2a=3'},
+    {q:'a>0 กราฟ?',a:'หงาย',h:'หงาย'}
+  ]
+},
+
+/* ---------- บท 30: สถิติ (3) ---------- */
+{
+  id:'math3_06',
+  subject:'math', grade:3, term:1, number:6,
+  title:'สถิติ (3)',
+  icon:'📊',
+  def:'สถิติชั้นสูง: การกระจาย ค่าเบี่ยงเบนมาตรฐาน ควอร์ไทล์',
+  formulas:[
+    'ค่าเฉลี่ย x̄ = Σx / n',
+    'ส่วนเบี่ยงเบน d = x - x̄',
+    'ความแปรปรวน = Σd² / n',
+    'ส่วนเบี่ยงเบนมาตรฐาน SD = √ความแปรปรวน',
+    'Q1 = ควอร์ไทล์ที่ 1',
+    'Q2 = มัธยฐาน',
+    'Q3 = ควอร์ไทล์ที่ 3',
+    'IQR = Q3 - Q1',
+    'พิสัย = max - min',
+    'CV = SD/x̄ × 100%'
+  ],
+  examples:[
+    {q:'ข้อมูล 2,4,6,8 → x̄?',a:'5',h:'= 20/4'},
+    {q:'SD ของ 1,3,5?',a:'1.63',h:'ความแปรปรวน≈2.67'},
+    {q:'Q2 ของ 1,2,3,4,5?',a:'3',h:'มัธยฐาน'},
+    {q:'IQR ถ้า Q1=3, Q3=9?',a:'6',h:'= 9-3'},
+    {q:'พิสัย 5, 20?',a:'15',h:'= 15'},
+    {q:'x̄=10, SD=2 → CV?',a:'20%',h:'= 2/10×100'},
+    {q:'ความแปรปรวน 4 → SD?',a:'2',h:'√4'},
+    {q:'Q1 ของ 2,4,6,8,10?',a:'4',h:'ค่ากลางครึ่งล่าง'}
+  ],
+  mistakes:[
+    'ลืมถอด √',
+    'สลับ Q1 กับ Q3'
+  ],
+  problems:[
+    {q:'x̄ ของ 3,6,9?',a:'6',h:'= 18/3'},
+    {q:'x̄ ของ 5,10,15,20?',a:'12.5',h:'= 50/4'},
+    {q:'SD ของ 2,4,6?',a:'1.63',h:'≈1.63'},
+    {q:'SD ของ 5,5,5?',a:'0',h:'เท่ากัน'},
+    {q:'Q2 ของ 1,3,5,7,9?',a:'5',h:'ค่ากลาง'},
+    {q:'IQR ถ้า Q1=2, Q3=8?',a:'6',h:'6'},
+    {q:'พิสัย 10,40?',a:'30',h:'30'},
+    {q:'x̄=20, SD=4 → CV?',a:'20%',h:'= 20%'},
+    {q:'ความแปรปรวน 9 → SD?',a:'3',h:'√9'},
+    {q:'ความแปรปรวน 16 → SD?',a:'4',h:'√16'}
+  ]
+},
+
+/* ---------- บท 31: ระบบสมการ 2 ตัวแปร ---------- */
+{
+  id:'math3_07',
+  subject:'math', grade:3, term:2, number:7,
+  title:'ระบบสมการเชิงเส้นสองตัวแปร',
+  icon:'⚖️',
+  def:'สมการ 2 ตัวแปร 2 สมการ หาคำตอบร่วม (x, y)',
+  formulas:[
+    'a₁x + b₁y = c₁',
+    'a₂x + b₂y = c₂',
+    'วิธีที่ 1: แทนค่า (substitution)',
+    'วิธีที่ 2: กำจัดตัวแปร (elimination)',
+    'วิธีที่ 3: กราฟ',
+    'ถ้า a₁/a₂ ≠ b₁/b₂ → 1 คำตอบ',
+    'ถ้า a₁/a₂ = b₁/b₂ = c₁/c₂ → ไม่มีที่สิ้นสุด',
+    'ถ้า a₁/a₂ = b₁/b₂ ≠ c₁/c₂ → ไม่มีคำตอบ',
+    'ตรวจโดยแทนกลับ',
+    'x+y และ x-y → บวก/ลบ 2 สมการ'
+  ],
+  examples:[
+    {q:'x+y=5, x-y=1 → (x,y)?',a:'(3,2)',h:'บวก: 2x=6'},
+    {q:'x+y=10, x-y=4 → x?',a:'7',h:'2x=14'},
+    {q:'2x+y=7, x+y=5 → (x,y)?',a:'(2,3)',h:'ลบ: x=2'},
+    {q:'x+2y=8, x-y=2 → x?',a:'4',h:'y=2'},
+    {q:'y=2x, x+y=9 → (x,y)?',a:'(3,6)',h:'แทน'},
+    {q:'3x+2y=16, x=2 → y?',a:'5',h:'= 5'},
+    {q:'x+y=7, x-y=1 → x?',a:'4',h:'x=4'},
+    {q:'2x-y=3, x+y=6 → x?',a:'3',h:'บวก 2 สมการ'}
+  ],
+  mistakes:[
+    'ลบสมการไม่เปลี่ยนเครื่องหมาย',
+    'แทนค่าผิด'
+  ],
+  problems:[
+    {q:'x+y=8, x-y=2 → x?',a:'5',h:'2x=10'},
+    {q:'x+y=8, x-y=2 → y?',a:'3',h:'= 3'},
+    {q:'x+y=6, x-y=0 → x?',a:'3',h:'2x=6'},
+    {q:'2x+y=9, x+y=6 → x?',a:'3',h:'ลบ: x=3'},
+    {q:'x+3y=11, x-y=3 → x?',a:'5',h:'y=2'},
+    {q:'y=x+1, x+y=7 → x?',a:'3',h:'= 3'},
+    {q:'y=2x, x+y=12 → x?',a:'4',h:'3x=12'},
+    {q:'3x-y=5, x+y=3 → x?',a:'2',h:'บวก 2 สมการ'},
+    {q:'x-y=4, x+y=10 → x?',a:'7',h:'2x=14'},
+    {q:'2x+y=10, x-y=2 → x?',a:'4',h:'3x=12'}
+  ]
+},
+
+/* ---------- บท 32: วงกลม ---------- */
+{
+  id:'math3_08',
+  subject:'math', grade:3, term:2, number:8,
+  title:'วงกลม',
+  icon:'⭕',
+  def:'สมบัติของวงกลม: คอร์ด เส้นสัมผัส มุมในวงกลม',
+  formulas:[
+    'เส้นรอบวง = 2πr',
+    'พื้นที่วงกลม = πr²',
+    'มุมที่จุดศูนย์กลาง = 2 × มุมที่เส้นรอบวง',
+    'มุมในครึ่งวงกลม = 90°',
+    'มุมในส่วนโค้งเดียวกันเท่ากัน',
+    'คอร์ดเท่า → ส่วนโค้งเท่า',
+    'เส้นสัมผัสตั้งฉากกับรัศมี',
+    'เส้นจากจุดศูนย์กลางตั้งฉากคอร์ด → แบ่งครึ่งคอร์ด',
+    'เส้นสัมผัสจากจุดภายนอกเท่ากัน',
+    'พื้นที่เซกเตอร์ = (θ/360) × πr²'
+  ],
+  examples:[
+    {q:'วงกลม r=5 → พื้นที่?',a:'78.5',h:'πr² = 3.14×25'},
+    {q:'เส้นรอบวง r=7?',a:'43.96',h:'2πr'},
+    {q:'มุมที่ศูนย์กลาง 60° → มุมที่เส้นรอบวง?',a:'30°',h:'ครึ่งหนึ่ง'},
+    {q:'มุมในครึ่งวงกลม = ?',a:'90°',h:'ฉาก'},
+    {q:'θ=90°, r=4 → เซกเตอร์?',a:'12.56',h:'(90/360)×3.14×16'},
+    {q:'r=10 → เส้นรอบ?',a:'62.8',h:'2×3.14×10'},
+    {q:'มุมที่เส้นรอบ 40° → ที่ศูนย์กลาง?',a:'80°',h:'×2'},
+    {q:'r=3 → พื้นที่?',a:'28.26',h:'3.14×9'}
+  ],
+  mistakes:[
+    'ใช้ r กับ d สลับ',
+    'ลืมหาร 2 ของมุมที่เส้นรอบวง'
+  ],
+  problems:[
+    {q:'r=4 → พื้นที่?',a:'50.24',h:'3.14×16'},
+    {q:'r=6 → พื้นที่?',a:'113.04',h:'3.14×36'},
+    {q:'r=2 → เส้นรอบ?',a:'12.56',h:'2×3.14×2'},
+    {q:'r=5 → เส้นรอบ?',a:'31.4',h:'2×3.14×5'},
+    {q:'มุมที่ศูนย์กลาง 100° → ที่เส้นรอบ?',a:'50',h:'ครึ่ง'},
+    {q:'มุมที่เส้นรอบ 30° → ที่ศูนย์?',a:'60',h:'×2'},
+    {q:'มุมในครึ่งวงกลม?',a:'90',h:'90'},
+    {q:'θ=180°, r=2 → เซกเตอร์?',a:'6.28',h:'ครึ่งวงกลม'},
+    {q:'θ=60°, r=6 → เซกเตอร์?',a:'18.84',h:'(1/6)πr²'},
+    {q:'r=10 → พื้นที่?',a:'314',h:'3.14×100'}
+  ]
+},
+
+/* ---------- บท 33: พีระมิด กรวย ทรงกลม ---------- */
+{
+  id:'math3_09',
+  subject:'math', grade:3, term:2, number:9,
+  title:'พีระมิด กรวย ทรงกลม',
+  icon:'🔺',
+  def:'รูป 3 มิติ: พีระมิด (ฐานหลายเหลี่ยม) กรวย (ฐานวงกลม) ทรงกลม',
+  formulas:[
+    'พีระมิด ปริมาตร = (1/3) × พื้นที่ฐาน × สูง',
+    'กรวย ปริมาตร = (1/3) πr²h',
+    'กรวย พื้นที่ผิวข้าง = πrl (l = สูงเอียง)',
+    'กรวย พื้นที่ผิวรวม = πr(r+l)',
+    'ทรงกลม ปริมาตร = (4/3) πr³',
+    'ทรงกลม พื้นที่ผิว = 4πr²',
+    'ลบองศา: l² = r² + h²',
+    'พีระมิด ฐาน 4 เหลี่ยม = ด้าน² × สูง / 3',
+    'πr²h / 3 = กรวย',
+    '4πr² = พื้นที่ผิวทรงกลม'
+  ],
+  examples:[
+    {q:'พีระมิด ฐาน 36 สูง 5 → ปริมาตร?',a:'60',h:'= 36×5/3'},
+    {q:'กรวย r=3 h=4 → ปริมาตร?',a:'37.68',h:'π×9×4/3'},
+    {q:'ทรงกลม r=3 → ปริมาตร?',a:'113.04',h:'(4/3)π×27'},
+    {q:'ทรงกลม r=2 → พื้นที่ผิว?',a:'50.24',h:'4π×4'},
+    {q:'กรวย r=2 l=5 → ผิวข้าง?',a:'31.4',h:'π×2×5'},
+    {q:'พีระมิด ฐาน 25 สูง 6 → ปริมาตร?',a:'50',h:'25×6/3'},
+    {q:'ทรงกลม r=5 → ปริมาตร?',a:'523.33',h:'≈523.33'},
+    {q:'กรวย r=4 h=9 → ปริมาตร?',a:'150.72',h:'π×16×9/3'}
+  ],
+  mistakes:[
+    'ลืมหาร 3',
+    'ใช้ h กับ l สลับ'
+  ],
+  problems:[
+    {q:'พีระมิด ฐาน 12 สูง 5 → ปริมาตร?',a:'20',h:'12×5/3'},
+    {q:'พีระมิด ฐาน 30 สูง 4 → ปริมาตร?',a:'40',h:'30×4/3'},
+    {q:'กรวย r=2 h=3 → ปริมาตร?',a:'12.56',h:'π×4×3/3'},
+    {q:'กรวย r=3 h=6 → ปริมาตร?',a:'56.52',h:'π×9×6/3'},
+    {q:'ทรงกลม r=2 → ปริมาตร?',a:'33.49',h:'≈33.49'},
+    {q:'ทรงกลม r=4 → ปริมาตร?',a:'267.95',h:'≈267.95'},
+    {q:'ทรงกลม r=3 → พื้นที่ผิว?',a:'113.04',h:'4π×9'},
+    {q:'ทรงกลม r=5 → พื้นที่ผิว?',a:'314',h:'4π×25'},
+    {q:'กรวย r=4 l=6 → ผิวข้าง?',a:'75.36',h:'π×4×6'},
+    {q:'พีระมิด ฐาน 64 สูง 3?',a:'64',h:'64×3/3'}
+  ]
+},
+
+/* ---------- บท 34: ความน่าจะเป็น ---------- */
+{
+  id:'math3_10',
+  subject:'math', grade:3, term:2, number:10,
+  title:'ความน่าจะเป็น',
+  icon:'🎲',
+  def:'ความน่าจะเป็น = โอกาสที่เหตุการณ์จะเกิดขึ้น',
+  formulas:[
+    'P(E) = n(E) / n(S)',
+    '0 ≤ P(E) ≤ 1',
+    'P(ไม่เกิด) = 1 - P(เกิด)',
+    'P(E ∪ F) = P(E) + P(F) - P(E ∩ F)',
+    'P(E ∩ F) = 0 (แยกกัน)',
+    'ทอยเต๋า n(S) = 6',
+    'ทอยเหรียญ n(S) = 2',
+    'ไพ่ n(S) = 52',
+    'ผลรวมทอย 2 ลูกเต๋า n(S) = 36',
+    'P(E) = 1 → แน่นอน'
+  ],
+  examples:[
+    {q:'ทอยเต๋า P(คู่)?',a:'1/2',h:'3/6'},
+    {q:'ทอยเต๋า P(6)?',a:'1/6',h:'= 1/6'},
+    {q:'ทอยเหรียญ P(หัว)?',a:'1/2',h:'= 1/2'},
+    {q:'ทอยเต๋า P(>4)?',a:'1/3',h:'2/6'},
+    {q:'ทอยเต๋า P(≤3)?',a:'1/2',h:'3/6'},
+    {q:'สุ่มไพ่ P(โพดำ)?',a:'1/4',h:'13/52'},
+    {q:'ทอยเต๋า P(7)?',a:'0',h:'ไม่มี 7'},
+    {q:'ทอยเต๋า P(1-6)?',a:'1',h:'แน่นอน'}
+  ],
+  mistakes:[
+    'นับ n(S) ผิด',
+    'ลืม P(ไม่เกิด) = 1 - P'
+  ],
+  problems:[
+    {q:'ทอยเต๋า P(3)?',a:'1/6',h:'1/6'},
+    {q:'ทอยเต๋า P(คี่)?',a:'1/2',h:'3/6'},
+    {q:'ทอยเต๋า P(≥5)?',a:'1/3',h:'2/6'},
+    {q:'ทอยเต๋า P(<3)?',a:'1/3',h:'2/6'},
+    {q:'ทอยเหรียญ P(ก้อย)?',a:'1/2',h:'1/2'},
+    {q:'ทอยเหรียญ 2 เหรียญ P(หัวทั้งคู่)?',a:'1/4',h:'1/4'},
+    {q:'สุ่มไพ่ P(แดง)?',a:'1/2',h:'26/52'},
+    {q:'ทอยเต๋า P(>6)?',a:'0',h:'0'},
+    {q:'ทอยเต๋า P(≤6)?',a:'1',h:'1'},
+    {q:'ทอยเต๋า P(4 หรือ 5)?',a:'1/3',h:'2/6'}
+  ]
+},
+
+/* ---------- บท 35: ตรีโกณมิติ ---------- */
+{
+  id:'math3_11',
+  subject:'math', grade:3, term:2, number:11,
+  title:'อัตราส่วนตรีโกณมิติ',
+  icon:'📐',
+  def:'ตรีโกณมิติใช้กับสามเหลี่ยมมุมฉาก: sin, cos, tan',
+  formulas:[
+    'sin θ = ตรงข้าม / ด้านตรงข้ามมุมฉาก',
+    'cos θ = ประจิด / ด้านตรงข้ามมุมฉาก',
+    'tan θ = ตรงข้าม / ประจิด',
+    'sin²θ + cos²θ = 1',
+    'tan θ = sin θ / cos θ',
+    'sin 30° = 1/2',
+    'cos 60° = 1/2',
+    'sin 45° = √2/2',
+    'tan 45° = 1',
+    'sin 60° = √3/2'
+  ],
+  examples:[
+    {q:'sin 30° = ?',a:'1/2',h:'= 0.5'},
+    {q:'cos 60° = ?',a:'1/2',h:'= 0.5'},
+    {q:'tan 45° = ?',a:'1',h:'= 1'},
+    {q:'sin 90° = ?',a:'1',h:'= 1'},
+    {q:'cos 0° = ?',a:'1',h:'= 1'},
+    {q:'sin 45° = ?',a:'√2/2',h:'≈0.707'},
+    {q:'tan 30° = ?',a:'√3/3',h:'≈0.577'},
+    {q:'cos 30° = ?',a:'√3/2',h:'≈0.866'}
+  ],
+  mistakes:[
+    'สลับ sin กับ cos',
+    'ลืมค่ามุมพิเศษ'
+  ],
+  problems:[
+    {q:'sin 30° = ?',a:'1/2',h:'0.5'},
+    {q:'sin 60° = ?',a:'√3/2',h:'≈0.866'},
+    {q:'sin 45° = ?',a:'√2/2',h:'≈0.707'},
+    {q:'cos 30° = ?',a:'√3/2',h:'≈0.866'},
+    {q:'cos 45° = ?',a:'√2/2',h:'≈0.707'},
+    {q:'cos 60° = ?',a:'1/2',h:'0.5'},
+    {q:'tan 30° = ?',a:'√3/3',h:'≈0.577'},
+    {q:'tan 45° = ?',a:'1',h:'1'},
+    {q:'tan 60° = ?',a:'√3',h:'≈1.732'},
+    {q:'sin 90° = ?',a:'1',h:'1'}
+  ]
+},
+
+/* ---------- บท 36: เศษส่วนพหุนาม ---------- */
+{
+  id:'math3_12',
+  subject:'math', grade:3, term:2, number:12,
+  title:'เศษส่วนพหุนาม',
+  icon:'➗',
+  def:'เศษส่วนที่มีพหุนามเป็นตัวเศษ/ตัวส่วน — บวกลบคูณหารได้เหมือนเศษส่วนปกติ',
+  formulas:[
+    'A/B + C/D = (AD + BC) / BD',
+    'A/B - C/D = (AD - BC) / BD',
+    'A/B × C/D = AC / BD',
+    'A/B ÷ C/D = A/B × D/C',
+    'ตัวส่วน ≠ 0 เสมอ',
+    'ทอนเศษส่วนด้วยการแยกตัวประกอบ',
+    'คูณด้วย conjugate เพื่อจัดรูป',
+    'a/(x-a) + b/(a-x) = (a-b)/(x-a)',
+    '(x²-1)/(x-1) = x + 1',
+    '1/x + 1/y = (x+y)/xy'
+  ],
+  examples:[
+    {q:'1/x + 1/y = ?',a:'(x+y)/xy',h:'ค.ร.น. = xy'},
+    {q:'2/x + 3/x = ?',a:'5/x',h:'ส่วนเท่า'},
+    {q:'(x²-4)/(x-2) = ?',a:'x+2',h:'= (x+2)(x-2)/(x-2)'},
+    {q:'1/x - 1/y = ?',a:'(y-x)/xy',h:'ส่วน xy'},
+    {q:'(2/x) × (3/y) = ?',a:'6/xy',h:'คูณ'},
+    {q:'(1/x) ÷ (2/y) = ?',a:'y/(2x)',h:'กลับ'},
+    {q:'(x²-9)/(x-3) = ?',a:'x+3',h:'แยกตัว'},
+    {q:'3/x + 2/x = ?',a:'5/x',h:'ส่วนเท่า'}
+  ],
+  mistakes:[
+    'บวกเศษส่วนโดยไม่ทำส่วนเท่ากัน',
+    'ลบเศษลบส่วน',
+    'ลืม domain (x ≠ 0, ตัวส่วน ≠ 0)'
+  ],
+  problems:[
+    {q:'1/x + 1/x = ?',a:'2/x',h:'2/x'},
+    {q:'3/x + 2/x = ?',a:'5/x',h:'5/x'},
+    {q:'5/x - 2/x = ?',a:'3/x',h:'3/x'},
+    {q:'1/a + 1/b = ?',a:'(a+b)/ab',h:'(a+b)/ab'},
+    {q:'1/a - 1/b = ?',a:'(b-a)/ab',h:'(b-a)/ab'},
+    {q:'(2/x)(3/x) = ?',a:'6/x²',h:'6/x²'},
+    {q:'(1/x) ÷ (1/y) = ?',a:'y/x',h:'y/x'},
+    {q:'(x²-1)/(x-1) = ?',a:'x+1',h:'x+1'},
+    {q:'(x²-16)/(x-4) = ?',a:'x+4',h:'x+4'},
+    {q:'(x²+2x+1)/(x+1) = ?',a:'x+1',h:'(x+1)²/(x+1)'}
+  ]
+}
+
+];
+
+var registered = MQEX.registerChapters(chapters);
+
+console.info('✅ MQ-EX Part 4: คณิต ม.3 loaded');
+console.info('   Registered: '+registered+' chapters');
+console.info('   Total chapters now: '+Object.keys(MQEX.chapters).length);
+})();
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 5: วิทย์ ม.1 + ม.2 (15 บท)
+   ต้องโหลด Part 1 ก่อน
+   ============================================================ */
+(function(){
+if(!window.MQEX || !window.MQEX.ready){
+  console.error('❌ ต้องโหลด MQ-EX Part 1 ก่อน');
+  return;
+}
+if(window.__MQEX_P5__){console.warn('Part 5 already loaded');return;}
+window.__MQEX_P5__=true;
+
+var MQEX = window.MQEX;
+
+var chapters = [
+
+/* =================== วิทย์ ม.1 =================== */
+
+/* ---------- บท 1: เรียนรู้วิทย์ ---------- */
+{
+  id:'sci1_01',
+  subject:'sci', grade:1, term:1, number:1,
+  title:'เรียนรู้วิทยาศาสตร์',
+  icon:'🔬',
+  def:'วิทยาศาสตร์คือการศึกษาธรรมชาติโดยใช้<b>กระบวนการทางวิทยาศาสตร์</b> ประกอบด้วยการสังเกต ตั้งสมมติฐาน ทดลอง และสรุปผล',
+  formulas:[
+    'ขั้นตอนวิทยาศาสตร์: ปัญหา → สมมติฐาน → ทดลอง → วิเคราะห์ → สรุป',
+    'ตัวแปรต้น = สิ่งที่จัดกระทำ',
+    'ตัวแปรตาม = สิ่งที่วัดผล',
+    'ตัวแปรควบคุม = สิ่งที่ต้องคงที่',
+    'หน่วย SI พื้นฐาน: m, kg, s, K, mol, A, cd',
+    'สัญกรณ์วิทยาศาสตร์: a × 10ⁿ (1 ≤ a < 10)',
+    'เลขนัยสำคัญ: จำนวนหลักที่เชื่อถือได้',
+    'ความแม่นยำ = ตรงกับค่าจริง',
+    'ความเที่ยง = ทำซ้ำได้ผลเดิม',
+    'ทักษะ: สังเกต วัด จำแนก ทำนาย'
+  ],
+  examples:[
+    {q:'ขั้นตอนแรกของวิทยาศาสตร์?',a:'ระบุปัญหา',h:'เริ่มจากปัญหา'},
+    {q:'ตัวแปรตามคือ?',a:'สิ่งที่วัดผล',h:'ขึ้นกับตัวแปรต้น'},
+    {q:'1 km = กี่ m?',a:'1000',h:'kilo=1000'},
+    {q:'0.00025 เขียนสัญกรณ์วิทย์?',a:'2.5 × 10⁻⁴',h:'เลื่อนจุด'},
+    {q:'หน่วย SI ของมวล?',a:'kg',h:'กิโลกรัม'},
+    {q:'ตัวแปรควบคุมต้อง?',a:'คงที่',h:'ไม่เปลี่ยน'},
+    {q:'3500 = 3.5 × ?',a:'10³',h:'= 10³'},
+    {q:'ความแม่นยำหมายถึง?',a:'ตรงกับค่าจริง',h:'accuracy'}
+  ],
+  mistakes:[
+    'สับสนตัวแปรต้น/ตาม',
+    'เขียนสัญกรณ์วิทยาศาสตร์ผิด (a ต้อง 1-10)'
+  ],
+  problems:[
+    {q:'ขั้นตอนที่ 2 ของวิทย์?',a:'ตั้งสมมติฐาน',h:'guess'},
+    {q:'หน่วย SI ของเวลา?',a:'s',h:'second'},
+    {q:'หน่วย SI ของความยาว?',a:'m',h:'meter'},
+    {q:'1 kg = กี่กรัม?',a:'1000',h:'1000'},
+    {q:'1 m = กี่ cm?',a:'100',h:'100'},
+    {q:'2000 = 2 × ?',a:'10³',h:'10³'},
+    {q:'0.003 = 3 × ?',a:'10⁻³',h:'10⁻³'},
+    {q:'ตัวแปรต้นคือ?',a:'สิ่งที่จัดกระทำ',h:'ตัวแปรต้น'},
+    {q:'ความเที่ยงคือ?',a:'ทำซ้ำได้ผลเดิม',h:'precision'},
+    {q:'1 km = กี่ cm?',a:'100000',h:'100,000'}
+  ]
+},
+
+/* ---------- บท 2: สารบริสุทธิ์ ---------- */
+{
+  id:'sci1_02',
+  subject:'sci', grade:1, term:1, number:2,
+  title:'สารบริสุทธิ์',
+  icon:'💎',
+  def:'สารบริสุทธิ์ = ธาตุหรือสารประกอบ ที่มีสมบัติคงที่แน่นอน',
+  formulas:[
+    'ธาตุ = สารที่แยกต่อไม่ได้',
+    'สารประกอบ = ธาตุ 2+ รวมตัวทางเคมี',
+    'สารเนื้อเดียว = สมบัติเหมือนกันทั่ว',
+    'สารเนื้อผสม = สมบัติไม่เหมือนกัน',
+    'จุดหลอมเหลว = อุณหภูมิเปลี่ยนของแข็ง→ของเหลว',
+    'จุดเดือด = ของเหลว→แก๊ส',
+    'ความหนาแน่น = มวล/ปริมาตร',
+    'การกรอง: แยกของแข็งจากของเหลว',
+    'การกลั่น: แยกของเหลวต่างจุดเดือด',
+    'การระเหย: แยกตัวทำละลาย'
+  ],
+  examples:[
+    {q:'น้ำ = สารบริสุทธิ์?',a:'ใช่',h:'H₂O'},
+    {q:'อากาศ = สารบริสุทธิ์?',a:'ไม่',h:'ผสมหลายแก๊ส'},
+    {q:'มวล 20 g ปริมาตร 4 cm³ → ρ?',a:'5',h:'= 20/4'},
+    {q:'น้ำเชื่อม = สาร?',a:'เนื้อผสม',h:'ผสม'},
+    {q:'ทองคำ = ?',a:'ธาตุ',h:'Au'},
+    {q:' NaCl = ?',a:'สารประกอบ',h:'Na+Cl'},
+    {q:'การกลั่นแยกอะไร?',a:'ของเหลว',h:'ต่างจุดเดือด'},
+    {q:'H₂O = ?',a:'สารประกอบ',h:'2 ธาตุ'}
+  ],
+  mistakes:[
+    'คิดว่าอากาศเป็นสารบริสุทธิ์',
+    'สับสนการกรอง/กลั่น'
+  ],
+  problems:[
+    {q:'น้ำกลั่น = สาร?',a:'บริสุทธิ์',h:'H₂O แท้'},
+    {q:'น้ำทะเล = สาร?',a:'เนื้อผสม',h:'มีเกลือ'},
+    {q:'O₂ = ?',a:'ธาตุ',h:'ออกซิเจน'},
+    {q:'CO₂ = ?',a:'สารประกอบ',h:'C+O'},
+    {q:'มวล 30 ปริมาตร 6 → ρ?',a:'5',h:'30/6'},
+    {q:'มวล 10 ปริมาตร 2 → ρ?',a:'5',h:'10/2'},
+    {q:'ทอง = ?',a:'ธาตุ',h:'Au'},
+    {q:'เกลือ = ?',a:'สารประกอบ',h:'NaCl'},
+    {q:'การกรองแยก?',a:'ของแข็ง',h:'ของแข็ง+ของเหลว'},
+    {q:'การระเหยแยก?',a:'ตัวทำละลาย',h:'น้ำ'} 
+  ]
+},
+
+/* ---------- บท 3: ธาตุ สารประกอบ สารละลาย ---------- */
+{
+  id:'sci1_03',
+  subject:'sci', grade:1, term:1, number:3,
+  title:'ธาตุ สารประกอบ และสารละลาย',
+  icon:'⚗️',
+  def:'สารแบ่งเป็น ธาตุ สารประกอบ และสารละลาย สัญลักษณ์ทางเคมีใช้แทน',
+  formulas:[
+    'สัญลักษณ์ธาตุ: H, O, C, N, Na, Cl',
+    'สูตรเคมี: H₂O, CO₂, NaCl',
+    'สารละลาย = ตัวทำละลาย + ตัวละลาย',
+    'ตัวละลาย = สิ่งที่ละลาย (มักน้อย)',
+    'ตัวทำละลาย = สิ่งที่ละลายสิ่งอื่น (มักมาก)',
+    'ความเข้มข้น = มวลตัวละลาย/ปริมาตรสารละลาย × 100',
+    'สารละลายอิ่มตัว = ละลายได้เต็มที่',
+    'สารละลายเจือจาง = มีตัวละลายน้อย',
+    'สารละลายเข้มข้น = มีตัวละลายมาก',
+    'กรด-เบส: pH < 7 กรด, pH = 7 กลาง, pH > 7 เบส'
+  ],
+  examples:[
+    {q:'H₂O มี H กี่อะตอม?',a:'2',h:'H₂O'},
+    {q:'NaCl = ธาตุอะไร?',a:'Na, Cl',h:'โซเดียม+คลอรีน'},
+    {q:'ละลายเกลือในน้ำ ตัวทำละลาย?',a:'น้ำ',h:'มีมาก'},
+    {q:'pH = 3 = ?',a:'กรด',h:'<7'},
+    {q:'pH = 7 = ?',a:'กลาง',h:'เป็นกลาง'},
+    {q:'pH = 10 = ?',a:'เบส',h:'>7'},
+    {q:'CO₂ มีธาตุ?',a:'C, O',h:'คาร์บอน+ออกซิเจน'},
+    {q:'ตัวละลายในน้ำหวาน?',a:'น้ำตาล',h:'ละลาย'}
+  ],
+  mistakes:[
+    'สลับตัวทำละลาย/ตัวละลาย',
+    'อ่านสูตรเคมีผิด'
+  ],
+  problems:[
+    {q:'O₂ มี O กี่อะตอม?',a:'2',h:'O₂'},
+    {q:'CO₂ มี O กี่อะตอม?',a:'2',h:'CO₂'},
+    {q:'H₂O = ? ธาตุ',a:'H, O',h:'ไฮโดรเจน+ออกซิเจน'},
+    {q:'pH = 1 = ?',a:'กรด',h:'กรดแก่'},
+    {q:'pH = 7 = ?',a:'กลาง',h:'กลาง'},
+    {q:'pH = 14 = ?',a:'เบส',h:'เบสแก่'},
+    {q:'น้ำตาล+น้ำ ตัวทำละลาย?',a:'น้ำ',h:'มีมาก'},
+    {q:'เกลือ+น้ำ ตัวละลาย?',a:'เกลือ',h:'มีน้อย'},
+    {q:'Na = ?',a:'โซเดียม',h:'ธาตุ'},
+    {q:'Cl = ?',a:'คลอรีน',h:'ธาตุ'}
+  ]
+},
+
+/* ---------- บท 4: หน่วยของสิ่งมีชีวิต ---------- */
+{
+  id:'sci1_04',
+  subject:'sci', grade:1, term:1, number:4,
+  title:'หน่วยของสิ่งมีชีวิต',
+  icon:'🔬',
+  def:'เซลล์คือหน่วยที่เล็กที่สุดของสิ่งมีชีวิต ประกอบด้วยออร์แกเนลล์ต่างๆ',
+  formulas:[
+    'เซลล์ = หน่วยเล็กสุดของสิ่งมีชีวิต',
+    'เนื้อเยื่อ = กลุ่มเซลล์ทำหน้าที่เดียวกัน',
+    'อวัยวะ = กลุ่มเนื้อเยื่อ',
+    'ระบบอวัยวะ = กลุ่มอวัยวะ',
+    'สิ่งมีชีวิต = ระบบหลายระบบ',
+    'ผนังเซลล์: พืชเท่านั้น',
+    'คลอโรพลาสต์: พืชเท่านั้น (สังเคราะห์แสง)',
+    'ไมโทคอนเดรีย: สร้างพลังงาน',
+    'นิวเคลียส: ควบคุมเซลล์',
+    'แวคิวโอล: กักเก็บน้ำ'
+  ],
+  examples:[
+    {q:'หน่วยเล็กสุดของสิ่งมีชีวิต?',a:'เซลล์',h:'cell'},
+    {q:'ผนังเซลล์พบที่ไหน?',a:'พืช',h:'พืชเท่านั้น'},
+    {q:'คลอโรพลาสต์มีที่ไหน?',a:'พืช',h:'สังเคราะห์แสง'},
+    {q:'นิวเคลียสทำหน้าที่?',a:'ควบคุม',h:'center'},
+    {q:'ไมโทคอนเดรียทำอะไร?',a:'สร้างพลังงาน',h:'powerhouse'},
+    {q:'กลุ่มเซลล์เรียกว่า?',a:'เนื้อเยื่อ',h:'tissue'},
+    {q:'กลุ่มอวัยวะเรียกว่า?',a:'ระบบอวัยวะ',h:'system'},
+    {q:'แวคิวโอลเก็บอะไร?',a:'น้ำ',h:'vacuole'}
+  ],
+  mistakes:[
+    'คิดว่าผนังเซลล์มีทั้งพืชและสัตว์',
+    'สลับหน้าที่ออร์แกเนลล์'
+  ],
+  problems:[
+    {q:'หน่วยเล็กสุด?',a:'เซลล์',h:'cell'},
+    {q:'ผนังเซลล์มีใน?',a:'พืช',h:'พืช'},
+    {q:'คลอโรพลาสต์ใน?',a:'พืช',h:'พืช'},
+    {q:'นิวเคลียสทำ?',a:'ควบคุม',h:'control'},
+    {q:'ไมโทคอนเดรียทำ?',a:'พลังงาน',h:'energy'},
+    {q:'กลุ่มเซลล์?',a:'เนื้อเยื่อ',h:'tissue'},
+    {q:'กลุ่มเนื้อเยื่อ?',a:'อวัยวะ',h:'organ'},
+    {q:'กลุ่มอวัยวะ?',a:'ระบบ',h:'system'},
+    {q:'แวคิวโอลเก็บ?',a:'น้ำ',h:'water'},
+    {q:'เยื่อหุ้มเซลล์ทำ?',a:'ควบคุมสาร',h:'membrane'}
+  ]
+},
+
+/* ---------- บท 5: การดำรงชีวิตของพืช ---------- */
+{
+  id:'sci1_05',
+  subject:'sci', grade:1, term:1, number:5,
+  title:'การดำรงชีวิตของพืช',
+  icon:'🌱',
+  def:'พืชดำรงชีวิตด้วยการสังเคราะห์แสง หายใจ คายน้ำ และลำเลียงสาร',
+  formulas:[
+    'สังเคราะห์แสง: 6CO₂ + 6H₂O + แสง → C₆H₁₂O₆ + 6O₂',
+    'การหายใจ: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + พลังงาน',
+    'คลอโรฟิลล์ = สารสีเขียว ดูดแสง',
+    'ปากใบ = ทางออกของไอน้ำ',
+    'ราก: ดูดน้ำและธาตุอาหาร',
+    'ลำต้น: ลำเลียงน้ำ/อาหาร',
+    'ท่อไซเลม: ลำเลียงน้ำขึ้น',
+    'ท่อโฟลเอม: ลำเลียงอาหารลง',
+    'การคายน้ำ: ระบายไอน้ำทางปากใบ',
+    'การงอก: seed → seedling → plant'
+  ],
+  examples:[
+    {q:'พืชใช้แก๊สอะไรสังเคราะห์แสง?',a:'CO₂',h:'คาร์บอนไดออกไซด์'},
+    {q:'พืชปล่อยแก๊สอะไร?',a:'O₂',h:'ออกซิเจน'},
+    {q:'ท่อลำเลียงน้ำ?',a:'ไซเลม',h:'xylem'},
+    {q:'ท่อลำเลียงอาหาร?',a:'โฟลเอม',h:'phloem'},
+    {q:'ปากใบทำหน้าที่?',a:'คายน้ำ',h:'stomata'},
+    {q:'คลอโรฟิลล์สีอะไร?',a:'เขียว',h:'chlorophyll'},
+    {q:'การหายใจใช้แก๊ส?',a:'O₂',h:'ออกซิเจน'},
+    {q:'รากทำหน้าที่?',a:'ดูดน้ำ',h:'absorb'}
+  ],
+  mistakes:[
+    'สลับท่อไซเลม/โฟลเอม',
+    'คิดว่าพืชหายใจเฉพาะกลางคืน'
+  ],
+  problems:[
+    {q:'พืชใช้แก๊ส?',a:'CO₂',h:'CO₂'},
+    {q:'พืชปล่อย?',a:'O₂',h:'O₂'},
+    {q:'ท่อน้ำ?',a:'ไซเลม',h:'xylem'},
+    {q:'ท่ออาหาร?',a:'โฟลเอม',h:'phloem'},
+    {q:'ปากใบทำ?',a:'คายน้ำ',h:'stomata'},
+    {q:'คลอโรฟิลล์สี?',a:'เขียว',h:'green'},
+    {q:'หายใจใช้?',a:'O₂',h:'O₂'},
+    {q:'รากทำ?',a:'ดูดน้ำ',h:'absorb'},
+    {q:'สังเคราะห์แสงต้อง?',a:'แสง',h:'light'},
+    {q:'พืชสร้างอาหารคือ?',a:'น้ำตาล',h:'glucose'}
+  ]
+},
+
+/* ---------- บท 6: ความร้อนและอุณหภูมิ ---------- */
+{
+  id:'sci1_06',
+  subject:'sci', grade:1, term:2, number:6,
+  title:'ความร้อนและอุณหภูมิ',
+  icon:'🌡️',
+  def:'ความร้อน = พลังงานที่ถ่ายเทจากที่ร้อนไปที่เย็น อุณหภูมิ = ระดับความร้อน',
+  formulas:[
+    'Q = mc ΔT',
+    'Q = ความร้อน (J), m = มวล (kg)',
+    'c = ความจุความร้อนจำเพาะ (J/kg·°C)',
+    'ΔT = อุณหภูมิที่เปลี่ยน',
+    'c ของน้ำ = 4200 J/kg·°C',
+    'การเปลี่ยนสถานะ: ของแข็ง→ของเหลว→แก๊ส',
+    'จุดหลอมเหลวน้ำ = 0°C',
+    'จุดเดือดน้ำ = 100°C',
+    '°C → K: K = °C + 273',
+    '°F = (°C × 9/5) + 32'
+  ],
+  examples:[
+    {q:'น้ำ 2 kg อบอุ่น 30°C → 50°C ต้องความร้อน?',a:'168000 J',h:'Q = 2×4200×20'},
+    {q:'25°C = ? K',a:'298',h:'+273'},
+    {q:'0°C = ? K',a:'273',h:'+273'},
+    {q:'100°C = ? °F',a:'212',h:'212°F'},
+    {q:'น้ำ 1 kg เปลี่ยน 10°C ใช้?',a:'42000 J',h:'= 1×4200×10'},
+    {q:'จุดหลอมเหลวน้ำ?',a:'0',h:'0°C'},
+    {q:'จุดเดือดน้ำ?',a:'100',h:'100°C'},
+    {q:'37°C = ? K',a:'310',h:'+273'}
+  ],
+  mistakes:[
+    'ลืมแปลงหน่วย',
+    'ใช้สูตร Q = mcΔT ผิด'
+  ],
+  problems:[
+    {q:'น้ำ 1 kg อบอุ่น 10°C ใช้?',a:'42000',h:'= 42000 J'},
+    {q:'น้ำ 2 kg × 5°C = ?',a:'42000',h:'= 42000 J'},
+    {q:'25°C = ?K',a:'298',h:'+273'},
+    {q:'0°C = ?K',a:'273',h:'273'},
+    {q:'50°C = ?K',a:'323',h:'+273'},
+    {q:'100°C = ?K',a:'373',h:'+273'},
+    {q:'0°C = ?°F',a:'32',h:'32°F'},
+    {q:'จุดหลอมเหลวน้ำ?',a:'0',h:'0'},
+    {q:'จุดเดือดน้ำ?',a:'100',h:'100'},
+    {q:'37°C = ?K',a:'310',h:'310'}
+  ]
+},
+
+/* ---------- บท 7: ลม ฟ้า อากาศ ---------- */
+{
+  id:'sci1_07',
+  subject:'sci', grade:1, term:2, number:7,
+  title:'ลม ฟ้า อากาศ',
+  icon:'🌪️',
+  def:'บรรยากาศ = ชั้นแก๊สห่อหุ้มโลก ปรากฏการณ์ลม ฝน เกิดจากความต่างอุณหภูมิ/ความดัน',
+  formulas:[
+    'บรรยากาศ: โทรโพสเฟียร์ → สตราโตสเฟียร์ → มีโซสเฟียร์ → เทอร์โมสเฟียร์',
+    'ลม: อากาศเคลื่อนที่จากความดันสูง→ต่ำ',
+    'ความชื้นสัมพัทธ์ = (ไอน้ำจริง/ไอน้ำอิ่มตัว) × 100',
+    'จุดน้ำค้าง = อุณหภูมิที่ไอน้ำกลั่นตัว',
+    'ฝน: ไอน้ำรวมตัวเป็นเมฆ → ฝน',
+    'ลมบก-ลมทะเล = ลมประจำถิ่น',
+    'มรสุม = ลมฤดู',
+    '臭氧: O₃ ชั้นบรรยากาศ',
+    'เรือนกระจก: CO₂, CH₄, H₂O',
+    'อุณหภูมิลด 6.5°C/1 km (troposphere)'
+  ],
+  examples:[
+    {q:'ลมพัดจากความดัน?',a:'สูง→ต่ำ',h:'high→low'},
+    {q:'ความชื้น 50/100 สัมพัทธ์?',a:'50%',h:'×100'},
+    {q:'臭氧 อยู่ชั้นไหน?',a:'สตราโตสเฟียร์',h:'stratosphere'},
+    {q:'ฝนเกิดจาก?',a:'ไอน้ำกลั่นตัว',h:'condensation'},
+    {q:'จุดน้ำค้างคือ?',a:'อุณหภูมิกลั่นตัว',h:'dew point'},
+    {q:'มรสุมคือ?',a:'ลมฤดู',h:'monsoon'},
+    {q:'ความดันสูง=อากาศ?',a:'เย็น',h:'cold'},
+    {q:'ลมบกคือ?',a:'ลมประจำถิ่น',h:'land breeze'}
+  ],
+  mistakes:[
+    'คิดว่าลมพัดจากต่ำ→สูง',
+    'สลับชั้นบรรยากาศ'
+  ],
+  problems:[
+    {q:'ลมพัดจาก?',a:'สูงไปต่ำ',h:'high→low'},
+    {q:'ความชื้น 80/100?',a:'80%',h:'80%'},
+    {q:'臭氧 อยู่?',a:'สตราโตสเฟียร์',h:'strato'},
+    {q:'ฝนเกิดจาก?',a:'กลั่นตัว',h:'condensation'},
+    {q:'จุดน้ำค้าง?',a:'กลั่นตัว',h:'dew point'},
+    {q:'มรสุมคือ?',a:'ลมฤดู',h:'monsoon'},
+    {q:'ลมบก?',a:'ประจำถิ่น',h:'local'},
+    {q:'ชั้นล่างสุด?',a:'โทรโพสเฟียร์',h:'troposphere'},
+    {q:'CO₂ ทำ?',a:'เรือนกระจก',h:'greenhouse'},
+    {q:'อุณหภูมิลด?',a:'6.5°C/km',h:'6.5'}
+  ]
+},
+
+/* =================== วิทย์ ม.2 =================== */
+
+/* ---------- บท 8: สารละลาย ---------- */
+{
+  id:'sci2_01',
+  subject:'sci', grade:2, term:1, number:1,
+  title:'สารละลาย',
+  icon:'🧪',
+  def:'สารละลาย = ของผสมเนื้อเดียว ประกอบด้วยตัวทำละลาย + ตัวละลาย',
+  formulas:[
+    'ความเข้มข้น %มวล/ปริมาตร = (มวลตัวละลาย/ปริมาตรสารละลาย) × 100',
+    '%มวล/มวล = (มวลตัวละลาย/มวลสารละลาย) × 100',
+    '%ปริมาตร/ปริมาตร = (V ตัวละลาย/V สารละลาย) × 100',
+    'ppm = (มวลตัวละลาย/มวลสารละลาย) × 10⁶',
+    'โมลาริตี M = mol ตัวละลาย / L สารละลาย',
+    'mol = มวล (g) / มวลโมเลกุล',
+    'การเจือจาง: M₁V₁ = M₂V₂',
+    'สารละลายอิ่มตัว: ละลายเต็มที่',
+    'สารละลายไม่อิ่มตัว: ยังละลายได้',
+    'สารละลายอิ่มตัวยวด: เกินจุดอิ่มตัว'
+  ],
+  examples:[
+    {q:'NaCl 20g ในน้ำ 100 mL → %m/v?',a:'20%',h:'= 20/100 × 100'},
+    {q:'10g ใน 50g สารละลาย → %m/m?',a:'20%',h:'= 20%'},
+    {q:'5g ใน 95g น้ำ → %m/m?',a:'5%',h:'= 5/100×100'},
+    {q:'0.5 mol ใน 2 L → M?',a:'0.25',h:'0.5/2'},
+    {q:'1 mol ใน 1 L → M?',a:'1',h:'1 M'},
+    {q:'เจือจาง 2M 100mL → 1M?',a:'200 mL',h:'2×100 = 1×V'},
+    {q:'mol ของ 40g NaOH (M=40)?',a:'1',h:'40/40'},
+    {q:'5% ของ 200g → ?',a:'10 g',h:'5%×200'}
+  ],
+  mistakes:[
+    'สลับตัวตั้ง/ตัวหาร',
+    'ไม่แปลงหน่วย mL ↔ L'
+  ],
+  problems:[
+    {q:'NaCl 10g ใน 100 mL → %?',a:'10%',h:'10/100'},
+    {q:'NaCl 25g ใน 100 mL → %?',a:'25%',h:'25%'},
+    {q:'5g ใน 50g → %m/m?',a:'10%',h:'5/50'},
+    {q:'10g ใน 90g น้ำ → %?',a:'10%',h:'10/100'},
+    {q:'0.4 mol ใน 2 L → M?',a:'0.2',h:'0.4/2'},
+    {q:'1.5 mol ใน 3 L → M?',a:'0.5',h:'0.5'},
+    {q:'mol ของ 20g (M=20)?',a:'1',h:'20/20'},
+    {q:'mol ของ 36g (M=18)?',a:'2',h:'36/18'},
+    {q:'เจือจาง 3M 100mL→1M?',a:'300 mL',h:'3×100/1'},
+    {q:'5% ของ 200 → ?',a:'10',h:'10 g'}
+  ]
+},
+
+/* ---------- บท 9: ร่างกายมนุษย์ ---------- */
+{
+  id:'sci2_02',
+  subject:'sci', grade:2, term:1, number:2,
+  title:'ร่างกายมนุษย์',
+  icon:'🫀',
+  def:'ร่างกายมนุษย์ประกอบด้วยระบบต่างๆ ที่ทำงานร่วมกัน',
+  formulas:[
+    'ระบบย่อยอาหาร: ปาก→หลอดอาหาร→กระเพาะ→ลำไส้เล็ก→ลำไส้ใหญ่',
+    'ระบบหายใจ: จมูก→หลอดลม→ปอด→ถุงลม',
+    'ระบบไหลเวียน: หัวใจ→หลอดเลือดแดง→หลอดเลือดดำ',
+    'ระบบประสาท: สมอง→ไขสันหลัง→เส้นประสาท',
+    'ระบบขับถ่าย: ไต→ท่อไต→กระเพาะปัสสาวะ',
+    'หัวใจ 4 ห้อง: บน-ล่าง ซ้าย-ขวา',
+    'เม็ดเลือดแดง: ลำเลียง O₂',
+    'เม็ดเลือดขาว: ต่อสู้เชื้อโรค',
+    'เกล็ดเลือด: ช่วยเลือดแข็งตัว',
+    'เซลล์ประสาท: รับ-ส่งสัญญาณ'
+  ],
+  examples:[
+    {q:'ปอดอยู่ระบบไหน?',a:'หายใจ',h:'respiratory'},
+    {q:'หัวใจมีกี่ห้อง?',a:'4',h:'4 ห้อง'},
+    {q:'ไตอยู่ระบบไหน?',a:'ขับถ่าย',h:'excretory'},
+    {q:'เม็ดเลือดแดงทำอะไร?',a:'ลำเลียง O₂',h:'oxygen'},
+    {q:'อาหารย่อยที่กระเพาะ?',a:'ใช่',h:'yes'},
+    {q:'สมองอยู่ระบบไหน?',a:'ประสาท',h:'nervous'},
+    {q:'เม็ดเลือดขาวทำ?',a:'ต่อสู้เชื้อ',h:'defense'},
+    {q:'เกล็ดเลือดทำ?',a:'เลือดแข็ง',h:'clot'}
+  ],
+  mistakes:[
+    'สลับหน้าที่เม็ดเลือด',
+    'สับสนระบบต่างๆ'
+  ],
+  problems:[
+    {q:'ปอดอยู่ระบบ?',a:'หายใจ',h:'resp'},
+    {q:'หัวใจกี่ห้อง?',a:'4',h:'4'},
+    {q:'ไตอยู่ระบบ?',a:'ขับถ่าย',h:'excr'},
+    {q:'เม็ดเลือดแดงทำ?',a:'O₂',h:'ออกซิเจน'},
+    {q:'เม็ดเลือดขาวทำ?',a:'ต่อสู้เชื้อ',h:'defense'},
+    {q:'เกล็ดเลือดทำ?',a:'แข็งตัว',h:'clot'},
+    {q:'สมองอยู่ระบบ?',a:'ประสาท',h:'nervous'},
+    {q:'อาหารย่อยที่?',a:'กระเพาะ',h:'stomach'},
+    {q:'ลำไส้เล็กทำ?',a:'ดูดสารอาหาร',h:'absorb'},
+    {q:'ปอดทำ?',a:'แลกแก๊ส',h:'gas exchange'}
+  ]
+},
+
+/* ---------- บท 10: การเคลื่อนที่ ---------- */
+{
+  id:'sci2_03',
+  subject:'sci', grade:2, term:1, number:3,
+  title:'การเคลื่อนที่',
+  icon:'🏃',
+  def:'การเคลื่อนที่ = การเปลี่ยนตำแหน่งตามเวลา มีปริมาณสเกลาร์/เวกเตอร์',
+  formulas:[
+    'อัตราเร็ว v = s/t',
+    'ความเร็ว v = การกระจัด/t',
+    'ความเร่ง a = (v-u)/t',
+    's = ut + ½at²',
+    'v² = u² + 2as',
+    'ปริมาณสเกลาร์: ขนาดเท่านั้น (ระยะทาง อัตราเร็ว มวล)',
+    'ปริมาณเวกเตอร์: มีทิศทาง (การกระจัด ความเร็ว แรง)',
+    'ระยะทาง = ทางที่เดินจริง',
+    'การกระจัด = ทางตรงจากจุดเริ่ม→จบ',
+    'v เฉลี่ย = ระยะทางรวม/เวลารวม'
+  ],
+  examples:[
+    {q:'s=100m t=20s → v?',a:'5 m/s',h:'100/20'},
+    {q:'v=20 m/s t=10s → s?',a:'200 m',h:'20×10'},
+    {q:'เริ่ม 0 m/s → 20 m/s ใน 4s → a?',a:'5',h:'(20-0)/4'},
+    {q:'ระยะทางคือ?',a:'ทางที่เดิน',h:'path length'},
+    {q:'การกระจัดคือ?',a:'ทางตรง',h:'displacement'},
+    {q:'ปริมาณสเกลาร์คือ?',a:'ขนาดเท่านั้น',h:'scalar'},
+    {q:'v=60 km/h t=2h → s?',a:'120 km',h:'120'},
+    {q:'a=2, t=3, u=0 → v?',a:'6',h:'= 2×3'}
+  ],
+  mistakes:[
+    'สับสนระยะทาง/การกระจัด',
+    'ใช้สูตรผิด'
+  ],
+  problems:[
+    {q:'s=200 t=10 → v?',a:'20 m/s',h:'20'},
+    {q:'s=50 t=5 → v?',a:'10',h:'10'},
+    {q:'v=15 t=4 → s?',a:'60',h:'60'},
+    {q:'v=30 t=2 → s?',a:'60',h:'60'},
+    {q:'0→10 ใน 2s → a?',a:'5',h:'5'},
+    {q:'5→15 ใน 5s → a?',a:'2',h:'(15-5)/5'},
+    {q:'v=100 km/h t=3h → s?',a:'300 km',h:'300'},
+    {q:'ระยะทาง = ?',a:'ทางที่เดิน',h:'path'},
+    {q:'การกระจัด = ?',a:'ทางตรง',h:'disp'},
+    {q:'เวกเตอร์มี?',a:'ทิศทาง',h:'direction'}
+  ]
+},
+
+/* ---------- บท 11: แรง ---------- */
+{
+  id:'sci2_04',
+  subject:'sci', grade:2, term:1, number:4,
+  title:'แรงและการเคลื่อนที่',
+  icon:'⚡',
+  def:'แรงคือสิ่งที่ทำให้วัตถุเปลี่ยนสภาพการเคลื่อนที่หรือเปลี่ยนรูปร่าง',
+  formulas:[
+    'F = ma (นิวตันที่ 2)',
+    'หน่วย F = นิวตัน (N)',
+    'W = mg (น้ำหนัก, g ≈ 9.8 m/s²)',
+    'นิวตันที่ 1: วัตถุอยู่นิ่ง/เคลื่อนที่สม่ำเสมอ ถ้าไม่มีแรง',
+    'นิวตันที่ 3: ทุกแรงมีแรงปฏิกิริยา',
+    'แรงเสียดทาน: ต้านการเคลื่อนที่',
+    'แรงโน้มถ่วง: ดึงลงล่าง',
+    'm = 10 kg → W ≈ 98 N',
+    'แรงลัพธ์ = ผลรวมแบบเวกเตอร์',
+    'สมดุล: แรงลัพธ์ = 0'
+  ],
+  examples:[
+    {q:'m=5 kg a=2 m/s² → F?',a:'10 N',h:'5×2'},
+    {q:'m=10 kg → W?',a:'98 N',h:'10×9.8'},
+    {q:'F=20 N a=4 → m?',a:'5 kg',h:'20/4'},
+    {q:'แรงโน้มถ่วงทำอะไร?',a:'ดึงลง',h:'gravity'},
+    {q:'แรงเสียดทานทำ?',a:'ต้านการเคลื่อน',h:'friction'},
+    {q:'นิวตันที่ 3 กล่าว?',a:'แรง=แรงปฏิกิริยา',h:'action-reaction'},
+    {q:'F=100 a=10 → m?',a:'10 kg',h:'10'},
+    {q:'m=2, a=3 → F?',a:'6 N',h:'6'}
+  ],
+  mistakes:[
+    'สับสนมวล/น้ำหนัก',
+    'ใช้ g = 10 แทน 9.8'
+  ],
+  problems:[
+    {q:'m=4 a=5 → F?',a:'20 N',h:'20'},
+    {q:'m=3 a=4 → F?',a:'12 N',h:'12'},
+    {q:'F=30 a=6 → m?',a:'5 kg',h:'5'},
+    {q:'F=50 a=5 → m?',a:'10 kg',h:'10'},
+    {q:'m=10 kg → W?',a:'98 N',h:'98'},
+    {q:'m=5 kg → W?',a:'49 N',h:'49'},
+    {q:'แรงโน้มถ่วง?',a:'ดึงลง',h:'gravity'},
+    {q:'แรงเสียดทาน?',a:'ต้าน',h:'friction'},
+    {q:'นิวตันที่ 1?',a:'คงสภาพ',h:'inertia'},
+    {q:'นิวตันที่ 3?',a:'แรงคู่',h:'action-reaction'}
+  ]
+},
+
+/* ---------- บท 12: งานและพลังงาน ---------- */
+{
+  id:'sci2_05',
+  subject:'sci', grade:2, term:2, number:5,
+  title:'งานและพลังงาน',
+  icon:'⚙️',
+  def:'งาน = แรง × ระยะทาง พลังงาน = ความสามารถทำงาน',
+  formulas:[
+    'W = F × s',
+    'หน่วยงาน = จูล (J)',
+    'กำลัง P = W/t',
+    'หน่วยกำลัง = วัตต์ (W)',
+    'พลังงานจลน์ KE = ½mv²',
+    'พลังงานศักย์ PE = mgh',
+    'พลังงานกล = KE + PE',
+    'พลังงานความร้อน = Q = mcΔT',
+    'พลังงานไม่หายไป แค่เปลี่ยนรูป (อนุรักษ์)',
+    '1 J = 1 N·m'
+  ],
+  examples:[
+    {q:'F=10 N s=5 m → W?',a:'50 J',h:'10×5'},
+    {q:'W=100 J t=5s → P?',a:'20 W',h:'100/5'},
+    {q:'m=2 v=3 → KE?',a:'9 J',h:'½×2×9'},
+    {q:'m=5 h=2 g=10 → PE?',a:'100 J',h:'5×10×2'},
+    {q:'F=20 s=4 → W?',a:'80 J',h:'80'},
+    {q:'W=200 t=4 → P?',a:'50 W',h:'50'},
+    {q:'m=4 v=5 → KE?',a:'50 J',h:'½×4×25'},
+    {q:'m=2 h=3 g=10 → PE?',a:'60 J',h:'60'}
+  ],
+  mistakes:[
+    'ลืม ½ ของ KE',
+    'ใช้ h ผิดหน่วย'
+  ],
+  problems:[
+    {q:'F=5 s=10 → W?',a:'50 J',h:'50'},
+    {q:'F=8 s=5 → W?',a:'40 J',h:'40'},
+    {q:'W=60 t=3 → P?',a:'20 W',h:'20'},
+    {q:'W=150 t=5 → P?',a:'30 W',h:'30'},
+    {q:'m=2 v=4 → KE?',a:'16 J',h:'16'},
+    {q:'m=3 v=2 → KE?',a:'6 J',h:'6'},
+    {q:'m=2 h=5 g=10 → PE?',a:'100 J',h:'100'},
+    {q:'m=4 h=2 g=10 → PE?',a:'80 J',h:'80'},
+    {q:'1 J = ? N·m',a:'1',h:'1'},
+    {q:'หน่วยงาน?',a:'จูล',h:'joule'}
+  ]
+},
+
+/* ---------- บท 13: การแยกสาร ---------- */
+{
+  id:'sci2_06',
+  subject:'sci', grade:2, term:2, number:6,
+  title:'การแยกสาร',
+  icon:'⚗️',
+  def:'เทคนิคการแยกสารผสมให้เป็นส่วนประกอบ',
+  formulas:[
+    'การกรอง: ของแข็ง+ของเหลว',
+    'การระเหย: แยกตัวทำละลาย',
+    'การกลั่น: แยกของเหลวต่างจุดเดือด',
+    'การตกผลึก: ได้ผลึกจากสารละลาย',
+    'โครมาโทกราฟี: แยกสารสี',
+    'การสกัด: ใช้ตัวทำละลายต่างกัน',
+    'การตกตะกอน: ให้ตะกอนแยกออก',
+    'การหมุนเหวี่ยง: แยกตามความหนาแน่น',
+    'แม่เหล็ก: แยกของที่มีแม่เหล็ก',
+    'การร่อน: แยกตามขนาดอนุภาค'
+  ],
+  examples:[
+    {q:'แยกทราย+น้ำ → ?',a:'การกรอง',h:'filtration'},
+    {q:'แยกเกลือ+น้ำ → ?',a:'การระเหย',h:'evaporation'},
+    {q:'แยกน้ำ+แอลกอฮอล์ → ?',a:'การกลั่น',h:'distillation'},
+    {q:'แยกสีในหมึก → ?',a:'โครมาโทกราฟี',h:'chromatography'},
+    {q:'แยกเหล็ก+ทราย → ?',a:'แม่เหล็ก',h:'magnet'},
+    {q:'แยกน้ำมัน+น้ำ → ?',a:'กรวยแยก',h:'separating funnel'},
+    {q:'แยกครีม+นม → ?',a:'หมุนเหวี่ยง',h:'centrifuge'},
+    {q:'ได้ผลึก → ?',a:'ตกผลึก',h:'crystallization'}
+  ],
+  mistakes:[
+    'ใช้วิธีผิดกับสาร',
+    'ลืมว่ากรองได้เฉพาะของแข็ง+ของเหลว'
+  ],
+  problems:[
+    {q:'แยกทราย+น้ำ?',a:'กรอง',h:'filter'},
+    {q:'แยกเกลือ+น้ำ?',a:'ระเหย',h:'evap'},
+    {q:'แยกน้ำ+แอลกอฮอล์?',a:'กลั่น',h:'distill'},
+    {q:'แยกสี?',a:'โครมาโทกราฟี',h:'chroma'},
+    {q:'แยกเหล็ก?',a:'แม่เหล็ก',h:'magnet'},
+    {q:'แยกน้ำมัน+น้ำ?',a:'กรวยแยก',h:'funnel'},
+    {q:'ครีม+นม?',a:'หมุนเหวี่ยง',h:'centrifuge'},
+    {q:'ได้ผลึก?',a:'ตกผลึก',h:'crystal'},
+    {q:'ร่อนแยกตาม?',a:'ขนาด',h:'size'},
+    {q:'กรองแยก?',a:'ของแข็ง',h:'solid'}
+  ]
+},
+
+/* ---------- บท 14: โลกเปลี่ยน ---------- */
+{
+  id:'sci2_07',
+  subject:'sci', grade:2, term:2, number:7,
+  title:'โลกและการเปลี่ยนแปลง',
+  icon:'🌍',
+  def:'โลกเปลี่ยนแปลงอยู่ตลอดเวลา ทั้งทางธรณีวิทยาและภูมิอากาศ',
+  formulas:[
+    'ชั้นโลก: เปลือก → เนื้อ → แกน',
+    'เปลือกโลก: 5-70 km',
+    'เนื้อโลก: ~2900 km',
+    'แกนโลก: ~3400 km',
+    'แผ่นเปลือกโลก: ~15 แผ่น',
+    'แผ่นดินไหว: เกิดจากการเลื่อนของแผ่น',
+    'ภูเขาไฟ: แมกมาใต้ดินปะทุ',
+    'ซากดึกดำบรรพ์: บันทึกประวัติศาสตร์',
+    'ปรากฏการณ์เรือนกระจก: อุณหภูมิสูงขึ้น',
+    'ภัยพิบัติ: น้ำท่วม แผ่นดินไหว สึนามิ'
+  ],
+  examples:[
+    {q:'ชั้นในสุดของโลก?',a:'แกน',h:'core'},
+    {q:'เปลือกโลกหนา?',a:'5-70 km',h:'crust'},
+    {q:'แผ่นดินไหวเกิดจาก?',a:'การเลื่อนของแผ่น',h:'plate movement'},
+    {q:'สึนามิเกิดจาก?',a:'แผ่นดินไหวใต้ทะเล',h:'underwater quake'},
+    {q:'ภูเขาไฟปะทุจาก?',a:'แมกมา',h:'magma'},
+    {q:'โลกมีกี่ชั้น?',a:'3',h:'3'},
+    {q:'เรือนกระจกทำให้?',a:'อุณหภูมิสูง',h:'warming'},
+    {q:'ซากดึกดำบรรพ์ศึกษา?',a:'ประวัติศาสตร์',h:'history'}
+  ],
+  mistakes:[
+    'สลับชั้นโลก',
+    'คิดว่าแผ่นดินไหวทำนายได้แม่น'
+  ],
+  problems:[
+    {q:'ชั้นในสุด?',a:'แกน',h:'core'},
+    {q:'ชั้นนอกสุด?',a:'เปลือก',h:'crust'},
+    {q:'โลกกี่ชั้น?',a:'3',h:'3'},
+    {q:'แผ่นดินไหวจาก?',a:'เลื่อนแผ่น',h:'plate'},
+    {q:'สึนามิจาก?',a:'แผ่นดินไหว',h:'quake'},
+    {q:'ภูเขาไฟปะทุ?',a:'แมกมา',h:'magma'},
+    {q:'เปลือกโลกหนา?',a:'5-70',h:'5-70'},
+    {q:'เรือนกระจก?',a:'ร้อนขึ้น',h:'warming'},
+    {q:'ซากดึกดำบรรพ์?',a:'ประวัติ',h:'history'},
+    {q:'แผ่นเปลือกโลก ~?',a:'15',h:'15'}
+  ]
+},
+
+/* ---------- บท 15: พลังงาน ---------- */
+{
+  id:'sci2_08',
+  subject:'sci', grade:2, term:2, number:8,
+  title:'พลังงานและสิ่งแวดล้อม',
+  icon:'⚡',
+  def:'พลังงานมีหลายรูปแบบ ต้องใช้อย่างยั่งยืน ไม่ทำลายสิ่งแวดล้อม',
+  formulas:[
+    'พลังงานทดแทน: แสงอาทิตย์ ลม น้ำ ชีวมวล',
+    'พลังงานไม่ทดแทน: ถ่านหิน น้ำมัน แก๊ส',
+    'พลังงานจลน์ KE = ½mv²',
+    'พลังงานศักย์ PE = mgh',
+    'พลังงานกล = KE + PE',
+    '1 kWh = 3.6 × 10⁶ J',
+    'กำลังไฟฟ้า P = VI',
+    'P = I²R',
+    'หน่วยไฟฟ้า: วัตต์-ชั่วโมง',
+    'พลังงานอนุรักษ์: ไม่หาย แค่เปลี่ยนรูป'
+  ],
+  examples:[
+    {q:'พลังงานทดแทนคือ?',a:'แสงอาทิตย์',h:'solar'},
+    {q:'ถ่านหินเป็น?',a:'ไม่ทดแทน',h:'non-renew'},
+    {q:'1 kWh = ? J',a:'3.6×10⁶',h:'= 3.6 ล้าน'},
+    {q:'P=VI, V=220 I=2 → P?',a:'440 W',h:'= 440'},
+    {q:'m=2 v=3 → KE?',a:'9 J',h:'9'},
+    {q:'m=3 h=4 g=10 → PE?',a:'120 J',h:'120'},
+    {q:'พลังงานกล = ?',a:'KE+PE',h:'sum'},
+    {q:'อนุรักษ์พลังงาน?',a:'ไม่หาย',h:'conserved'}
+  ],
+  mistakes:[
+    'สับสนทดแทน/ไม่ทดแทน',
+    'ลืมสูตร'
+  ],
+  problems:[
+    {q:'แสงอาทิตย์ = ?',a:'ทดแทน',h:'renew'},
+    {q:'น้ำมัน = ?',a:'ไม่ทดแทน',h:'nonrenew'},
+    {q:'ลม = ?',a:'ทดแทน',h:'renew'},
+    {q:'ถ่านหิน = ?',a:'ไม่ทดแทน',h:'nonrenew'},
+    {q:'1 kWh = ? J',a:'3.6e6',h:'3.6×10⁶'},
+    {q:'V=220 I=1 → P?',a:'220 W',h:'220'},
+    {q:'m=2 v=4 → KE?',a:'16',h:'16'},
+    {q:'m=5 h=2 g=10 → PE?',a:'100',h:'100'},
+    {q:'พลังงานกล?',a:'KE+PE',h:'sum'},
+    {q:'พลังงานอนุรักษ์?',a:'ไม่หาย',h:'conserved'}
+  ]
+}
+
+];
+
+var registered = MQEX.registerChapters(chapters);
+
+console.info('✅ MQ-EX Part 5: วิทย์ ม.1 + ม.2 loaded');
+console.info('   Registered: '+registered+' chapters');
+console.info('   Total chapters now: '+Object.keys(MQEX.chapters).length);
+})();
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MQ-EX PART 6: วิทย์ ม.3 + FINAL INTEGRATION
+   ต้องโหลด Part 1-5 ก่อน
+   ============================================================ */
+(function(){
+if(!window.MQEX || !window.MQEX.ready){
+  console.error('❌ ต้องโหลด MQ-EX Part 1 ก่อน');
+  return;
+}
+if(window.__MQEX_P6__){console.warn('Part 6 already loaded');return;}
+window.__MQEX_P6__=true;
+
+var MQEX = window.MQEX;
+
+/* ============================================================
+   DATA — 6 บท วิทย์ ม.3
+   ============================================================ */
+var chapters = [
+
+/* ---------- บท 1: พันธุศาสตร์ ---------- */
+{
+  id:'sci3_01',
+  subject:'sci', grade:3, term:1, number:1,
+  title:'พันธุศาสตร์',
+  icon:'🧬',
+  def:'พันธุศาสตร์ศึกษาการถ่ายทอดลักษณะทางพันธุกรรมจากรุ่นสู่รุ่น ผ่าน<b>ยีน</b>บน<b>โครโมโซม</b>',
+  formulas:[
+    'ยีน = หน่วยถ่ายทอดลักษณะ',
+    'โครโมโซมมนุษย์ = 46 แท่ง (23 คู่)',
+    'DNA = สารพันธุกรรม',
+    'จีโนไทป์ = ลักษณะทางพันธุกรรม (BB, Bb, bb)',
+    'ฟีโนไทป์ = ลักษณะที่แสดงออก',
+    'อัลลีลเด่น = B, อัลลีลด้อย = b',
+    'พันธุ์แท้ = BB หรือ bb',
+    'พันธุ์ทาง = Bb (ลูกผสม)',
+    'Punnett Square: Bb × Bb → 1BB : 2Bb : 1bb',
+    'โรคทางพันธุกรรม: ทาลัสซีเมีย, ดาวน์ซินโดรม'
+  ],
+  examples:[
+    {q:'มนุษย์มีโครโมโซมกี่แท่ง?',a:'46',h:'23 คู่'},
+    {q:'Bb × Bb → ฟีโนไทป์?',a:'3:1',h:'เด่น:ด้อย'},
+    {q:'BB × bb → ลูกเป็น?',a:'Bb ทุกตัว',h:'พันธุ์ทาง'},
+    {q:'ยีนอยู่ใน?',a:'โครโมโซม',h:'chromosome'},
+    {q:'Bb คือ?',a:'พันธุ์ทาง',h:'hetero'},
+    {q:'BB × BB → ?',a:'BB',h:'พันธุ์แท้'},
+    {q:'อัลลีลเด่นใช้ตัวอักษร?',a:'ตัวใหญ่',h:'B'},
+    {q:'DNA ย่อมาจาก?',a:'กรดดีออกซีไรโบนิวคลีอิก',h:'deoxyribonucleic acid'}
+  ],
+  mistakes:[
+    'สลับจีโนไทป์/ฟีโนไทป์',
+    'ใช้ Punnett Square ผิด'
+  ],
+  problems:[
+    {q:'มนุษย์มีโครโมโซม?',a:'46',h:'46'},
+    {q:'Bb × Bb → พันธุ์แท้ด้อย?',a:'1/4',h:'bb=1/4'},
+    {q:'Bb × Bb → พันธุ์ทาง?',a:'1/2',h:'2/4'},
+    {q:'BB × bb → ลูก?',a:'Bb',h:'Bb ทุก'},
+    {q:'ยีนอยู่ที่?',a:'โครโมโซม',h:'chromosome'},
+    {q:'Bb คือ?',a:'พันธุ์ทาง',h:'hetero'},
+    {q:'อัลลีลด้อยใช้?',a:'ตัวเล็ก',h:'b'},
+    {q:'DNA คือ?',a:'สารพันธุกรรม',h:'genetic'},
+    {q:'BB × BB → ?',a:'BB',h:'BB'},
+    {q:'โรคทางพันธุกรรม?',a:'ทาลัสซีเมีย',h:'thalassemia'}
+  ]
+},
+
+/* ---------- บท 2: คลื่นและแสง ---------- */
+{
+  id:'sci3_02',
+  subject:'sci', grade:3, term:1, number:2,
+  title:'คลื่นและแสง',
+  icon:'🌈',
+  def:'คลื่น = การถ่ายโอนพลังงานผ่านตัวกลาง แสง = คลื่นแม่เหล็กไฟฟ้าที่มองเห็นได้',
+  formulas:[
+    'v = f × λ (อัตราเร็ว = ความถี่ × ความยาวคลื่น)',
+    'f = 1/T (T = คาบ)',
+    'แสงเดินทางเป็นเส้นตรง',
+    'มุมตกกระทบ = มุมสะท้อน',
+    'การหักเห: n = c/v',
+    'ดรรชนีหักเหน้ำ = 1.33',
+    'สเปกตรัม: แดง ส้ม เหลือง เขียว น้ำเงิน คราม ม่วง',
+    'ความยาวคลื่นแสง: 400-700 nm',
+    'สีที่มองเห็น = สีที่สะท้อน',
+    'เงา: เกิดจากการบังแสง'
+  ],
+  examples:[
+    {q:'v=340 m/s, f=170 Hz → λ?',a:'2 m',h:'λ = v/f'},
+    {q:'f=50 Hz → T?',a:'0.02 s',h:'1/50'},
+    {q:'แสงอาทิตย์ = คลื่น?',a:'แม่เหล็กไฟฟ้า',h:'EM'},
+    {q:'สีที่มองเห็นกล้วยเหลือง?',a:'เหลือง',h:'สะท้อน'},
+    {q:'แสงหักเหเพราะ?',a:'เปลี่ยนตัวกลาง',h:'medium'},
+    {q:'v=300 m/s, λ=3 m → f?',a:'100 Hz',h:'v/λ'},
+    {q:'มุมสะท้อน = มุมตกกระทบ?',a:'เท่ากัน',h:'equal'},
+    {q:'แสงมีความเร็ว?',a:'3×10⁸ m/s',h:'~300,000 km/s'}
+  ],
+  mistakes:[
+    'สลับ f กับ T',
+    'คิดว่าแสงไม่ต้องใช้ตัวกลาง'
+  ],
+  problems:[
+    {q:'v=340, f=340 → λ?',a:'1 m',h:'λ=1'},
+    {q:'v=340, f=170 → λ?',a:'2 m',h:'2'},
+    {q:'f=100 Hz → T?',a:'0.01 s',h:'1/100'},
+    {q:'f=10 Hz → T?',a:'0.1 s',h:'0.1'},
+    {q:'v=300, λ=3 → f?',a:'100',h:'100'},
+    {q:'v=300, λ=1 → f?',a:'300',h:'300'},
+    {q:'แสงเป็นคลื่น?',a:'แม่เหล็กไฟฟ้า',h:'EM'},
+    {q:'มุมสะท้อน=มุม?',a:'ตกกระทบ',h:'incident'},
+    {q:'แสงในสุญญากาศ?',a:'3×10⁸',h:'3e8'},
+    {q:'ดรรชนีหักเหน้ำ?',a:'1.33',h:'1.33'}
+  ]
+},
+
+/* ---------- บท 3: ระบบสุริยะ ---------- */
+{
+  id:'sci3_03',
+  subject:'sci', grade:3, term:1, number:3,
+  title:'ระบบสุริยะ',
+  icon:'🌌',
+  def:'ระบบสุริยะประกอบด้วยดวงอาทิตย์ ดาวเคราะห์ 8 ดวง ดาวบริวาร และอื่นๆ',
+  formulas:[
+    'ดาวเคราะห์ 8 ดวง: พุธ ศุกร์ โลก อังคาร พฤหัสบดี เสาร์ ยูเรเนส นeptune',
+    'ดาวเคราะห์หิน: พุธ ศุกร์ โลก อังคาร',
+    'ดาวเคราะห์แก๊ส: พฤหัสบดี เสาร์ ยูเรเนส นeptune',
+    'ดวงจันทร์ของโลก = 1 ดวง',
+    'ดวงอาทิตย์ = ดาวฤกษ์',
+    '1 AU = ระยะโลก-ดวงอาทิตย์ ~150 ล้าน km',
+    'คาบโคจรโลก = 365.25 วัน',
+    'คาบหมุนรอบตัวเอง = 24 ชั่วโมง',
+    'โลกเอียง 23.5°',
+    'ฤดูกาลเกิดจากการเอียงของโลก'
+  ],
+  examples:[
+    {q:'โลกเป็นดาวเคราะห์หิน?',a:'ใช่',h:'yes'},
+    {q:'ดาวเคราะห์ที่ใหญ่สุด?',a:'พฤหัสบดี',h:'Jupiter'},
+    {q:'โลกห่างจากดวงอาทิตย์?',a:'~150 ล้าน km',h:'1 AU'},
+    {q:'ดาวเคราะห์กี่ดวง?',a:'8',h:'8'},
+    {q:'โลกมีดวงจันทร์กี่ดวง?',a:'1',h:'1'},
+    {q:'ฤดูกาลเกิดจาก?',a:'การเอียง',h:'tilt'},
+    {q:'คาบโคจรโลก?',a:'365 วัน',h:'1 ปี'},
+    {q:'ดาวเคราะห์ใกล้ดวงอาทิตย์สุด?',a:'พุธ',h:'Mercury'}
+  ],
+  mistakes:[
+    'นับดาวพลูโต (ไม่นับแล้ว)',
+    'สลับคาบโคจรกับหมุนตัวเอง'
+  ],
+  problems:[
+    {q:'ดาวเคราะห์กี่ดวง?',a:'8',h:'8'},
+    {q:'ดาวเคราะห์ใหญ่สุด?',a:'พฤหัสบดี',h:'Jupiter'},
+    {q:'โลกมีดวงจันทร์?',a:'1',h:'1'},
+    {q:'โลกเป็นหิน?',a:'ใช่',h:'rocky'},
+    {q:'คาบโคจรโลก?',a:'365',h:'365'},
+    {q:'ฤดูกาลจาก?',a:'เอียง',h:'tilt'},
+    {q:'1 AU = ?',a:'150 ล้าน km',h:'150M'},
+    {q:'ใกล้ดวงอาทิตย์สุด?',a:'พุธ',h:'Mercury'},
+    {q:'ไกลสุด?',a:'เนปจูน',h:'Neptune'},
+    {q:'โลกเอียง?',a:'23.5°',h:'23.5'}
+  ]
+},
+
+/* ---------- บท 4: ปฏิกิริยาเคมี ---------- */
+{
+  id:'sci3_04',
+  subject:'sci', grade:3, term:2, number:4,
+  title:'ปฏิกิริยาเคมี',
+  icon:'⚗️',
+  def:'ปฏิกิริยาเคมี = การเปลี่ยนแปลงที่เกิดสารใหม่ มีสมการเคมีแสดง',
+  formulas:[
+    'สมการเคมี: สารตั้งต้น → ผลิตภัณฑ์',
+    'สมดุลสมการ: จำนวนอะตอมทั้ง 2 ข้างเท่ากัน',
+    '2H₂ + O₂ → 2H₂O',
+    'CH₄ + 2O₂ → CO₂ + 2H₂O',
+    'ปฏิกิริยาดูดความร้อน: ΔH > 0',
+    'ปฏิกิริยาคายความร้อน: ΔH < 0',
+    'ตัวเร่ง: เพิ่มอัตรา ไม่ถูกใช้หมด',
+    'ตัวยับยั้ง: ลดอัตรา',
+    'ปัจจัย: อุณหภูมิ ความเข้มข้น พื้นที่ผิว ตัวเร่ง',
+    'กฎอนุรักษ์มวล: มวลรวมก่อน = หลัง'
+  ],
+  examples:[
+    {q:'H₂ + O₂ → ?',a:'H₂O',h:'2H₂+O₂→2H₂O'},
+    {q:'ปฏิกิริยาคายความร้อน?',a:'ΔH<0',h:'ปล่อย'},
+    {q:'ตัวเร่งทำอะไร?',a:'เพิ่มอัตรา',h:'catalyst'},
+    {q:'CH₄ + 2O₂ → ?',a:'CO₂ + 2H₂O',h:'combustion'},
+    {q:'เพิ่มอุณหภูมิ → อัตรา?',a:'เพิ่ม',h:'faster'},
+    {q:'มวลก่อน-หลัง?',a:'เท่ากัน',h:'conserved'},
+    {q:'ตัวยับยั้งทำ?',a:'ลดอัตรา',h:'inhibitor'},
+    {q:'2H₂ + O₂ → 2H₂O ใช้ H₂ กี่ตัว?',a:'2',h:'2'}
+  ],
+  mistakes:[
+    'สมดุลสมการผิด',
+    'สลับ reactant/product'
+  ],
+  problems:[
+    {q:'H₂+O₂ → ?',a:'H₂O',h:'H₂O'},
+    {q:'C+O₂ → ?',a:'CO₂',h:'CO₂'},
+    {q:'CH₄+2O₂ → ?',a:'CO₂+2H₂O',h:'combust'},
+    {q:'ตัวเร่ง?',a:'เพิ่มอัตรา',h:'catalyst'},
+    {q:'ตัวยับยั้ง?',a:'ลดอัตรา',h:'inhibitor'},
+    {q:'อุณหภูมิสูง → ?',a:'เร็วขึ้น',h:'fast'},
+    {q:'คายความร้อน?',a:'ΔH<0',h:'neg'},
+    {q:'ดูดความร้อน?',a:'ΔH>0',h:'pos'},
+    {q:'มวลอนุรักษ์?',a:'เท่า',h:'equal'},
+    {q:'N₂+3H₂→?',a:'2NH₃',h:'NH₃'}
+  ]
+},
+
+/* ---------- บท 5: ไฟฟ้า ---------- */
+{
+  id:'sci3_05',
+  subject:'sci', grade:3, term:2, number:5,
+  title:'ไฟฟ้า',
+  icon:'⚡',
+  def:'ไฟฟ้า = การเคลื่อนที่ของอิเล็กตรอน มีกระแส แรงดัน ความต้านทาน',
+  formulas:[
+    'V = IR (โอห์ม)',
+    'V = แรงดัน (โวลต์ V)',
+    'I = กระแส (แอมแปร์ A)',
+    'R = ความต้านทาน (โอห์ม Ω)',
+    'P = VI (กำลังไฟฟ้า)',
+    'P = I²R = V²/R',
+    'ต่ออนุกรม: R รวม = R₁+R₂+...',
+    'ต่อขนาน: 1/R รวม = 1/R₁+1/R₂+...',
+    'อนุกรม: กระแสเท่ากัน, แรงดันแบ่ง',
+    'ขนาน: แรงดันเท่ากัน, กระแสแบ่ง'
+  ],
+  examples:[
+    {q:'V=220 I=2 → R?',a:'110 Ω',h:'V/I'},
+    {q:'V=12 I=3 → R?',a:'4',h:'4 Ω'},
+    {q:'R₁=10 R₂=20 อนุกรม → R?',a:'30 Ω',h:'+'},
+    {q:'R₁=R₂=10 ขนาน → R?',a:'5 Ω',h:'1/R=2/10'},
+    {q:'V=220 I=2 → P?',a:'440 W',h:'VI'},
+    {q:'I=2 R=5 → V?',a:'10',h:'IR'},
+    {q:'I=3 R=4 → V?',a:'12',h:'12'},
+    {q:'V=6 R=3 → I?',a:'2',h:'2 A'}
+  ],
+  mistakes:[
+    'สลับสูตรอนุกรม/ขนาน',
+    'ใช้หน่วยผิด'
+  ],
+  problems:[
+    {q:'V=12 I=2 → R?',a:'6',h:'6'},
+    {q:'V=24 I=4 → R?',a:'6',h:'6'},
+    {q:'R₁=5 R₂=5 อนุกรม?',a:'10',h:'10'},
+    {q:'R₁=4 R₂=4 อนุกรม?',a:'8',h:'8'},
+    {q:'R₁=R₂=10 ขนาน?',a:'5',h:'5'},
+    {q:'R₁=R₂=20 ขนาน?',a:'10',h:'10'},
+    {q:'V=220 I=1 → P?',a:'220',h:'220'},
+    {q:'I=2 R=10 → V?',a:'20',h:'20'},
+    {q:'V=10 R=2 → I?',a:'5',h:'5'},
+    {q:'V=6 I=3 → R?',a:'2',h:'2'}
+  ]
+},
+
+/* ---------- บท 6: ระบบนิเวศ ---------- */
+{
+  id:'sci3_06',
+  subject:'sci', grade:3, term:2, number:6,
+  title:'ระบบนิเวศ',
+  icon:'🌿',
+  def:'ระบบนิเวศ = ความสัมพันธ์ระหว่างสิ่งมีชีวิตกับสิ่งแวดล้อม',
+  formulas:[
+    'ผู้ผลิต: พืช (สร้างอาหาร)',
+    'ผู้บริโภค: สัตว์ (กิน)',
+    'ผู้ย่อยสลาย: แบคทีเรีย เห็ด รา',
+    'ห่วงโซ่อาหาร: พืช → สัตว์ → สัตว์',
+    'สายใยอาหาร: หลายห่วงโซ่',
+    'พีระมิดพลังงาน: 10% ถ่ายทอด',
+    'ความหลากหลายชีวภาพ',
+    'การอยู่ร่วมกัน: ภาวะพึ่งพา, ภาวะปรสิต',
+    'วัฏจักร: น้ำ คาร์บอน ไนโตรเจน',
+    'มลพิษ: อากาศ น้ำ ดิน'
+  ],
+  examples:[
+    {q:'พืชเป็น?',a:'ผู้ผลิต',h:'producer'},
+    {q:'เห็ดเป็น?',a:'ผู้ย่อยสลาย',h:'decomposer'},
+    {q:'หญ้า → กระต่าย → เสือ = ?',a:'ห่วงโซ่อาหาร',h:'food chain'},
+    {q:'พลังงานถ่ายทอดกี่ %?',a:'10%',h:'10%'},
+    {q:'เสือเป็น?',a:'ผู้บริโภค',h:'consumer'},
+    {q:'แบคทีเรียเป็น?',a:'ผู้ย่อยสลาย',h:'decomp'},
+    {q:'พืชกินสัตว์?',a:'ผู้บริโภค',h:'consumer'},
+    {q:'มลพิษอากาศ?',a:'PM2.5',h:'dust'}
+  ],
+  mistakes:[
+    'สลับผู้ผลิต/ผู้บริโภค',
+    'คิดว่าพลังงาน 100% ถ่ายทอด'
+  ],
+  problems:[
+    {q:'พืชเป็น?',a:'ผู้ผลิต',h:'producer'},
+    {q:'เห็ดเป็น?',a:'ผู้ย่อยสลาย',h:'decomposer'},
+    {q:'หญ้า→กระต่าย→?',a:'ห่วงโซ่',h:'food chain'},
+    {q:'พลังงานถ่ายทอด?',a:'10%',h:'10'},
+    {q:'เสือเป็น?',a:'ผู้บริโภค',h:'consumer'},
+    {q:'แบคทีเรียเป็น?',a:'ผู้ย่อยสลาย',h:'decomp'},
+    {q:'วัฏจักรน้ำ?',a:'น้ำ',h:'water'},
+    {q:'ความหลากหลาย?',a:'biodiversity',h:'biodiv'},
+    {q:'มลพิษอากาศ?',a:'PM2.5',h:'PM2.5'},
+    {q:'สัตว์กินพืช?',a:'ผู้บริโภค',h:'herbivore'}
+  ]
+}
+
+];
+
+/* ============================================================
+   REGISTER CHAPTERS
+   ============================================================ */
+var registered = MQEX.registerChapters(chapters);
+
+/* ============================================================
+   FINAL INTEGRATION — Stats Panel / Search / Reset
+   ============================================================ */
+
+/* ----- เพิ่มปุ่ม Stats ในเมนูหลักของ MQEX ----- */
+var _origShowMainMenu = window.__mqexMain;
+/* wrap showMainMenu (ตอนนี้คือ __mqexMain) */
+try{
+  /* find internal showMainMenu via __mqexMain */
+  var origMainFn = window.__mqexMain;
+  /* cannot wrap directly because internal ref; ใช้ add ปุ่มในเมนูผ่าน injectStatsBtn แทน */
+}catch(e){}
+
+/* ----- ฟังก์ชันสถิติรวม ----- */
+window.__mqexStats = function(){
+  var el = document.getElementById('gameContent');
+  if(!el) return;
+
+  var stats = MQEX.progress.stats || {read:0,quizDone:0,correct:0,wrong:0};
+
+  /* นับจำนวนบททั้งสิ้น */
+  var totalCh = Object.keys(MQEX.chapters).length;
+  var mathCh = MQEX.getChapters('math').length;
+  var sciCh = MQEX.getChapters('sci').length;
+
+  /* นับที่อ่านแล้วแยกวิชา */
+  var mathRead = 0, sciRead = 0, mathQuiz = 0, sciQuiz = 0;
+  MQEX.getChapters('math').forEach(function(c){
+    if(MQEX.progress.read[c.id]) mathRead++;
+    if(MQEX.progress.quiz[c.id]) mathQuiz++;
+  });
+  MQEX.getChapters('sci').forEach(function(c){
+    if(MQEX.progress.read[c.id]) sciRead++;
+    if(MQEX.progress.quiz[c.id]) sciQuiz++;
+  });
+
+  /* คำนวณคะแนน quiz รวม */
+  var totalScore = 0, totalMax = 0;
+  for(var cid in MQEX.progress.quiz){
+    var q = MQEX.progress.quiz[cid];
+    totalScore += q.score || 0;
+    totalMax += q.total || 0;
+  }
+  var accPct = totalMax > 0 ? Math.round(totalScore/totalMax*100) : 0;
+
+  var h='<h3>📊 สถิติคลังโจทย์</h3>';
+
+  /* ภาพรวม */
+  h+='<div class="tp" style="background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(181,55,242,0.1));border-color:#00f0ff">';
+  h+='<div class="tc" style="font-size:14px;font-weight:700;margin-bottom:8px">📚 ภาพรวม</div>';
+  h+='<div class="sbar" style="background:rgba(0,0,0,0.3);margin:0">';
+  h+='<span>📖 บท <span class="sv">'+totalCh+'</span></span>';
+  h+='<span>📐 '+mathCh+'</span>';
+  h+='<span>🔬 '+sciCh+'</span>';
+  h+='</div></div>';
+
+  /* progress bar อ่าน */
+  var readPct = totalCh > 0 ? Math.round(stats.read/totalCh*100) : 0;
+  h+='<div class="tp"><div style="font-weight:700;color:#00f0ff;margin-bottom:6px">📖 อ่านบทเรียน</div>';
+  h+='<div class="pb"><div class="pbf" style="width:'+readPct+'%"></div></div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px">';
+  h+='<span>'+stats.read+'/'+totalCh+' บท</span><b>'+readPct+'%</b></div></div>';
+
+  /* progress bar quiz */
+  var quizPct = totalCh > 0 ? Math.round(stats.quizDone/totalCh*100) : 0;
+  h+='<div class="tp"><div style="font-weight:700;color:#ffe600;margin-bottom:6px">🎯 ทำแบบทดสอบ</div>';
+  h+='<div class="pb"><div class="pbf" style="width:'+quizPct+'%"></div></div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px">';
+  h+='<span>'+stats.quizDone+'/'+totalCh+' บท</span><b>'+quizPct+'%</b></div></div>';
+
+  /* accuracy */
+  h+='<div class="tp"><div style="font-weight:700;color:#39ff14;margin-bottom:6px">✅ ความแม่นยำ</div>';
+  h+='<div class="pb"><div class="pbf" style="width:'+accPct+'%"></div></div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px">';
+  h+='<span>ตอบถูก '+totalScore+'/'+totalMax+'</span><b>'+accPct+'%</b></div></div>';
+
+  /* แยกวิชา */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">📐 คณิต ม.ต้น</h3>';
+  h+='<div class="si"><span>📖 อ่าน</span><b>'+mathRead+'/'+mathCh+'</b></div>';
+  h+='<div class="si"><span>🎯 ทำ quiz</span><b>'+mathQuiz+'/'+mathCh+'</b></div>';
+
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">🔬 วิทย์ ม.ต้น</h3>';
+  h+='<div class="si"><span>📖 อ่าน</span><b>'+sciRead+'/'+sciCh+'</b></div>';
+  h+='<div class="si"><span>🎯 ทำ quiz</span><b>'+sciQuiz+'/'+sciCh+'</b></div>';
+
+  /* Action buttons */
+  h+='<button class="btn btn-g wf mt3" onclick="window.__mqexMain()">📚 กลับหน้าหลัก</button>';
+  h+='<button class="btn btn-y wf mt2" onclick="window.__mqexSearch()">🔍 ค้นหาบทเรียน</button>';
+  h+='<button class="btn btn-r wf mt2" onclick="window.__mqexResetConfirm()">🗑️ รีเซ็ต progress</button>';
+
+  el.innerHTML = h;
+  el.scrollTop = 0;
+};
+
+/* ----- ค้นหาบทเรียน ----- */
+window.__mqexSearch = function(){
+  var el = document.getElementById('gameContent');
+  if(!el) return;
+  var h='<h3>🔍 ค้นหาบทเรียน</h3>';
+  h+='<div class="tp">';
+  h+='<input id="mqexSearchInp" type="text" placeholder="พิมพ์คำค้น..." '+
+    'style="width:100%;padding:12px;font-size:14px;border-radius:10px;border:2px solid #00f0ff;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit" autocomplete="off">';
+  h+='<div class="ts mt2" style="color:#b0b0d0">ค้นหาจากชื่อบท หรือคำอธิบาย</div>';
+  h+='</div>';
+  h+='<div id="mqexSearchResults"></div>';
+  h+='<button class="btn btn-o wf mt3" onclick="window.__mqexStats()">◀ กลับสถิติ</button>';
+  el.innerHTML = h;
+
+  var inp = document.getElementById('mqexSearchInp');
+  if(inp){
+    inp.focus();
+    inp.addEventListener('input', function(){
+      var q = inp.value.trim().toLowerCase();
+      var results = document.getElementById('mqexSearchResults');
+      if(!results) return;
+      if(!q){results.innerHTML='';return;}
+      var found = [];
+      for(var id in MQEX.chapters){
+        var c = MQEX.chapters[id];
+        var text = (c.title+' '+c.def+' '+(c.formulas||[]).join(' ')).toLowerCase();
+        if(text.indexOf(q)>-1) found.push(c);
+      }
+      if(!found.length){
+        results.innerHTML = '<div class="si tc" style="color:#b0b0d0;padding:20px">ไม่พบผลลัพธ์</div>';
+        return;
+      }
+      var rh = '<div class="ts mb2" style="color:#b0b0d0">พบ '+found.length+' บท</div>';
+      found.slice(0,20).forEach(function(c){
+        var icon = c.subject==='math'?'📐':'🔬';
+        rh += '<div class="si" onclick="window.__mqexOpen(\''+c.id+'\')" style="cursor:pointer">'+
+          '<div style="flex:1"><b>'+icon+' '+c.title+'</b>'+
+          '<div class="ts" style="color:#b0b0d0">ม.'+c.grade+' · เทอม '+c.term+' · บท '+c.number+'</div></div>'+
+          '<span style="color:#00f0ff">▶</span></div>';
+      });
+      results.innerHTML = rh;
+    });
+  }
+  el.scrollTop = 0;
+};
+
+/* ----- รีเซ็ต progress ----- */
+window.__mqexResetConfirm = function(){
+  if(!confirm('ล้าง progress ทั้งหมด?\n(บทที่อ่านแล้ว + คะแนน quiz)')) return;
+  try{localStorage.removeItem(MQEX.storage.progressKey);}catch(e){}
+  MQEX.progress = {read:{},quiz:{},stats:{read:0,quizDone:0,correct:0,wrong:0}};
+  alert('✅ รีเซ็ตแล้ว');
+  window.__mqexStats();
+};
+
+/* ============================================================
+   PATCH — เพิ่มปุ่ม Stats ในหน้า MQEX Main
+   ============================================================ */
+(function patchMainMenu(){
+  /* รอ core พร้อม */
+  var tryPatch = setInterval(function(){
+    var el = document.getElementById('gameContent');
+    if(!el) return;
+    /* ตรวจว่าอยู่ในหน้า MQEX Main ไหม — ดูจากหัวข้อ */
+    var heading = el.querySelector('h3');
+    if(!heading || heading.textContent.indexOf('คลังโจทย์')<0) return;
+    /* ตรวจว่ามีปุ่ม Stats อยู่แล้วไหม */
+    if(document.getElementById('mqexStatsBtn')) return;
+    /* เพิ่มปุ่ม Stats ที่ด้านบน */
+    var firstTp = el.querySelector('.tp') || el.querySelector('.sbar');
+    if(!firstTp) return;
+    var btn = document.createElement('button');
+    btn.id = 'mqexStatsBtn';
+    btn.className = 'btn btn-pur wf mb2';
+    btn.textContent = '📊 ดูสถิติ + ค้นหา';
+    btn.onclick = window.__mqexStats;
+    firstTp.parentNode.insertBefore(btn, firstTp);
+  }, 800);
+  /* เคลียร์ interval หลัง 30 วิ (ไม่จำเป็นต้องรันตลอด) */
+  setTimeout(function(){clearInterval(tryPatch);},30000);
+})();
+
+/* ============================================================
+   SUMMARY
+   ============================================================ */
+var totalCh = Object.keys(MQEX.chapters).length;
+var mathCh = MQEX.getChapters('math').length;
+var sciCh = MQEX.getChapters('sci').length;
+var totalFormulas = 0, totalExamples = 0, totalProblems = 0;
+for(var id in MQEX.chapters){
+  var c = MQEX.chapters[id];
+  totalFormulas += (c.formulas||[]).length;
+  totalExamples += (c.examples||[]).length;
+  totalProblems += (c.problems||[]).length;
+}
+
+console.info('✅ MQ-EX Part 6: วิทย์ ม.3 + Final Integration loaded');
+console.info('   Registered: '+registered+' chapters');
+console.info('   ─────────────────────────────');
+console.info('   📚 TOTAL MQ-EX:');
+console.info('   • บทเรียน: '+totalCh+' ('+mathCh+' คณิต + '+sciCh+' วิทย์)');
+console.info('   • สูตรรวม: '+totalFormulas);
+console.info('   • ตัวอย่างรวม: '+totalExamples);
+console.info('   • โจทย์รวม: '+totalProblems);
+console.info('   ─────────────────────────────');
+console.info('   API เพิ่ม: __mqexStats() · __mqexSearch()');
+})();
+</script>
 </body>
   </html>
