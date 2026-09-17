@@ -1501,587 +1501,381 @@ console.log('✅ Math Quest loaded');
   <script>
 "use strict";
 /* ============================================================
-   MATH QUEST — EXTRA PACK v30 MEGA UNIFIED
-   รวมทุกอย่าง + Safety · สร้างโดย ธนวัฒน์
+   MATH QUEST — MEGA PACK (All-in-One)
+   Pets + Classes + Daily + Ach + Login + PetEvo + CM + Sets
+   + Leaderboard + Stats + 4 Modes + Geometry + Tutorial
+   + Detail + Safety MAX · สร้างโดย ธนวัฒน์
    ============================================================ */
 (function(){
-/* ---------- กันโหลดซ้ำ ---------- */
-if(window.__MQ_V30__){console.warn('v30 already loaded');return;}
-window.__MQ_V30__=true;
+if(window.__MQ_MEGA__){console.warn('already loaded');return;}
+window.__MQ_MEGA__=true;
+
+/* ========== HELPERS ========== */
+var _S=function(){try{return (typeof state!=='undefined')?state:null;}catch(e){return null;}};
+var _W=function(){try{var s=_S();if(s&&typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}};
+var _A=function(n){try{if(typeof Audio!=='undefined'&&Audio.sfx&&Audio.sfx[n])Audio.sfx[n]();}catch(e){}};
+var _F=function(x,y,t,c){try{if(typeof floatText==='function')floatText(x,y,t,c);}catch(e){}};
+var _M=function(t,b,btns){try{if(typeof showModal==='function'){showModal(t,b,btns);return true;}}catch(e){}return false;};
+var _C=function(){try{if(typeof closeModal==='function')closeModal();}catch(e){}};
+var _G=function(s){try{if(typeof go==='function')go(s);}catch(e){}};
+var _GOLD=function(n){var s=_S();if(!s||!s.player)return 0;var m=1;try{if(typeof getGoldMul==='function')m=getGoldMul();}catch(e){}var g=Math.round(n*m);s.player.gold+=g;_W();return g;};
+var R=function(a,b){return Math.floor(Math.random()*(b-a+1))+a;};
+var pick=function(a){return a[Math.floor(Math.random()*a.length)];};
 
 /* ============================================================
-   PART 0: SAFETY LAYER
+   PART 1: SAFETY (Error Catcher + Log + Badge)
    ============================================================ */
 var ERR=[];
-window.addEventListener('error',function(e){ERR.push({t:Date.now(),m:e.message});try{console.warn('[MQ]',e.message);}catch(x){}});
-window.addEventListener('unhandledrejection',function(e){ERR.push({t:Date.now(),m:String(e.reason)});});
-
-/* ============================================================
-   PART 1: HELPERS
-   ============================================================ */
-function gs(){try{return (typeof state!=='undefined')?state:null;}catch(e){return null;}}
-function ws(){try{var s=gs();if(s&&typeof Save!=='undefined'&&Save.write)Save.write(s);}catch(e){}}
-function sfx(n){try{if(typeof Audio!=='undefined'&&Audio.sfx&&Audio.sfx[n])Audio.sfx[n]();}catch(e){}}
-function ft(x,y,t,c){try{if(typeof floatText==='function')floatText(x,y,t,c);}catch(e){}}
-function modal(t,b,btns){try{if(typeof showModal==='function'){showModal(t,b,btns);return true;}}catch(e){}return false;}
-function closeM(){try{if(typeof closeModal==='function')closeModal();}catch(e){}}
-function goS(s){try{if(typeof go==='function')go(s);}catch(e){}}
-function gold(n){var s=gs();if(!s||!s.player)return 0;var m=1;try{if(typeof getGoldMul==='function')m=getGoldMul();}catch(e){}var g=Math.round(n*m);s.player.gold+=g;ws();return g;}
-function pick(a){return a[Math.floor(Math.random()*a.length)];}
-function R(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function btnExists(id){return !!document.getElementById(id);}
-
-/* ============================================================
-   PART 2: CREATOR FOOTER
-   ============================================================ */
-function setCreator(){
+window.addEventListener('error',function(e){ERR.push({t:Date.now(),s:'global',m:String(e.message).slice(0,200)});try{console.warn('[MQ]',e.message);}catch(x){}updateBadge();});
+window.addEventListener('unhandledrejection',function(e){ERR.push({t:Date.now(),s:'promise',m:String(e.reason).slice(0,200)});updateBadge();});
+function updateBadge(){
   try{
-    var ov=document.getElementById('startOverlay');
-    if(ov&&!ov.querySelector('.creator-tag')){
-      var sc=ov.querySelector('.sc');if(!sc)return;
-      var tag=document.createElement('div');
-      tag.className='creator-tag';
-      tag.style.cssText='margin-top:14px;padding:8px 12px;background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border:1px solid rgba(0,240,255,0.4);border-radius:10px;font-size:12px;color:#00f0ff;font-weight:700;letter-spacing:1px';
-      tag.innerHTML='✨ สร้างโดย <b style="color:#ffe600">ธนวัฒน์</b> ✨';
-      sc.appendChild(tag);
+    var b=document.getElementById('__sb');
+    if(ERR.length===0){if(b&&b.parentNode)b.parentNode.removeChild(b);return;}
+    if(!b){
+      b=document.createElement('div');b.id='__sb';
+      b.style.cssText='position:fixed;bottom:70px;right:10px;z-index:99998;background:linear-gradient(135deg,#ff006e,#ff4b2b);color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;cursor:pointer;box-shadow:0 0 15px rgba(255,0,110,0.8);font-family:monospace;border:2px solid #fff';
+      b.onclick=window.__mqPanel;
+      document.body.appendChild(b);
     }
+    b.textContent=ERR.length>99?'99+':String(ERR.length);
   }catch(e){}
 }
-setTimeout(setCreator,300);setTimeout(setCreator,1500);
+window.__mqPanel=function(){
+  var h='<div style="max-height:60vh;overflow-y:auto;text-align:left;font-family:monospace;font-size:11px">';
+  if(!ERR.length)h+='<div style="color:#39ff14;text-align:center;padding:20px">✅ ไม่มี error</div>';
+  else ERR.slice(-25).forEach(function(e){var d=new Date(e.t);var ts=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+    h+='<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><span style="color:#b0b0d0">['+ts+']</span> <b style="color:#00f0ff">'+e.s+'</b> <span style="color:#ff006e">'+e.m+'</span></div>';});
+  h+='</div>';
+  _M('🛡️ Safety Log',h,[
+    {label:'🗑️ ล้าง',cls:'btn-r',action:'window.__mqClearErr()'},
+    {label:'💾 กู้คืน Backup',cls:'btn-y',action:'window.__mqRestore()'},
+    {label:'ปิด',cls:'btn-o',action:'closeModal()'}
+  ]);
+};
+window.__mqClearErr=function(){ERR.length=0;updateBadge();_C();};
+window.__mqRestore=function(){
+  try{
+    var bk=localStorage.getItem('mq_backup');
+    if(!bk){alert('ไม่มี backup');return;}
+    var d=JSON.parse(bk);healState(d);window.state=d;
+    if(typeof Save!=='undefined'&&Save.write)Save.write(d);
+    alert('✅ กู้คืนสำเร็จ');location.reload();
+  }catch(e){alert('❌ '+e.message);}
+};
+
+/* ========== STATE HEAL ========== */
+var SCHEMA={player:{name:'ผู้กล้า',hp:100,maxHp:100,score:0,gold:200,combo:0,maxCombo:0,tc:0,tw:0,ch:1,lv:1,exp:0,plv:1,rebirth:0,rbonus:0,bossHp:0,bossMaxHp:0,shield:false,skillPoints:0},pclass:'warrior',epet:null,inv:{w:0,s:0,h:0,a:0,p:0,sh:0},skillTree:{},rareItems:[],consumables:{},permanentBoosts:{crit:0,cmul:0,gold:0,exp:0,hp:0,time:0},myPets:[],myGClasses:[],completed:{},bossKills:[],stats:{},stats2:{maxDamage:0,totalDamage:0,patternsSolved:0,balanceSolved:0,comparisonsSolved:0,twentyFourSolved:0},wrongLog:[],soundOn:true};
+function healState(s){
+  if(!s||typeof s!=='object')return s;
+  function fill(t,d){for(var k in d){if(!Object.prototype.hasOwnProperty.call(d,k))continue;var v=d[k];
+    if(t[k]===undefined||t[k]===null){t[k]=typeof v==='object'?JSON.parse(JSON.stringify(v)):v;}
+    else if(v&&typeof v==='object'&&!Array.isArray(v)&&t[k]&&typeof t[k]==='object'&&!Array.isArray(t[k]))fill(t[k],v);}}
+  fill(s,SCHEMA);
+  if(!s.player)s.player=JSON.parse(JSON.stringify(SCHEMA.player));
+  var P=s.player;
+  if(typeof P.gold!=='number'||!isFinite(P.gold)||P.gold<0)P.gold=0;if(P.gold>1e13)P.gold=1e13;
+  if(typeof P.hp!=='number'||!isFinite(P.hp))P.hp=100;
+  if(typeof P.maxHp!=='number'||!isFinite(P.maxHp)||P.maxHp<1)P.maxHp=100;
+  if(P.hp<0)P.hp=0;if(P.hp>P.maxHp)P.hp=P.maxHp;
+  if(P.plv<1)P.plv=1;if(P.rebirth<0)P.rebirth=0;
+  ['myPets','myGClasses','wrongLog','rareItems','bossKills'].forEach(function(k){if(!Array.isArray(s[k]))s[k]=[];});
+  ['completed','inv','consumables','skillTree','permanentBoosts','stats','stats2'].forEach(function(k){if(!s[k]||typeof s[k]!=='object')s[k]={};});
+  if(s.wrongLog.length>100)s.wrongLog.length=100;
+  return s;
+}
+try{var _st=_S();if(_st)healState(_st);}catch(e){}
+setInterval(function(){try{var s=_S();if(s)healState(s);}catch(e){}},30000);
+
+/* auto-save backup */
+setInterval(function(){try{var s=_S();if(s&&s.player)localStorage.setItem('mq_backup',JSON.stringify(s));}catch(e){}},15000);
 
 /* ============================================================
-   PART 3: PETS + CLASSES (19 entities)
+   PART 2: DATA — PETS + CLASSES (19 entities)
    ============================================================ */
 var ENT=[
-{key:'leng',    name:'เล้ง',         emoji:'🐛', p:1, theme:'ตัวตลก อ่อนสุด'},
-{key:'windsor', name:'เศษขยะวินเซอร์', emoji:'🗑️', p:1, theme:'เศษขยะพยายามเป็นฮีโร่'},
-{key:'pasta',   name:'พาสต้า',       emoji:'🍝', p:2, theme:'ยืดหยุ่นแต่เปราะ'},
-{key:'mel',     name:'เมล',          emoji:'🐱', p:2, theme:'แมวขี้อ้อน'},
-{key:'tree1',   name:'ต้นไม้',        emoji:'🌳', p:2, theme:'มั่นคงแต่เชื่องช้า'},
-{key:'apo',     name:'อโป',          emoji:'🐧', p:2, theme:'เพนกวินขั้วโลก'},
-{key:'tree2',   name:'ต้นไม้',        emoji:'🌲', p:2, theme:'ป่าลึก'},
-{key:'auto',    name:'ออโต้',        emoji:'🤖', p:3, theme:'หุ่นยนต์ผู้ช่วย'},
-{key:'nik',     name:'นิก',          emoji:'🦊', p:3, theme:'จิ้งจอกเจ้าเล่ห์'},
-{key:'idin',    name:'ไอดิน',         emoji:'🌍', p:3, theme:'ภูเขาไฟสงบ'},
-{key:'forge',   name:'ฟอร์จ',         emoji:'🔨', p:3, theme:'ช่างตีเหล็ก'},
-{key:'junin',   name:'จูนิน',         emoji:'🌙', p:3, theme:'จันทราแห่งราตรี'},
-{key:'ryu',     name:'ริว',          emoji:'🐉', p:4, theme:'มังกรสายฟ้า'},
-{key:'pupa',    name:'ภูผา',         emoji:'🏔️', p:4, theme:'ภูเขายักษ์'},
-{key:'iq',      name:'ไอคิว',         emoji:'🧠', p:4, theme:'อัจฉริยะ'},
-{key:'title',   name:'ไตเติ้ล',       emoji:'👑', p:4, theme:'ราชันย์'},
-{key:'jay',     name:'เจ',           emoji:'🎸', p:4, theme:'ร็อคสตาร์'},
-{key:'bass',    name:'เบส',          emoji:'🎵', p:4, theme:'นักดนตรี'},
-{key:'heriang', name:'เหรียง',       emoji:'🦅', p:5, theme:'อินทรีทองคำ'},
-{key:'tawan',   name:'ตะวัน',        emoji:'☀️', p:6, theme:'เทพสุริยะ แข็งสุด'}
+{key:'leng',n:'เล้ง',e:'🐛',p:1,th:'ตัวตลก อ่อนสุด'},
+{key:'windsor',n:'เศษขยะวินเซอร์',e:'🗑️',p:1,th:'เศษขยะพยายามเป็นฮีโร่'},
+{key:'pasta',n:'พาสต้า',e:'🍝',p:2,th:'ยืดหยุ่นแต่เปราะ'},
+{key:'mel',n:'เมล',e:'🐱',p:2,th:'แมวขี้อ้อน'},
+{key:'tree1',n:'ต้นไม้',e:'🌳',p:2,th:'มั่นคงแต่เชื่องช้า'},
+{key:'apo',n:'อโป',e:'🐧',p:2,th:'เพนกวินขั้วโลก'},
+{key:'tree2',n:'ต้นไม้',e:'🌲',p:2,th:'ป่าลึก'},
+{key:'auto',n:'ออโต้',e:'🤖',p:3,th:'หุ่นยนต์ผู้ช่วย'},
+{key:'nik',n:'นิก',e:'🦊',p:3,th:'จิ้งจอกเจ้าเล่ห์'},
+{key:'idin',n:'ไอดิน',e:'🌍',p:3,th:'ภูเขาไฟสงบ'},
+{key:'forge',n:'ฟอร์จ',e:'🔨',p:3,th:'ช่างตีเหล็ก'},
+{key:'junin',n:'จูนิน',e:'🌙',p:3,th:'จันทราแห่งราตรี'},
+{key:'ryu',n:'ริว',e:'🐉',p:4,th:'มังกรสายฟ้า'},
+{key:'pupa',n:'ภูผา',e:'🏔️',p:4,th:'ภูเขายักษ์'},
+{key:'iq',n:'ไอคิว',e:'🧠',p:4,th:'อัจฉริยะ'},
+{key:'title',n:'ไตเติ้ล',e:'👑',p:4,th:'ราชันย์'},
+{key:'jay',n:'เจ',e:'🎸',p:4,th:'ร็อคสตาร์'},
+{key:'bass',n:'เบส',e:'🎵',p:4,th:'นักดนตรี'},
+{key:'heriang',n:'เหรียง',e:'🦅',p:5,th:'อินทรีทองคำ'},
+{key:'tawan',n:'ตะวัน',e:'☀️',p:6,th:'เทพสุริยะ แข็งสุด'}
 ];
-var PSTAT={1:{c:1,b:'dmg',a:0.01,h:0},2:{c:80,b:'hp',a:8,h:8},3:{c:250,b:'both',a:0.15,h:15},4:{c:800,b:'both',a:0.3,h:40},5:{c:3000,b:'all',a:0.5,h:80},6:{c:9999,b:'all',a:1,h:150}};
-var PSPC={leng:{lifesteal:1},windsor:{thorns:1},pasta:{hpRegen:2},mel:{hpRegen:2},tree1:{hpRegen:3},apo:{shieldStart:1},tree2:{hpRegen:3},auto:{mana:2,multiHit:1},nik:{critDodge:2,critDmg:2},idin:{thorns:2,hpRegen:2},forge:{firstStrike:2,lifesteal:2},junin:{critDodge:2,timeBonus:2},ryu:{critDmg:4,multiHit:2},pupa:{hpRegen:4,shieldStart:2},iq:{mana:3,expBonus:3},title:{critDmg:4,goldBonus:4},jay:{multiHit:3,comboKeep:2},bass:{comboKeep:3,critDmg:3},heriang:{hpRegen:5,critDmg:5,shieldStart:2},tawan:{lifesteal:8,critDmg:10,execute:2,revive:3,shieldStart:3,hpRegen:8,goldBonus:8,expBonus:8}};
+var PS={1:{c:1,b:'dmg',a:0.01,h:0},2:{c:80,b:'hp',a:8,h:8},3:{c:250,b:'both',a:0.15,h:15},4:{c:800,b:'both',a:0.3,h:40},5:{c:3000,b:'all',a:0.5,h:80},6:{c:9999,b:'all',a:1,h:150}};
+var PSPEC={leng:{lifesteal:1},windsor:{thorns:1},pasta:{hpRegen:2},mel:{hpRegen:2},tree1:{hpRegen:3},apo:{shieldStart:1},tree2:{hpRegen:3},auto:{mana:2,multiHit:1},nik:{critDodge:2,critDmg:2},idin:{thorns:2,hpRegen:2},forge:{firstStrike:2,lifesteal:2},junin:{critDodge:2,timeBonus:2},ryu:{critDmg:4,multiHit:2},pupa:{hpRegen:4,shieldStart:2},iq:{mana:3,expBonus:3},title:{critDmg:4,goldBonus:4},jay:{multiHit:3,comboKeep:2},bass:{comboKeep:3,critDmg:3},heriang:{hpRegen:5,critDmg:5,shieldStart:2},tawan:{lifesteal:8,critDmg:10,execute:2,revive:3,shieldStart:3,hpRegen:8,goldBonus:8,expBonus:8}};
 try{
   if(typeof Pets!=='undefined'){
-    ENT.forEach(function(e){var s=PSTAT[e.p];Pets['pet_'+e.key]={id:'pet_'+e.key,name:e.name,emoji:e.emoji,cost:s.c,bonus:s.b,amt:s.b==='hp'?s.h:s.a,desc:e.emoji+' '+e.theme,shop:true,special:PSPC[e.key]||{}};});
-    if(typeof GachaPets!=='undefined')ENT.filter(function(e){return e.p>=4;}).forEach(function(e){var k='pet_'+e.key;if(GachaPets.indexOf(k)<0)GachaPets.push(k);});
+    ENT.forEach(function(x){var s=PS[x.p];Pets['pet_'+x.key]={id:'pet_'+x.key,name:x.n,emoji:x.e,cost:s.c,bonus:s.b,amt:s.b==='hp'?s.h:s.a,desc:x.e+' '+x.th,shop:true,special:PSPEC[x.key]||{}};});
+    if(typeof GachaPets!=='undefined')ENT.filter(function(x){return x.p>=4;}).forEach(function(x){var k='pet_'+x.key;if(GachaPets.indexOf(k)<0)GachaPets.push(k);});
   }
 }catch(e){console.warn('Pets:',e.message);}
-
-var CSTAT={1:{hp:-40,d:0.3,c:0,cm:1.5},2:{hp:-10,d:0.7,c:0.05,cm:2},3:{hp:20,d:1.2,c:0.15,cm:3.5},4:{hp:50,d:1.6,c:0.3,cm:5},5:{hp:80,d:2,c:0.45,cm:6.5},6:{hp:150,d:3,c:0.6,cm:8}};
-var CUNL={1:1,2:5,3:20,4:40,5:60,6:100};
-var CSKL={leng:['slash','guard'],windsor:['slash','dodge'],pasta:['backstab','heal'],mel:['slash','heal'],tree1:['heal','guard'],apo:['slash','guard'],tree2:['heal','guard'],auto:['fireball','guard'],nik:['backstab','dodge'],idin:['slash','guard'],forge:['rage','guard'],junin:['arcaneBlast','rewind'],ryu:['lightning','flameBreath'],pupa:['titanPunch','titanShield'],iq:['arcaneBlast','timeStop'],title:['judgment','divineShield'],jay:['shadowStrike','finalSlash'],bass:['slash','backstab'],heriang:['holySmite','radiance'],tawan:['judgment','oblivion']};
-var CPSV={leng:{},windsor:{},pasta:{hpRegen:1},mel:{hpRegen:2},tree1:{hpRegen:3,thorns:1},apo:{shieldStart:1},tree2:{hpRegen:2},auto:{mana:2,multiHit:1},nik:{critDodge:2,critDmg:2},idin:{hpRegen:3,thorns:2},forge:{firstStrike:2,lifesteal:2},junin:{critDodge:2,timeBonus:2},ryu:{critDmg:4,multiHit:2},pupa:{hpRegen:5,shieldStart:2},iq:{mana:3,expBonus:3},title:{critDmg:4,goldBonus:4},jay:{multiHit:3,comboKeep:2},bass:{comboKeep:3,critDmg:3},heriang:{hpRegen:6,critDmg:6,shieldStart:3,revive:2},tawan:{lifesteal:10,critDmg:12,execute:3,revive:4,shieldStart:4,hpRegen:10,goldBonus:10,expBonus:10}};
+var CS={1:{hp:-40,d:0.3,c:0,cm:1.5},2:{hp:-10,d:0.7,c:0.05,cm:2},3:{hp:20,d:1.2,c:0.15,cm:3.5},4:{hp:50,d:1.6,c:0.3,cm:5},5:{hp:80,d:2,c:0.45,cm:6.5},6:{hp:150,d:3,c:0.6,cm:8}};
+var CU={1:1,2:5,3:20,4:40,5:60,6:100};
+var CSK={leng:['slash','guard'],windsor:['slash','dodge'],pasta:['backstab','heal'],mel:['slash','heal'],tree1:['heal','guard'],apo:['slash','guard'],tree2:['heal','guard'],auto:['fireball','guard'],nik:['backstab','dodge'],idin:['slash','guard'],forge:['rage','guard'],junin:['arcaneBlast','rewind'],ryu:['lightning','flameBreath'],pupa:['titanPunch','titanShield'],iq:['arcaneBlast','timeStop'],title:['judgment','divineShield'],jay:['shadowStrike','finalSlash'],bass:['slash','backstab'],heriang:['holySmite','radiance'],tawan:['judgment','oblivion']};
+var CP={leng:{},windsor:{},pasta:{hpRegen:1},mel:{hpRegen:2},tree1:{hpRegen:3,thorns:1},apo:{shieldStart:1},tree2:{hpRegen:2},auto:{mana:2,multiHit:1},nik:{critDodge:2,critDmg:2},idin:{hpRegen:3,thorns:2},forge:{firstStrike:2,lifesteal:2},junin:{critDodge:2,timeBonus:2},ryu:{critDmg:4,multiHit:2},pupa:{hpRegen:5,shieldStart:2},iq:{mana:3,expBonus:3},title:{critDmg:4,goldBonus:4},jay:{multiHit:3,comboKeep:2},bass:{comboKeep:3,critDmg:3},heriang:{hpRegen:6,critDmg:6,shieldStart:3,revive:2},tawan:{lifesteal:10,critDmg:12,execute:3,revive:4,shieldStart:4,hpRegen:10,goldBonus:10,expBonus:10}};
 try{
   if(typeof AdvanceClasses!=='undefined'){
-    ENT.forEach(function(e){
-      var s=CSTAT[e.p];
-      var skills=(CSKL[e.key]||['slash','guard']).filter(function(sid){return typeof SKILLS!=='undefined'&&SKILLS[sid];});
-      while(skills.length<2){var fb=['slash','guard','fireball','heal','backstab','dodge'];var f=fb[skills.length];if(SKILLS[f]&&skills.indexOf(f)<0)skills.push(f);else break;}
-      var pas={};for(var pid in CPSV[e.key]){if(typeof PASSIVES!=='undefined'&&PASSIVES[pid])pas[pid]=CPSV[e.key][pid];}
-      AdvanceClasses['cls_'+e.key]={id:'cls_'+e.key,name:e.name,emoji:e.emoji,unlock:CUNL[e.p],hp:s.hp,dmg:s.d,crit:s.c,cmul:s.cm,skills:skills,passives:pas,desc:e.theme+' · DMG x'+s.d};
+    ENT.forEach(function(x){
+      var s=CS[x.p];
+      var sk=(CSK[x.key]||['slash','guard']).filter(function(sid){return typeof SKILLS!=='undefined'&&SKILLS[sid];});
+      while(sk.length<2){var fb=['slash','guard','fireball','heal'];var f=fb[sk.length];if(SKILLS[f]&&sk.indexOf(f)<0)sk.push(f);else break;}
+      var pa={};for(var pid in CP[x.key]){if(typeof PASSIVES!=='undefined'&&PASSIVES[pid])pa[pid]=CP[x.key][pid];}
+      AdvanceClasses['cls_'+x.key]={id:'cls_'+x.key,name:x.n,emoji:x.e,unlock:CU[x.p],hp:s.hp,dmg:s.d,crit:s.c,cmul:s.cm,skills:sk,passives:pa,desc:x.th+' · DMG x'+s.d};
     });
-    if(typeof GachaClasses!=='undefined')ENT.filter(function(e){return e.p>=4;}).forEach(function(e){var k='cls_'+e.key;if(GachaClasses.indexOf(k)<0)GachaClasses.push(k);});
+    if(typeof GachaClasses!=='undefined')ENT.filter(function(x){return x.p>=4;}).forEach(function(x){var k='cls_'+x.key;if(GachaClasses.indexOf(k)<0)GachaClasses.push(k);});
   }
 }catch(e){console.warn('Classes:',e.message);}
 
 /* ============================================================
-   PART 4: GEOMETRY KNOWLEDGE
+   PART 3: GEOMETRY
    ============================================================ */
-var GEOM={
-translate:{t:'การเลื่อนขนาน',i:'➡️',d:'เลื่อนจุดไปในทิศเดียว ระยะเท่ากัน',
- p:['P(x,y) เลื่อน (a,b) → (x+a, y+b)','a>0 ขวา, a<0 ซ้าย','b>0 ขึ้น, b<0 ลง','รูปใหม่เท่ากันทุกประการ'],
- f:['P(x,y) → P\'(x+a, y+b)'],
- e:['(3,5) เลื่อน (2,-3) → (5,2)','(-1,4) เลื่อน (5,1) → (4,5)']},
-reflect:{t:'การสะท้อน',i:'🪞',d:'พลิกรูปข้ามเส้น (แกนสะท้อน)',
- p:['แกน x: (x,y)→(x,-y)','แกน y: (x,y)→(-x,y)','จุดกำเนิด: (x,y)→(-x,-y)','y=x: (x,y)→(y,x)','y=-x: (x,y)→(-y,-x)','x=k: (x,y)→(2k-x,y)','y=k: (x,y)→(x,2k-y)'],
- f:['แกน x: (x,y)→(x,-y)','y=x: (x,y)→(y,x)','x=k: (x,y)→(2k-x,y)'],
- e:['(3,5) แกน x → (3,-5)','(3,5) y=x → (5,3)','(3,5) x=2 → (1,5)']},
-rotate:{t:'การหมุน',i:'🔄',d:'หมุนรอบจุด O ด้วยมุม θ',
- p:['90° CCW: (x,y)→(-y,x)','180°: (x,y)→(-x,-y)','90° CW: (x,y)→(y,-x)','270° CCW = 90° CW','ทวนเข็ม = บวก'],
- f:['90° CCW: (-y,x)','180°: (-x,-y)','90° CW: (y,-x)'],
- e:['(2,3) 90°CCW → (-3,2)','(2,3) 180° → (-2,-3)','(2,3) 90°CW → (3,-2)']},
-dilate:{t:'การย่อ/ขยาย',i:'🔍',d:'ย่อ/ขยายจากจุดศูนย์กลาง ด้วยอัตรา k',
- p:['จาก (0,0): (x,y)→(kx,ky)','k>1 ขยาย','0<k<1 ย่อ','k<0 สะท้อน+ย่อ/ขยาย','มุมเท่าเดิม รูปคล้ายกัน'],
- f:['(x,y)→(kx,ky)','จาก C(a,b): (a+k(x-a), b+k(y-b))'],
- e:['(4,6) k=1/2 → (2,3)','(4,6) k=2 → (8,12)','(4,6) k=-1 → (-4,-6)']}
+var GEO={
+translate:{t:'การเลื่อนขนาน',i:'➡️',d:'เลื่อนไปทิศเดียว ระยะเท่ากัน',
+ p:['(x,y) เลื่อน (a,b) → (x+a, y+b)','a>0 ขวา, b>0 ขึ้น'],e:['(3,5)+(2,-3)=(5,2)','(-1,4)+(5,1)=(4,5)']},
+reflect:{t:'การสะท้อน',i:'🪞',d:'พลิกรูปข้ามเส้น',
+ p:['แกน x: (x,-y)','แกน y: (-x,y)','จุดกำเนิด: (-x,-y)','y=x: (y,x)','y=-x: (-y,-x)','x=k: (2k-x,y)','y=k: (x,2k-y)'],e:['(3,5)→x:(3,-5)','(3,5)→y=x:(5,3)','(3,5)→x=2:(1,5)']},
+rotate:{t:'การหมุน',i:'🔄',d:'หมุนรอบจุด',
+ p:['90°CCW: (-y,x)','180°: (-x,-y)','90°CW: (y,-x)'],e:['(2,3)90°CCW=(-3,2)','(2,3)180°=(-2,-3)','(2,3)90°CW=(3,-2)']},
+dilate:{t:'การย่อ/ขยาย',i:'🔍',d:'ย่อ/ขยายด้วย k',
+ p:['(x,y)→(kx,ky)','k>1 ขยาย','0<k<1 ย่อ','k<0 สะท้อน'],e:['(4,6) k=1/2=(2,3)','(4,6) k=2=(8,12)','(4,6) k=-1=(-4,-6)']}
 };
-function genGeom(topic){
-  var types={
-    translate:function(){var a=R(1,5)*(Math.random()<0.5?-1:1),b=R(1,5)*(Math.random()<0.5?-1:1),x=R(-8,8),y=R(-8,8);return{q:'A('+x+','+y+') เลื่อน ('+a+','+b+') → ?',a:(x+a)+','+(y+b),h:'x\'='+(x+a)+', y\'='+(y+b)};},
-    reflect:function(){var x=R(1,10),y=R(1,10);var m=pick(['x','y','o','yx','ynx']);var r;
-      if(m==='x')r={a:x+','+(-y),h:'แกน x → y กลับ'};
-      else if(m==='y')r={a:(-x)+','+y,h:'แกน y → x กลับ'};
-      else if(m==='o')r={a:(-x)+','+(-y),h:'จุดกำเนิด'};
-      else if(m==='yx')r={a:y+','+x,h:'y=x → สลับ'};
-      else r={a:(-y)+','+(-x),h:'y=-x'};
-      return{q:'A('+x+','+y+') สะท้อน '+m+' → ?',a:r.a,h:r.h};},
-    rotate:function(){var x=R(1,10)*(Math.random()<0.5?-1:1),y=R(1,10)*(Math.random()<0.5?-1:1);var deg=pick([90,180,270]);var ccw=Math.random()<0.5;var r;
-      if(deg===180)r={a:(-x)+','+(-y),h:'180°'};
-      else if(deg===90&&ccw)r={a:(-y)+','+x,h:'90° CCW'};
-      else if(deg===90&&!ccw)r={a:y+','+(-x),h:'90° CW'};
-      else if(deg===270&&ccw)r={a:y+','+(-x),h:'270° CCW'};
-      else r={a:(-y)+','+x,h:'270° CW'};
-      return{q:'A('+x+','+y+') หมุน '+deg+'° '+(ccw?'ทวน':'ตาม')+'เข็ม → ?',a:r.a,h:r.h};},
-    dilate:function(){var x=R(2,10),y=R(2,10);var k=pick([2,3,1/2,1/3,-1]);var kstr=typeof k==='number'&&k<1?'1/'+(1/k):String(k);
-      return{q:'A('+x+','+y+') k='+kstr+' → ?',a:(x*k)+','+(y*k),h:'= (kx, ky)'};}
-  };
-  return types[topic]();
+function genGeo(tp){
+  if(tp==='translate'){var a=R(1,5)*(Math.random()<0.5?-1:1),b=R(1,5)*(Math.random()<0.5?-1:1),x=R(-8,8),y=R(-8,8);return{q:'A('+x+','+y+') เลื่อน ('+a+','+b+') → ?',a:(x+a)+','+(y+b),h:'x\'='+(x+a)+' y\'='+(y+b)};}
+  if(tp==='reflect'){var x2=R(1,10),y2=R(1,10),m=pick(['x','y','o','yx','ynx']);var r;if(m==='x')r={a:x2+','+(-y2),h:'แกน x'};else if(m==='y')r={a:(-x2)+','+y2,h:'แกน y'};else if(m==='o')r={a:(-x2)+','+(-y2),h:'จุดกำเนิด'};else if(m==='yx')r={a:y2+','+x2,h:'y=x'};else r={a:(-y2)+','+(-x2),h:'y=-x'};return{q:'A('+x2+','+y2+') สะท้อน '+m+' → ?',a:r.a,h:r.h};}
+  if(tp==='rotate'){var x3=R(1,10)*(Math.random()<0.5?-1:1),y3=R(1,10)*(Math.random()<0.5?-1:1),d=pick([90,180,270]),ccw=Math.random()<0.5;var r2;if(d===180)r2={a:(-x3)+','+(-y3),h:'180°'};else if(d===90&&ccw)r2={a:(-y3)+','+x3,h:'90°CCW'};else if(d===90&&!ccw)r2={a:y3+','+(-x3),h:'90°CW'};else if(d===270&&ccw)r2={a:y3+','+(-x3),h:'270°CCW'};else r2={a:(-y3)+','+x3,h:'270°CW'};return{q:'A('+x3+','+y3+') หมุน '+d+'° '+(ccw?'ทวน':'ตาม')+' → ?',a:r2.a,h:r2.h};}
+  var x4=R(2,10),y4=R(2,10),k=pick([2,3,0.5,0.333,-1]),ks=k<1&&k>0?'1/'+Math.round(1/k):String(k);return{q:'A('+x4+','+y4+') k='+ks+' → ?',a:(x4*k)+','+(y4*k),h:'(kx,ky)'};
 }
 
 /* ============================================================
-   PART 5: DAILY QUEST
+   PART 4: DAILY / ACHIEVEMENT / LOGIN
    ============================================================ */
-var DQ={K:'mq_dq30',tasks:[],last:0,
-load:function(){try{var d=JSON.parse(localStorage.getItem(this.K)||'{}');this.tasks=d.tasks||[];this.last=d.last||0;}catch(e){}},
-save:function(){try{localStorage.setItem(this.K,JSON.stringify({tasks:this.tasks,last:this.last}));}catch(e){}},
+var DQ={K:'mq_dq',t:[],last:0,
+load:function(){try{var d=JSON.parse(localStorage.getItem(this.K)||'{}');this.t=d.t||[];this.last=d.last||0;}catch(e){}},
+save:function(){try{localStorage.setItem(this.K,JSON.stringify({t:this.t,last:this.last}));}catch(e){}},
 today:function(){var d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();},
 gen:function(){
-  var pool=[
-    {id:'ans20',t:'ตอบถูก 20 ข้อ',g:20,r:500},
-    {id:'combo10',t:'คอมโบ x10',g:10,r:400},
-    {id:'win3',t:'ชนะ 3 ด่าน',g:3,r:600},
-    {id:'pat3',t:'Pattern 3 ครั้ง',g:3,r:350},
-    {id:'bal2',t:'Balance 2 ครั้ง',g:2,r:350},
-    {id:'t24',t:'Target 24 ผ่าน 1 ข้อ',g:1,r:500},
-    {id:'tr2',t:'Treasure 2 ครั้ง',g:2,r:400},
-    {id:'duel1',t:'Duel 1 ครั้ง',g:1,r:300},
-    {id:'boss1',t:'ปราบบอส 1',g:1,r:800},
-    {id:'gold1k',t:'รับทอง 1000',g:1000,r:300},
-    {id:'lvlup',t:'Level up 1',g:1,r:400},
-    {id:'gacha1',t:'กาชา 1 ครั้ง',g:1,r:300}
-  ];
+  var pool=[{id:'ans20',t:'ตอบถูก 20 ข้อ',g:20,r:500},{id:'combo10',t:'คอมโบ x10',g:10,r:400},{id:'win3',t:'ชนะ 3 ด่าน',g:3,r:600},{id:'pat3',t:'Pattern 3 ครั้ง',g:3,r:350},{id:'bal2',t:'Balance 2',g:2,r:350},{id:'t24',t:'24 ผ่าน 1 ข้อ',g:1,r:500},{id:'tr2',t:'Treasure 2',g:2,r:400},{id:'duel1',t:'Duel 1',g:1,r:300},{id:'boss1',t:'ปราบบอส 1',g:1,r:800},{id:'gold1k',t:'รับทอง 1000',g:1000,r:300},{id:'lvlup',t:'Level up 1',g:1,r:400},{id:'gacha1',t:'กาชา 1',g:1,r:300}];
   var sh=pool.slice().sort(function(){return Math.random()-0.5;});
-  this.tasks=sh.slice(0,3).map(function(t){return{id:t.id,t:t.t,g:t.g,prog:0,r:t.r,done:false,claimed:false};});
+  this.t=sh.slice(0,3).map(function(x){return{id:x.id,t:x.t,g:x.g,prog:0,r:x.r,done:false,claimed:false};});
   this.last=this.today();this.save();
 },
 ensure:function(){if(this.last!==this.today())this.gen();},
-add:function(id,n){this.ensure();var c=false;this.tasks.forEach(function(t){if(t.id===id&&!t.done){t.prog=Math.min(t.g,t.prog+(n||1));if(t.prog>=t.g){t.done=true;c=true;}}});if(c)this.save();},
-claim:function(i){var t=this.tasks[i];if(!t||!t.done||t.claimed)return 0;t.claimed=true;var g=gold(t.r);this.save();return g;}
+add:function(id,n){this.ensure();var c=false;this.t.forEach(function(x){if(x.id===id&&!x.done){x.prog=Math.min(x.g,x.prog+(n||1));if(x.prog>=x.g){x.done=true;c=true;}}});if(c)this.save();},
+claim:function(i){var x=this.t[i];if(!x||!x.done||x.claimed)return 0;x.claimed=true;var g=_GOLD(x.r);this.save();return g;}
 };
 DQ.load();DQ.ensure();
 
-/* ============================================================
-   PART 6: ACHIEVEMENTS
-   ============================================================ */
 var ACH=[
-{id:'w1',n:'👶 ก้าวแรก',d:'ชนะด่านแรก',r:200},
-{id:'lv5',n:'⭐ Lv.5',d:'ถึง Lv.5',r:300},
-{id:'lv10',n:'⭐ Lv.10',d:'ถึง Lv.10',r:500},
-{id:'lv20',n:'🌟 Lv.20',d:'ถึง Lv.20',r:800},
-{id:'lv50',n:'🌟 Lv.50',d:'ถึง Lv.50',r:2000},
-{id:'c10',n:'🔥 คอมโบ 10',d:'ทำคอมโบ x10',r:300},
-{id:'c20',n:'🔥 คอมโบ 20',d:'x20',r:600},
-{id:'c50',n:'💥 คอมโบ 50',d:'x50',r:1500},
-{id:'b1',n:'👑 บอสแรก',d:'ปราบบอส 1',r:500},
-{id:'b5',n:'👑 บอส 5',d:'ปราบบอส 5',r:1500},
-{id:'b10',n:'👑 ราชา',d:'ปราบบอส 10',r:5000},
-{id:'r1k',n:'💰 1K',d:'มี 1,000🪙',r:100},
-{id:'r10k',n:'💰 10K',d:'10,000🪙',r:500},
-{id:'r100k',n:'💎 100K',d:'100,000🪙',r:2000},
-{id:'pet5',n:'🐾 สัตว์ 5',d:'มีสัตว์ 5',r:300},
-{id:'pet10',n:'🐾 สัตว์ 10',d:'สัตว์ 10',r:800},
-{id:'cls5',n:'⚔️ คลาส 5',d:'ปลดคลาส 5',r:500},
-{id:'gacha',n:'🎰 นักสุ่ม',d:'สุ่มกาชา',r:100},
-{id:'perf',n:'💯 Perfect',d:'ตอบถูก 10 ติด',r:1000},
-{id:'rb1',n:'💀 Rebirth',d:'RB 1',r:1500},
-{id:'rare1',n:'🌟 ของหายาก',d:'ได้ rare 1',r:400},
-{id:'allb',n:'👑👑 ราชาแห่งราชา',d:'บอส 10 + RB 1',r:3000}
+{id:'w1',n:'👶 ก้าวแรก',d:'ชนะด่านแรก',r:200},{id:'lv5',n:'⭐ Lv.5',d:'ถึง Lv.5',r:300},{id:'lv10',n:'⭐ Lv.10',d:'ถึง Lv.10',r:500},{id:'lv20',n:'🌟 Lv.20',d:'ถึง Lv.20',r:800},{id:'lv50',n:'🌟 Lv.50',d:'ถึง Lv.50',r:2000},{id:'c10',n:'🔥 คอมโบ 10',d:'x10',r:300},{id:'c20',n:'🔥 x20',d:'x20',r:600},{id:'c50',n:'💥 x50',d:'x50',r:1500},{id:'b1',n:'👑 บอสแรก',d:'ปราบ 1',r:500},{id:'b5',n:'👑 บอส 5',d:'ปราบ 5',r:1500},{id:'b10',n:'👑 ราชา',d:'ปราบ 10',r:5000},{id:'r1k',n:'💰 1K',d:'มี 1,000🪙',r:100},{id:'r10k',n:'💰 10K',d:'10,000🪙',r:500},{id:'r100k',n:'💎 100K',d:'100,000🪙',r:2000},{id:'pet5',n:'🐾 สัตว์ 5',d:'มี 5',r:300},{id:'pet10',n:'🐾 สัตว์ 10',d:'มี 10',r:800},{id:'cls5',n:'⚔️ คลาส 5',d:'ปลด 5',r:500},{id:'gacha',n:'🎰 นักสุ่ม',d:'กาชา',r:100},{id:'perf',n:'💯 Perfect',d:'ถูก 10 ติด',r:1000},{id:'rb1',n:'💀 Rebirth',d:'RB 1',r:1500},{id:'rare1',n:'🌟 ของหายาก',d:'rare 1',r:400},{id:'allb',n:'👑👑 ราชาแห่งราชา',d:'บอส 10+RB1',r:3000}
 ];
-var ACHD={};
-try{ACHD=JSON.parse(localStorage.getItem('mq_ach30')||'{}');}catch(e){ACHD={};}
-function achSave(){try{localStorage.setItem('mq_ach30',JSON.stringify(ACHD));}catch(e){}}
-function unlockAch(id){
-  if(ACHD[id])return;
-  var a=ACH.find(function(x){return x.id===id;});if(!a)return;
-  ACHD[id]={at:Date.now()};achSave();gold(a.r);
-  sfx('milestone');
-  ft(window.innerWidth/2,window.innerHeight*0.3,'🏅 '+a.n+' +'+a.r+'🪙','gold');
-  try{Particles.burst(window.innerWidth/2,window.innerHeight*0.3,{count:40,speed:8});}catch(e){}
-}
+var ACHD={};try{ACHD=JSON.parse(localStorage.getItem('mq_ach')||'{}');}catch(e){ACHD={};}
+function achSave(){try{localStorage.setItem('mq_ach',JSON.stringify(ACHD));}catch(e){}}
+function unlock(id){if(ACHD[id])return;var a=ACH.find(function(x){return x.id===id;});if(!a)return;ACHD[id]={at:Date.now()};achSave();_GOLD(a.r);_A('milestone');_F(window.innerWidth/2,window.innerHeight*0.3,'🏅 '+a.n+' +'+a.r+'🪙','gold');try{Particles.burst(window.innerWidth/2,window.innerHeight*0.3,{count:40,speed:8});}catch(e){}}
 function checkAch(){
-  var s=gs();if(!s||!s.player)return;var P=s.player;
-  if(P.tc>=1)unlockAch('w1');
-  if(P.plv>=5)unlockAch('lv5');if(P.plv>=10)unlockAch('lv10');if(P.plv>=20)unlockAch('lv20');if(P.plv>=50)unlockAch('lv50');
-  if(P.maxCombo>=10)unlockAch('c10');if(P.maxCombo>=20)unlockAch('c20');if(P.maxCombo>=50)unlockAch('c50');
-  if(s.bossKills&&s.bossKills.length>=1)unlockAch('b1');
-  if(s.bossKills&&s.bossKills.length>=5)unlockAch('b5');
-  if(s.bossKills&&s.bossKills.length>=10)unlockAch('b10');
-  if(P.gold>=1000)unlockAch('r1k');if(P.gold>=10000)unlockAch('r10k');if(P.gold>=100000)unlockAch('r100k');
-  if(s.myPets&&s.myPets.length>=5)unlockAch('pet5');if(s.myPets&&s.myPets.length>=10)unlockAch('pet10');
-  if(s.myGClasses&&s.myGClasses.length>=5)unlockAch('cls5');
-  if(P.rebirth>=1)unlockAch('rb1');
-  if(s.rareItems&&s.rareItems.length>=1)unlockAch('rare1');
-  if(s.bossKills&&s.bossKills.length>=10&&P.rebirth>=1)unlockAch('allb');
+  var s=_S();if(!s||!s.player)return;var P=s.player;
+  if(P.tc>=1)unlock('w1');if(P.plv>=5)unlock('lv5');if(P.plv>=10)unlock('lv10');if(P.plv>=20)unlock('lv20');if(P.plv>=50)unlock('lv50');
+  if(P.maxCombo>=10)unlock('c10');if(P.maxCombo>=20)unlock('c20');if(P.maxCombo>=50)unlock('c50');
+  if(s.bossKills.length>=1)unlock('b1');if(s.bossKills.length>=5)unlock('b5');if(s.bossKills.length>=10)unlock('b10');
+  if(P.gold>=1000)unlock('r1k');if(P.gold>=10000)unlock('r10k');if(P.gold>=100000)unlock('r100k');
+  if(s.myPets.length>=5)unlock('pet5');if(s.myPets.length>=10)unlock('pet10');
+  if(s.myGClasses.length>=5)unlock('cls5');if(P.rebirth>=1)unlock('rb1');
+  if(s.rareItems.length>=1)unlock('rare1');if(s.bossKills.length>=10&&P.rebirth>=1)unlock('allb');
 }
 setInterval(checkAch,5000);
 
-/* ============================================================
-   PART 7: LOGIN STREAK
-   ============================================================ */
-var LS={K:'mq_ls30',d:{days:0,last:0,reward:0},
+var LS={K:'mq_ls',d:{days:0,last:0,reward:0},
 load:function(){try{this.d=JSON.parse(localStorage.getItem(this.K)||'{}')||this.d;}catch(e){}},
 save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.d));}catch(e){}},
 today:function(){var d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();},
-check:function(){
-  var t=this.today();if(this.d.last===t)return null;
-  if((t-this.d.last)!==1&&this.d.last!==0)this.d.days=0;
-  this.d.days++;this.d.last=t;
-  var rewards=[100,150,250,400,600,900,1500];
-  this.d.reward=rewards[Math.min(this.d.days-1,6)];this.save();
-  return{days:this.d.days,reward:this.d.reward};
-},
-claim:function(){if(!this.d.reward)return 0;var r=this.d.reward;gold(r);this.d.reward=0;this.save();return r;}};
+check:function(){var t=this.today();if(this.d.last===t)return null;if((t-this.d.last)!==1&&this.d.last!==0)this.d.days=0;this.d.days++;this.d.last=t;var rw=[100,150,250,400,600,900,1500];this.d.reward=rw[Math.min(this.d.days-1,6)];this.save();return{days:this.d.days,reward:this.d.reward};},
+claim:function(){if(!this.d.reward)return 0;var r=this.d.reward;_GOLD(r);this.d.reward=0;this.save();return r;}
+};
 LS.load();
 
 /* ============================================================
-   PART 8: PET EVOLUTION + CLASS MASTERY + ITEM SETS
+   PART 5: PET EVO + CLASS MASTERY + SETS
    ============================================================ */
-var PE={K:'mq_pe30',d:{},load:function(){try{this.d=JSON.parse(localStorage.getItem(this.K)||'{}');}catch(e){this.d={};}},save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.d));}catch(e){}},lv:function(k){return this.d[k]||1;},ex:function(k){return this.d[k+'_e']||0;},need:function(l){return l*50;},add:function(k,n){var l=this.lv(k);if(l>=5)return;var e=this.ex(k)+n;var nd=this.need(l);if(e>=nd){e-=nd;l++;this.d[k]=l;this.d[k+'_e']=e;this.save();ft(window.innerWidth/2,window.innerHeight*0.4,'🐾 Lv.'+l+'!','heal');sfx('level');}else{this.d[k+'_e']=e;this.save();}}};
+var PE={K:'mq_pe',d:{},load:function(){try{this.d=JSON.parse(localStorage.getItem(this.K)||'{}');}catch(e){this.d={};}},save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.d));}catch(e){}},lv:function(k){return this.d[k]||1;},ex:function(k){return this.d[k+'_e']||0;},need:function(l){return l*50;},add:function(k,n){var l=this.lv(k);if(l>=5)return;var e=this.ex(k)+n,nd=this.need(l);if(e>=nd){e-=nd;l++;this.d[k]=l;this.d[k+'_e']=e;this.save();_F(window.innerWidth/2,window.innerHeight*0.4,'🐾 Lv.'+l+'!','heal');_A('level');}else{this.d[k+'_e']=e;this.save();}}};
 PE.load();
-var CM={K:'mq_cm30',d:{},load:function(){try{this.d=JSON.parse(localStorage.getItem(this.K)||'{}');}catch(e){this.d={};}},save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.d));}catch(e){}},lv:function(k){return this.d[k]||1;},ex:function(k){return this.d[k+'_e']||0;},need:function(l){return l*40;},add:function(k,n){var l=this.lv(k);if(l>=10)return;var e=this.ex(k)+n;var nd=this.need(l);if(e>=nd){e-=nd;l++;this.d[k]=l;this.d[k+'_e']=e;this.save();ft(window.innerWidth/2,window.innerHeight*0.35,'⚔️ Lv.'+l+'!','heal');sfx('level');}else{this.d[k+'_e']=e;this.save();}}};
+var CM={K:'mq_cm',d:{},load:function(){try{this.d=JSON.parse(localStorage.getItem(this.K)||'{}');}catch(e){this.d={};}},save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.d));}catch(e){}},lv:function(k){return this.d[k]||1;},ex:function(k){return this.d[k+'_e']||0;},need:function(l){return l*40;},add:function(k,n){var l=this.lv(k);if(l>=10)return;var e=this.ex(k)+n,nd=this.need(l);if(e>=nd){e-=nd;l++;this.d[k]=l;this.d[k+'_e']=e;this.save();_F(window.innerWidth/2,window.innerHeight*0.35,'⚔️ Lv.'+l+'!','heal');_A('level');}else{this.d[k+'_e']=e;this.save();}}};
 CM.load();
-var SETS=[
-{id:'b',n:'🌱 ผู้เริ่ม',need:1,hp:50,bonus:'+50 HP'},
-{id:'a',n:'⚔️ นักรบ',need:3,hp:100,dmg:0.1,bonus:'+100 HP +10% DMG'},
-{id:'e',n:'🔥 ช่ำชอง',need:6,hp:200,dmg:0.2,bonus:'+200 HP +20% DMG'},
-{id:'m',n:'👑 ปรมาจารย์',need:10,hp:400,dmg:0.35,bonus:'+400 HP +35% DMG'},
-{id:'l',n:'🌟 ตำนาน',need:15,hp:800,dmg:0.5,crit:0.2,bonus:'+800 HP +50% DMG +20% CRIT'}
-];
-function getSet(){var s=gs();if(!s||!s.inv)return SETS[0];var t=0;for(var k in s.inv)t+=s.inv[k];var a=SETS[0];SETS.forEach(function(x){if(t>=x.need)a=x;});return a;}
+var SETS=[{id:'b',n:'🌱 ผู้เริ่ม',need:1,hp:50,bonus:'+50 HP'},{id:'a',n:'⚔️ นักรบ',need:3,hp:100,dmg:0.1,bonus:'+100 HP +10% DMG'},{id:'e',n:'🔥 ช่ำชอง',need:6,hp:200,dmg:0.2,bonus:'+200 HP +20% DMG'},{id:'m',n:'👑 ปรมาจารย์',need:10,hp:400,dmg:0.35,bonus:'+400 HP +35% DMG'},{id:'l',n:'🌟 ตำนาน',need:15,hp:800,dmg:0.5,crit:0.2,bonus:'+800 HP +50% DMG'}];
+function getSet(){var s=_S();if(!s||!s.inv)return SETS[0];var t=0;for(var k in s.inv)t+=s.inv[k];var a=SETS[0];SETS.forEach(function(x){if(t>=x.need)a=x;});return a;}
 
 /* ============================================================
-   PART 9: LEADERBOARD + STATS REPORT
+   PART 6: LEADERBOARD + STATS
    ============================================================ */
-var LB={K:'mq_lb30',data:[],
-load:function(){try{var d=JSON.parse(localStorage.getItem(this.K)||'[]');if(Array.isArray(d))this.data=d;}catch(e){this.data=[];}},
-save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.data));}catch(e){}},
-submit:function(e){
-  if(!e||!e.name)return;
-  var i=-1;for(var j=0;j<this.data.length;j++)if(this.data[j].name===e.name){i=j;break;}
-  if(i>=0){var c=this.data[i];['score','plv','rebirth','maxCombo','totalCorrect'].forEach(function(f){if((e[f]||0)>(c[f]||0))c[f]=e[f];});c.updatedAt=Date.now();}
-  else{this.data.push({name:e.name,score:e.score||0,plv:e.plv||1,rebirth:e.rebirth||0,maxCombo:e.maxCombo||0,totalCorrect:e.totalCorrect||0,totalWrong:e.totalWrong||0,accuracy:e.accuracy||0,gold:e.gold||0,classId:e.classId||'warrior',petId:e.petId||null,createdAt:Date.now(),updatedAt:Date.now()});}
-  this.data.sort(function(a,b){return b.score-a.score;});
-  if(this.data.length>50)this.data.length=50;
-  this.save();
-},
-rank:function(n){for(var i=0;i<this.data.length;i++)if(this.data[i].name===n)return i+1;return 0;},
-clear:function(){this.data=[];this.save();}};
+var LB={K:'mq_lb',data:[],load:function(){try{var d=JSON.parse(localStorage.getItem(this.K)||'[]');if(Array.isArray(d))this.data=d;}catch(e){}},save:function(){try{localStorage.setItem(this.K,JSON.stringify(this.data));}catch(e){}},
+submit:function(e){if(!e||!e.name)return;var i=-1;for(var j=0;j<this.data.length;j++)if(this.data[j].name===e.name){i=j;break;}
+if(i>=0){var c=this.data[i];['score','plv','rebirth','maxCombo','totalCorrect'].forEach(function(f){if((e[f]||0)>(c[f]||0))c[f]=e[f];});c.updatedAt=Date.now();}
+else this.data.push({name:e.name,score:e.score||0,plv:e.plv||1,rebirth:e.rebirth||0,maxCombo:e.maxCombo||0,totalCorrect:e.totalCorrect||0,totalWrong:e.totalWrong||0,accuracy:e.accuracy||0,gold:e.gold||0,updatedAt:Date.now()});
+this.data.sort(function(a,b){return b.score-a.score;});if(this.data.length>50)this.data.length=50;this.save();},
+rank:function(n){for(var i=0;i<this.data.length;i++)if(this.data[i].name===n)return i+1;return 0;},clear:function(){this.data=[];this.save();}};
 LB.load();
-function submitScore(){
-  try{
-    var s=gs();if(!s||!s.player)return;
-    var t=s.player.tc+s.player.tw;var acc=t>0?Math.round(s.player.tc/t*1000)/10:0;
-    LB.submit({name:s.player.name||'ผู้กล้า',score:s.player.score||0,plv:s.player.plv||1,rebirth:s.player.rebirth||0,maxCombo:s.player.maxCombo||0,totalCorrect:s.player.tc||0,totalWrong:s.player.tw||0,accuracy:acc,gold:s.player.gold||0,classId:s.pclass||'warrior',petId:s.epet||null});
-  }catch(e){}
-}
-setInterval(submitScore,30000);
-window.addEventListener('beforeunload',submitScore);
+function submitScore(){try{var s=_S();if(!s||!s.player)return;var t=s.player.tc+s.player.tw,acc=t>0?Math.round(s.player.tc/t*1000)/10:0;LB.submit({name:s.player.name||'ผู้กล้า',score:s.player.score||0,plv:s.player.plv||1,rebirth:s.player.rebirth||0,maxCombo:s.player.maxCombo||0,totalCorrect:s.player.tc||0,totalWrong:s.player.tw||0,accuracy:acc,gold:s.player.gold||0});}catch(e){}}
+setInterval(submitScore,30000);window.addEventListener('beforeunload',submitScore);
 
-function buildReport(){
-  var s=gs();if(!s)return null;var P=s.player;
-  var t=P.tc+P.tw;var acc=t>0?Math.round(P.tc/t*1000)/10:0;
-  var ch=[];try{if(typeof Chapters!=='undefined'){Chapters.forEach(function(c){var st=s.stats[c.id]||{correct:0,wrong:0};var tt=st.correct+st.wrong;ch.push({id:c.id,name:c.name,icon:c.icon,correct:st.correct,wrong:st.wrong,acc:tt>0?Math.round(st.correct/tt*1000)/10:0,done:(s.completed[c.id]||[]).length,boss:s.bossKills.indexOf(c.id)>-1});});}}catch(e){}
-  var eq=[];try{if(typeof EQUIP!=='undefined'){for(var sl in EQUIP)eq.push({name:EQUIP[sl].name,lv:s.inv[sl]||0,max:EQUIP[sl].max});}}catch(e){}
-  var cl={name:'?'};try{if(typeof BaseClasses!=='undefined'&&BaseClasses[s.pclass])cl=BaseClasses[s.pclass];else if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[s.pclass])cl=AdvanceClasses[s.pclass];}catch(e){}
-  var pt={name:'—',emoji:''};try{if(s.epet&&typeof Pets!=='undefined'&&Pets[s.epet])pt=Pets[s.epet];}catch(e){}
-  var s2=s.stats2||{};
-  return{
-    p:{name:P.name,score:P.score,gold:P.gold,plv:P.plv,rebirth:P.rebirth,maxCombo:P.maxCombo,tc:P.tc,tw:P.tw,acc:acc,sp:P.skillPoints||0},
-    pr:{cd:Object.values(s.completed).reduce(function(a,ar){return a+ar.length;},0),ct:(typeof Chapters!=='undefined'?Chapters.length:10)*5,bk:s.bossKills.length,bt:(typeof Chapters!=='undefined'?Chapters.length:10)},
-    col:{pets:s.myPets.length,pt:typeof Pets!=='undefined'?Object.keys(Pets).length:0,cls:s.myGClasses.length+3,ct:typeof AdvanceClasses!=='undefined'?Object.keys(AdvanceClasses).length+3:0,rare:s.rareItems.length,pn:s.skillTree?Object.keys(s.skillTree).length:0},
-    ex:{pat:s2.patternsSolved||0,bal:s2.balanceSolved||0,cmp:s2.comparisonsSolved||0,t24:s2.twentyFourSolved||0,md:s2.maxDamage||0,td:s2.totalDamage||0},
-    ch:ch,eq:eq,cls:cl,pet:pt,wl:(s.wrongLog||[]).slice(0,10),
-    lb:{rank:LB.rank(P.name),total:LB.data.length},at:Date.now()
-  };
-}
+function buildReport(){var s=_S();if(!s)return null;var P=s.player;var t=P.tc+P.tw,acc=t>0?Math.round(P.tc/t*1000)/10:0;
+var ch=[];try{if(typeof Chapters!=='undefined')Chapters.forEach(function(c){var st=s.stats[c.id]||{correct:0,wrong:0};var tt=st.correct+st.wrong;ch.push({id:c.id,name:c.name,icon:c.icon,correct:st.correct,wrong:st.wrong,acc:tt>0?Math.round(st.correct/tt*1000)/10:0,done:(s.completed[c.id]||[]).length,boss:s.bossKills.indexOf(c.id)>-1});});}catch(e){}
+var eq=[];try{if(typeof EQUIP!=='undefined')for(var sl in EQUIP)eq.push({name:EQUIP[sl].name,lv:s.inv[sl]||0,max:EQUIP[sl].max});}catch(e){}
+var cl={name:'?',emoji:'❔'};try{if(typeof BaseClasses!=='undefined'&&BaseClasses[s.pclass])cl=BaseClasses[s.pclass];else if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[s.pclass])cl=AdvanceClasses[s.pclass];}catch(e){}
+var pt={name:'—',emoji:''};try{if(s.epet&&typeof Pets!=='undefined'&&Pets[s.epet])pt=Pets[s.epet];}catch(e){}
+var s2=s.stats2||{};
+return{p:{name:P.name,score:P.score,gold:P.gold,plv:P.plv,rebirth:P.rebirth,maxCombo:P.maxCombo,tc:P.tc,tw:P.tw,acc:acc,sp:P.skillPoints||0},pr:{cd:Object.values(s.completed).reduce(function(a,ar){return a+ar.length;},0),ct:50,bk:s.bossKills.length,bt:10},col:{pets:s.myPets.length,pt:typeof Pets!=='undefined'?Object.keys(Pets).length:0,cls:s.myGClasses.length+3,ct:typeof AdvanceClasses!=='undefined'?Object.keys(AdvanceClasses).length+3:0,rare:s.rareItems.length,pn:Object.keys(s.skillTree||{}).length},ex:{pat:s2.patternsSolved||0,bal:s2.balanceSolved||0,cmp:s2.comparisonsSolved||0,t24:s2.twentyFourSolved||0},ch:ch,eq:eq,cls:cl,pet:pt,lb:{rank:LB.rank(P.name),total:LB.data.length},at:Date.now()};}
 
 /* ============================================================
-   PART 10: NEW MODES
+   PART 7: 4 NEW MODES
    ============================================================ */
 var TA=null,EN=null,BR=null,ME=null;
-/* Time Attack */
-window.startTimeAttack=function(){
-  TA={r:1,tot:20,s:0,t:60,q:null,ans:false,timer:null};
-  nextTA();goS('timeAttack');renderTA();
-  TA.timer=setInterval(function(){if(!TA)return;TA.t--;var e=document.getElementById('taT');if(e)e.textContent=TA.t+'s';if(TA.t<=0)endTA();},1000);
-  sfx('win');
-};
+window.__mqStartTA=function(){TA={r:1,tot:20,s:0,t:60,q:null,ans:false,timer:null};nextTA();_G('timeAttack');renderTA();TA.timer=setInterval(function(){if(!TA)return;TA.t--;var e=document.getElementById('taT');if(e)e.textContent=TA.t+'s';if(TA.t<=0)endTA();},1000);_A('win');};
 function nextTA(){try{TA.q=generateQuestion(R(1,10));}catch(e){TA.q={q:'2+2',a:'4'};}TA.ans=false;}
-function renderTA(){if(!TA)return;var e=document.getElementById('gameContent');if(!e)return;
-e.innerHTML='<h3>⏱️ Time Attack</h3><div class="sbar"><span>ข้อ <span class="sv">'+TA.r+'/'+TA.tot+'</span></span><span>คะแนน <span class="sg">'+TA.s+'</span></span><span>⏱<span id="taT">'+TA.t+'s</span></span></div>'+
-'<div class="qp"><div class="qd">'+TA.q.q+'</div><div class="air"><input class="ai" id="taI" placeholder="คำตอบ" '+(TA.ans?'disabled':'')+'><button class="btn btn-g" onclick="taSub()" '+(TA.ans?'disabled':'')+'>✓</button></div><div class="fbm" id="taF"></div></div>'+
-'<button class="btn btn-r wf mt2" onclick="taExit()">✖ ออก</button>';
-var i=document.getElementById('taI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')taSub();});}}
-window.taSub=function(){
-  if(!TA||TA.ans)return;var i=document.getElementById('taI');if(!i)return;var v=i.value.trim();if(!v)return;
-  TA.ans=true;i.disabled=true;
-  var ok=false;try{ok=answersMatch(v,TA.q.a);}catch(e){ok=v===String(TA.q.a);}
-  if(ok){sfx('correct');TA.s+=10;gold(15);}else sfx('wrong');
-  TA.r++;
-  setTimeout(function(){if(!TA)return;if(TA.r>TA.tot)endTA();else{nextTA();renderTA();}},ok?400:900);
-};
-function endTA(){if(!TA)return;if(TA.timer)clearInterval(TA.timer);var s=TA.s;TA=null;sfx('win');modal('🏆 Time Attack','<div class="tc"><div style="font-size:56px">⏱️</div><div>คะแนน: '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();startTimeAttack()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
-window.taExit=function(){if(!TA)return;if(TA.timer)clearInterval(TA.timer);TA=null;goS('modes');};
+function renderTA(){if(!TA)return;var e=document.getElementById('gameContent');if(!e)return;e.innerHTML='<h3>⏱️ Time Attack</h3><div class="sbar"><span>ข้อ <span class="sv">'+TA.r+'/'+TA.tot+'</span></span><span>คะแนน <span class="sg">'+TA.s+'</span></span><span>⏱<span id="taT">'+TA.t+'s</span></span></div><div class="qp"><div class="qd">'+TA.q.q+'</div><div class="air"><input class="ai" id="taI" placeholder="คำตอบ" '+(TA.ans?'disabled':'')+'><button class="btn btn-g" onclick="__mqTASub()" '+(TA.ans?'disabled':'')+'>✓</button></div></div><button class="btn btn-r wf mt2" onclick="__mqTAExit()">✖ ออก</button>';var i=document.getElementById('taI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')window.__mqTASub();});}}
+window.__mqTASub=function(){if(!TA||TA.ans)return;var i=document.getElementById('taI');if(!i)return;var v=i.value.trim();if(!v)return;TA.ans=true;i.disabled=true;var ok=false;try{ok=answersMatch(v,TA.q.a);}catch(e){ok=v===String(TA.q.a);}if(ok){_A('correct');TA.s+=10;_GOLD(15);}else _A('wrong');TA.r++;setTimeout(function(){if(!TA)return;if(TA.r>TA.tot)endTA();else{nextTA();renderTA();}},ok?400:900);};
+function endTA(){if(!TA)return;if(TA.timer)clearInterval(TA.timer);var s=TA.s;TA=null;_A('win');_M('🏆 Time Attack','<div class="tc"><div style="font-size:56px">⏱️</div><div>คะแนน: '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();__mqStartTA()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
+window.__mqTAExit=function(){if(!TA)return;if(TA.timer)clearInterval(TA.timer);TA=null;_G('modes');};
 
-/* Endless */
-window.startEndless=function(){
-  EN={w:1,k:0,s:0,hp:100,bhp:50,q:null,ans:false};
-  nextEN();goS('endless');renderEN();sfx('win');
-};
+window.__mqStartEN=function(){EN={w:1,s:0,hp:100,bhp:50,q:null,ans:false};nextEN();_G('endless');renderEN();_A('win');};
 function nextEN(){try{EN.q=generateQuestion(R(1,10));}catch(e){EN.q={q:'2+2',a:'4'};}EN.ans=false;}
-function renderEN(){if(!EN)return;var e=document.getElementById('gameContent');if(!e)return;
-e.innerHTML='<h3>♾️ Endless</h3><div class="sbar"><span>Wave <span class="sv">'+EN.w+'</span></span><span>คะแนน <span class="sg">'+EN.s+'</span></span></div>'+
-'<div class="si"><span>❤️ HP</span><b>'+EN.hp+'</b></div><div class="si"><span>👹 บอส HP</span><b>'+EN.bhp+'</b></div>'+
-'<div class="qp"><div class="qd">'+EN.q.q+'</div><div class="air"><input class="ai" id="enI" placeholder="คำตอบ" '+(EN.ans?'disabled':'')+'><button class="btn btn-g" onclick="enSub()" '+(EN.ans?'disabled':'')+'>✓</button></div><div class="fbm" id="enF"></div></div>'+
-'<button class="btn btn-r wf mt2" onclick="enExit()">✖ ออก</button>';
-var i=document.getElementById('enI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')enSub();});}}
-window.enSub=function(){
-  if(!EN||EN.ans)return;var i=document.getElementById('enI');if(!i)return;var v=i.value.trim();if(!v)return;
-  EN.ans=true;i.disabled=true;
-  var ok=false;try{ok=answersMatch(v,EN.q.a);}catch(e){ok=v===String(EN.q.a);}
-  if(ok){sfx('correct');var d=20+EN.w*5;EN.bhp-=d;EN.s+=d;gold(20);
-    if(EN.bhp<=0){EN.k++;EN.w++;EN.bhp=50+EN.w*30;EN.hp=Math.min(100+EN.w*5,EN.hp+20);ft(window.innerWidth/2,window.innerHeight*0.3,'👑 Wave '+EN.w,'gold');}}
-  else{sfx('wrong');EN.hp-=10+EN.w*2;if(EN.hp<=0){setTimeout(endEN,800);return;}}
-  setTimeout(function(){if(!EN)return;nextEN();renderEN();},ok?400:900);
-};
-function endEN(){if(!EN)return;var s=EN.s,w=EN.w;EN=null;sfx('lose');modal('♾️ จบ','<div class="tc"><div style="font-size:56px">💀</div><div>Wave '+w+'</div><div>คะแนน '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();startEndless()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
-window.enExit=function(){if(!EN)return;EN=null;goS('modes');};
+function renderEN(){if(!EN)return;var e=document.getElementById('gameContent');if(!e)return;e.innerHTML='<h3>♾️ Endless</h3><div class="sbar"><span>Wave <span class="sv">'+EN.w+'</span></span><span>คะแนน <span class="sg">'+EN.s+'</span></span></div><div class="si"><span>❤️ HP</span><b>'+EN.hp+'</b></div><div class="si"><span>👹 บอส</span><b>'+EN.bhp+'</b></div><div class="qp"><div class="qd">'+EN.q.q+'</div><div class="air"><input class="ai" id="enI" placeholder="คำตอบ" '+(EN.ans?'disabled':'')+'><button class="btn btn-g" onclick="__mqENSub()" '+(EN.ans?'disabled':'')+'>✓</button></div></div><button class="btn btn-r wf mt2" onclick="__mqENExit()">✖ ออก</button>';var i=document.getElementById('enI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')window.__mqENSub();});}}
+window.__mqENSub=function(){if(!EN||EN.ans)return;var i=document.getElementById('enI');if(!i)return;var v=i.value.trim();if(!v)return;EN.ans=true;i.disabled=true;var ok=false;try{ok=answersMatch(v,EN.q.a);}catch(e){ok=v===String(EN.q.a);}if(ok){_A('correct');var d=20+EN.w*5;EN.bhp-=d;EN.s+=d;_GOLD(20);if(EN.bhp<=0){EN.w++;EN.bhp=50+EN.w*30;EN.hp=Math.min(100+EN.w*5,EN.hp+20);_F(window.innerWidth/2,window.innerHeight*0.3,'👑 Wave '+EN.w,'gold');}}else{_A('wrong');EN.hp-=10+EN.w*2;if(EN.hp<=0){setTimeout(endEN,800);return;}}setTimeout(function(){if(!EN)return;nextEN();renderEN();},ok?400:900);};
+function endEN(){if(!EN)return;var s=EN.s,w=EN.w;EN=null;_A('lose');_M('♾️ จบ','<div class="tc"><div style="font-size:56px">💀</div><div>Wave '+w+'</div><div>คะแนน '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();__mqStartEN()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
+window.__mqENExit=function(){if(!EN)return;EN=null;_G('modes');};
 
-/* Boss Rush */
-window.startBossRush=function(){
-  BR={i:0,bs:[1,2,3,4,5,6,7,8,9,10],s:0,q:null,hp:100,ans:false};
-  nextBR();goS('bossRush');renderBR();sfx('win');
-};
+window.__mqStartBR=function(){BR={i:0,bs:[1,2,3,4,5,6,7,8,9,10],s:0,q:null,hp:100,ans:false};nextBR();_G('bossRush');renderBR();_A('win');};
 function nextBR(){try{BR.q=generateQuestion(BR.bs[BR.i]);}catch(e){BR.q={q:'2+2',a:'4'};}BR.ans=false;}
-function renderBR(){if(!BR)return;var e=document.getElementById('gameContent');if(!e)return;
-e.innerHTML='<h3>💀 Boss Rush</h3><div class="sbar"><span>บอส <span class="sv">'+(BR.i+1)+'/10</span></span><span>คะแนน <span class="sg">'+BR.s+'</span></span></div>'+
-'<div class="si"><span>❤️ HP</span><b>'+BR.hp+'</b></div>'+
-'<div class="qp"><div class="qd">บอสบท '+BR.bs[BR.i]+'<br>'+BR.q.q+'</div><div class="air"><input class="ai" id="brI" placeholder="คำตอบ" '+(BR.ans?'disabled':'')+'><button class="btn btn-g" onclick="brSub()" '+(BR.ans?'disabled':'')+'>✓</button></div><div class="fbm" id="brF"></div></div>'+
-'<button class="btn btn-r wf mt2" onclick="brExit()">✖ ออก</button>';
-var i=document.getElementById('brI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')brSub();});}}
-window.brSub=function(){
-  if(!BR||BR.ans)return;var i=document.getElementById('brI');if(!i)return;var v=i.value.trim();if(!v)return;
-  BR.ans=true;i.disabled=true;
-  var ok=false;try{ok=answersMatch(v,BR.q.a);}catch(e){ok=v===String(BR.q.a);}
-  if(ok){sfx('correct');BR.s+=50;gold(100);BR.i++;}else{sfx('wrong');BR.hp-=20;if(BR.hp<=0){setTimeout(function(){endBR(false);},800);return;}}
-  setTimeout(function(){if(!BR)return;if(BR.i>=BR.bs.length){endBR(true);return;}nextBR();renderBR();},ok?400:900);
-};
-function endBR(win){if(!BR)return;var s=BR.s;BR=null;if(win)sfx('win');else sfx('lose');modal('💀 Boss Rush',(win?'<div class="tc"><div style="font-size:56px">🏆</div><div>ผ่านครบ!</div>':'<div class="tc"><div style="font-size:56px">💀</div><div>HP หมด</div>')+'<div>คะแนน '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();startBossRush()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
-window.brExit=function(){if(!BR)return;BR=null;goS('modes');};
+function renderBR(){if(!BR)return;var e=document.getElementById('gameContent');if(!e)return;e.innerHTML='<h3>💀 Boss Rush</h3><div class="sbar"><span>บอส <span class="sv">'+(BR.i+1)+'/10</span></span><span>คะแนน <span class="sg">'+BR.s+'</span></span></div><div class="si"><span>❤️ HP</span><b>'+BR.hp+'</b></div><div class="qp"><div class="qd">บอสบท '+BR.bs[BR.i]+'<br>'+BR.q.q+'</div><div class="air"><input class="ai" id="brI" placeholder="คำตอบ" '+(BR.ans?'disabled':'')+'><button class="btn btn-g" onclick="__mqBRSub()" '+(BR.ans?'disabled':'')+'>✓</button></div></div><button class="btn btn-r wf mt2" onclick="__mqBRExit()">✖ ออก</button>';var i=document.getElementById('brI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')window.__mqBRSub();});}}
+window.__mqBRSub=function(){if(!BR||BR.ans)return;var i=document.getElementById('brI');if(!i)return;var v=i.value.trim();if(!v)return;BR.ans=true;i.disabled=true;var ok=false;try{ok=answersMatch(v,BR.q.a);}catch(e){ok=v===String(BR.q.a);}if(ok){_A('correct');BR.s+=50;_GOLD(100);BR.i++;}else{_A('wrong');BR.hp-=20;if(BR.hp<=0){setTimeout(function(){endBR(false);},800);return;}}setTimeout(function(){if(!BR)return;if(BR.i>=BR.bs.length){endBR(true);return;}nextBR();renderBR();},ok?400:900);};
+function endBR(w){if(!BR)return;var s=BR.s;BR=null;if(w)_A('win');else _A('lose');_M('💀 Boss Rush',(w?'<div class="tc"><div style="font-size:56px">🏆</div><div>ผ่านครบ!</div>':'<div class="tc"><div style="font-size:56px">💀</div><div>HP หมด</div>')+'<div>คะแนน '+s+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();__mqStartBR()'},{label:'กลับ',cls:'btn-o',action:"closeModal();go('modes')"}]);}
+window.__mqBRExit=function(){if(!BR)return;BR=null;_G('modes');};
 
-/* Mock Exam */
-window.startMockExam=function(){
-  var qs=[];for(var i=0;i<20;i++){try{qs.push(generateQuestion(R(1,10)));}catch(e){qs.push({q:'2+2',a:'4'});}}
-  ME={i:0,qs:qs,c:0,st:Date.now(),ans:false};goS('mock');renderME();
-};
-function renderME(){if(!ME)return;var e=document.getElementById('gameContent');if(!e)return;
-if(ME.i>=ME.qs.length){renderMEResult();return;}
-var q=ME.qs[ME.i];
-e.innerHTML='<h3>🎓 Mock Exam</h3><div class="sbar"><span>ข้อ <span class="sv">'+(ME.i+1)+'/'+ME.qs.length+'</span></span><span>ถูก <span class="sg">'+ME.c+'</span></span></div>'+
-'<div class="qp"><div class="qd">'+q.q+'</div><div class="air"><input class="ai" id="meI" placeholder="คำตอบ" '+(ME.ans?'disabled':'')+'><button class="btn btn-g" onclick="meSub()" '+(ME.ans?'disabled':'')+'>✓</button></div><div class="fbm" id="meF"></div></div>'+
-'<button class="btn btn-r wf mt2" onclick="meExit()">✖ ออก</button>';
-var i=document.getElementById('meI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')meSub();});}}
-window.meSub=function(){
-  if(!ME||ME.ans)return;var i=document.getElementById('meI');if(!i)return;var v=i.value.trim();if(!v)return;
-  ME.ans=true;i.disabled=true;
-  var q=ME.qs[ME.i];var ok=false;try{ok=answersMatch(v,q.a);}catch(e){ok=v===String(q.a);}
-  if(ok){sfx('correct');ME.c++;}else sfx('wrong');
-  setTimeout(function(){if(!ME)return;ME.i++;ME.ans=false;renderME();},ok?400:1000);
-};
-function renderMEResult(){var e=document.getElementById('gameContent');if(!e||!ME)return;
-var pct=Math.round(ME.c/ME.qs.length*100);var g=pct>=80?'A':pct>=70?'B':pct>=60?'C':pct>=50?'D':'F';
-var t=Math.round((Date.now()-ME.st)/1000);var rw=gold(ME.c*30);
-e.innerHTML='<h3>🎓 ผลสอบ</h3><div class="gc2" style="background:var(--g);border:2px solid var(--ny);border-radius:16px;padding:20px;text-align:center">'+
-'<div style="font-size:64px;font-weight:900;color:'+(pct>=70?'#39ff14':pct>=50?'#ffe600':'#ff006e')+'">'+g+'</div>'+
-'<div style="font-size:28px;font-weight:900;margin:8px 0">'+ME.c+'/'+ME.qs.length+'</div>'+
-'<div style="font-size:14px;color:#b0b0d0">'+pct+'% · '+t+' วิ</div>'+
-'<div style="margin-top:8px;color:#ffe600">💰 +'+rw+'🪙</div></div>'+
-'<button class="btn btn-g wf mt3" onclick="startMockExam()">🎓 สอบใหม่</button>'+
-'<button class="btn btn-o wf mt2" onclick="meExit()">🔙 กลับ</button>';
-sfx('win');}
-window.meExit=function(){ME=null;goS('modes');};
+window.__mqStartME=function(){var qs=[];for(var i=0;i<20;i++){try{qs.push(generateQuestion(R(1,10)));}catch(e){qs.push({q:'2+2',a:'4'});}}ME={i:0,qs:qs,c:0,st:Date.now(),ans:false};_G('mock');renderME();};
+function renderME(){if(!ME)return;var e=document.getElementById('gameContent');if(!e)return;if(ME.i>=ME.qs.length){renderMEResult();return;}var q=ME.qs[ME.i];e.innerHTML='<h3>🎓 Mock Exam</h3><div class="sbar"><span>ข้อ <span class="sv">'+(ME.i+1)+'/20</span></span><span>ถูก <span class="sg">'+ME.c+'</span></span></div><div class="qp"><div class="qd">'+q.q+'</div><div class="air"><input class="ai" id="meI" placeholder="คำตอบ" '+(ME.ans?'disabled':'')+'><button class="btn btn-g" onclick="__mqMESub()" '+(ME.ans?'disabled':'')+'>✓</button></div></div><button class="btn btn-r wf mt2" onclick="__mqMEExit()">✖ ออก</button>';var i=document.getElementById('meI');if(i){i.focus();i.addEventListener('keydown',function(ev){if(ev.key==='Enter')window.__mqMESub();});}}
+window.__mqMESub=function(){if(!ME||ME.ans)return;var i=document.getElementById('meI');if(!i)return;var v=i.value.trim();if(!v)return;ME.ans=true;i.disabled=true;var q=ME.qs[ME.i],ok=false;try{ok=answersMatch(v,q.a);}catch(e){ok=v===String(q.a);}if(ok){_A('correct');ME.c++;}else _A('wrong');setTimeout(function(){if(!ME)return;ME.i++;ME.ans=false;renderME();},ok?400:1000);};
+function renderMEResult(){var e=document.getElementById('gameContent');if(!e||!ME)return;var pct=Math.round(ME.c/20*100),g=pct>=80?'A':pct>=70?'B':pct>=60?'C':pct>=50?'D':'F',rw=_GOLD(ME.c*30);e.innerHTML='<h3>🎓 ผลสอบ</h3><div class="gc2" style="background:var(--g);border:2px solid var(--ny);border-radius:16px;padding:20px;text-align:center"><div style="font-size:64px;font-weight:900;color:'+(pct>=70?'#39ff14':pct>=50?'#ffe600':'#ff006e')+'">'+g+'</div><div style="font-size:28px;font-weight:900;margin:8px 0">'+ME.c+'/20</div><div style="font-size:14px;color:#b0b0d0">'+pct+'%</div><div style="margin-top:8px;color:#ffe600">💰 +'+rw+'🪙</div></div><button class="btn btn-g wf mt3" onclick="__mqStartME()">🎓 สอบใหม่</button><button class="btn btn-o wf mt2" onclick="__mqMEExit()">🔙 กลับ</button>';_A('win');}
+window.__mqMEExit=function(){ME=null;_G('modes');};
 
 /* ============================================================
-   PART 11: EXTRA CHAPTERS (ม.1 + ม.3)
+   PART 8: EXTRA CHAPTERS (ม.1 + ม.3)
    ============================================================ */
 try{
   if(typeof Generators!=='undefined'&&Generators){
-    Generators[11]=[
-      function(){var a=R(-20,20),b=R(-20,20);return{q:a+' + '+b+' = ?',a:String(a+b),h:'= '+(a+b)};},
-      function(){var a=R(-15,15),b=R(-15,15);return{q:a+' - '+b+' = ?',a:String(a-b),h:'= '+(a-b)};},
-      function(){var a=R(-10,10),b=R(-10,10);return{q:'('+a+') × ('+b+') = ?',a:String(a*b),h:'= '+(a*b)};}
-    ];
-    Generators[12]=[
-      function(){var x=R(2,8);return{q:'2x + 3 > '+(2*x+2)+' → x > ?',a:String(x-1),h:'x > '+(x-1)};},
-      function(){var a=R(2,5),b=R(1,9),c=R(2,5);return{q:'y = '+a+'x + '+b+' · x='+c+' → y = ?',a:String(a*c+b),h:'y = '+(a*c+b)};},
-      function(){var a=R(1,3);return{q:'y = '+a+'x² · x='+a+' → y = ?',a:String(a*a*a),h:'y = '+(a*a*a)};}
-    ];
+    Generators[11]=[function(){var a=R(-20,20),b=R(-20,20);return{q:a+' + '+b+' = ?',a:String(a+b),h:'= '+(a+b)};},function(){var a=R(-15,15),b=R(-15,15);return{q:a+' - '+b+' = ?',a:String(a-b),h:'= '+(a-b)};},function(){var a=R(-10,10),b=R(-10,10);return{q:'('+a+') × ('+b+') = ?',a:String(a*b),h:'= '+(a*b)};}];
+    Generators[12]=[function(){var x=R(2,8);return{q:'2x+3 > '+(2*x+2)+' → x > ?',a:String(x-1),h:'x > '+(x-1)};},function(){var a=R(2,5),b=R(1,9),c=R(2,5);return{q:'y = '+a+'x+'+b+' · x='+c+' → y = ?',a:String(a*c+b),h:'y = '+(a*c+b)};},function(){var a=R(1,3);return{q:'y = '+a+'x² · x='+a+' → y = ?',a:String(a*a*a),h:'y = '+(a*a*a)};}];
   }
 }catch(e){}
 
 /* ============================================================
-   PART 12: HOOKS
+   PART 9: TUTORIAL
    ============================================================ */
-try{
-  if(typeof endBattle==='function'){
-    var _eb=endBattle;
-    window.endBattle=function(){
-      _eb.apply(this,arguments);
-      try{var s=gs();if(s&&s.player&&s.player.bossHp<=0){
-        DQ.add('win3',1);if(s.player.lv===5)DQ.add('boss1',1);DQ.add('gold1k',30);
-        if(s.epet)PE.add(s.epet,5);CM.add(s.pclass,5);submitScore();
-      }}catch(e){}
-    };
-  }
-}catch(e){}
-try{
-  if(typeof addExp==='function'){
-    var _ae=addExp;
-    window.addExp=function(n){
-      var l0=0;try{l0=gs().player.plv;}catch(e){}
-      _ae.apply(this,arguments);
-      try{var l1=gs().player.plv;if(l1>l0)DQ.add('lvlup',l1-l0);}catch(e){}
-    };
-  }
-}catch(e){}
-
-/* ============================================================
-   PART 13: MENU INJECTION (dedup-safe)
-   ============================================================ */
-function injectMenu(){
-  var el=document.getElementById('gameContent');
-  if(!el)return;
-  /* clear old custom buttons */
-  el.querySelectorAll('.mq-custom-btn').forEach(function(b){try{b.remove();}catch(e){}});
-  /* dedup existing */
-  var seen={};
-  el.querySelectorAll('button.btn').forEach(function(b){
-    var k=(b.textContent||'').trim();
-    if(!k)return;
-    if(seen[k])try{b.remove();}catch(e){}
-    else seen[k]=true;
-  });
-  var back=el.querySelector('button:last-of-type');
-  function add(id,txt,cls,fn){
-    if(btnExists(id))return;
-    var b=document.createElement('button');
-    b.id=id;b.className='btn '+cls+' wf mt2 mq-custom-btn';
-    b.textContent=txt;b.onclick=fn;
-    if(back&&back.parentNode===el)el.insertBefore(b,back);else el.appendChild(b);
-  }
-  /* daily badge */
-  DQ.ensure();
-  var cc=0;DQ.tasks.forEach(function(t){if(t.done&&!t.claimed)cc++;});
-  add('mq-daily','🎯 ภารกิจรายวัน'+(cc>0?' ('+cc+')':''),cc>0?'btn-gold':'btn-o',openDaily);
-  var ac=0;for(var k in ACHD)ac++;
-  add('mq-ach','🏅 เหรียญ ('+ac+'/'+ACH.length+')','btn-y',openAch);
-  add('mq-petevo','🐾 วิวัฒนาการสัตว์','btn-o',openPetEvo);
-  add('mq-cm','⭐ Class Mastery','btn-pur',openClassMastery);
-  add('mq-sets','💍 Item Sets','btn-o',openSets);
-  add('mq-lb','🏆 จัดอันดับ (# '+(LB.rank(state.player.name||'ผู้กล้า')||'-')+')','btn-gold',openLeaderboard);
-  add('mq-rp','📄 รายงานสถิติ','btn-y',openStatsReport);
-  add('mq-geom','📐 การแปลงทางเรขาคณิต','btn-pur',openGeomMenu);
-  add('mq-rename','✏️ เปลี่ยนชื่อผู้เล่น','btn-o',changeName);
-  /* creator footer */
-  if(!el.querySelector('.mq-creator-foot')){
-    var foot=document.createElement('div');
-    foot.className='mq-creator-foot';
-    foot.style.cssText='text-align:center;margin-top:20px;padding:10px;font-size:11px;color:#b0b0d0;border-top:1px dashed rgba(255,255,255,0.15)';
-    foot.innerHTML='✨ สร้างโดย <b style="color:#00f0ff">ธนวัฒน์</b> ✨';
-    el.appendChild(foot);
-  }
+var TUT_KEY='mq_tut';
+var TUT_PAGES=[
+{i:'🎮',t:'ยินดีต้อนรับ!',d:'Math Quest — เกมผจญภัยคณิตศาสตร์<br>ตอบโจทย์เพื่อตีบอส!'},
+{i:'⚔️',t:'เริ่มผจญภัย',d:'กด <b>⚔️ ผจญภัย</b><br>เลือกบท → ด่าน → สู้บอส!'},
+{i:'💯',t:'ตอบคำถาม',d:'พิมพ์คำตอบ · ถูก = ตีบอส<br>คอมโบ = ดาเมจแรงขึ้น'},
+{i:'🐾',t:'สัตว์เลี้ยง',d:'ช่วยเพิ่มพลัง · ซื้อที่ <b>ร้านสัตว์</b><br>หรือกาชา · กด ℹ️ ดูรายละเอียด'},
+{i:'⚔️',t:'คลาส',d:'เลือกได้ที่ <b>เปลี่ยนคลาส</b><br>แต่ละคลาสมีสกิลต่างกัน · กด ℹ️ ดู'},
+{i:'🌟',t:'Skill Tree',d:'ได้ SP ทุก Level up<br>อัพเกรดพาสซีฟที่ <b>ต้นไม้ทักษะ</b>'},
+{i:'🎮',t:'โหมดพิเศษ',d:'12+ โหมด! Duel, Pattern, 24, Chess<br>Time Attack, Endless, Boss Rush'},
+{i:'🎁',t:'ภารกิจรายวัน',d:'เล่นทุกวันรับรางวัล<br>เข้า 7 วันติดรางวัลใหญ่'},
+{i:'✨',t:'พร้อมแล้ว!',d:'สร้างโดย <b>ธนวัฒน์</b><br>ขอให้สนุก! 🎉'}
+];
+function showTut(pg){
+  var p=TUT_PAGES[pg],dots='';for(var i=0;i<TUT_PAGES.length;i++)dots+='<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+(i===pg?'#00f0ff':'#555')+';margin:0 2px"></span>';
+  var h='<div style="text-align:center;padding:10px 0"><div style="font-size:64px;margin-bottom:12px">'+p.i+'</div><div style="font-size:18px;font-weight:700;color:#00f0ff;margin-bottom:12px">'+p.t+'</div><div style="font-size:14px;line-height:1.7;color:#e0e0f0;min-height:80px">'+p.d+'</div><div style="margin-top:16px">'+dots+'</div><div style="font-size:11px;color:#b0b0d0;margin-top:8px">หน้า '+(pg+1)+'/'+TUT_PAGES.length+'</div></div>';
+  var btns=[];
+  if(pg>0)btns.push({label:'◀',cls:'btn-o',action:'window.__mqTut('+(pg-1)+')'});
+  if(pg<TUT_PAGES.length-1)btns.push({label:'ถัดไป ▶',cls:'btn-g',action:'window.__mqTut('+(pg+1)+')'});
+  else btns.push({label:'✅ เริ่ม!',cls:'btn-gold',action:'window.__mqTutDone()'});
+  btns.push({label:'ข้าม',cls:'btn-o',action:'window.__mqTutDone()'});
+  _M('📖 Tutorial',h,btns);
 }
-try{
-  if(typeof renderMenu==='function'){
-    var _rm=renderMenu;
-    window.renderMenu=function(){
-      _rm.apply(this,arguments);
-      setTimeout(injectMenu,30);
-      setTimeout(injectMenu,200);
-    };
-  }
-}catch(e){}
-setInterval(injectMenu,2000);
+window.__mqTut=function(i){showTut(i);};
+window.__mqTutDone=function(){try{localStorage.setItem(TUT_KEY,'1');}catch(e){}_C();_A('win');
+  var s=_S();if(s&&s.player&&(!s.player.name||s.player.name==='ผู้กล้า'))setTimeout(function(){
+    var h='<div class="tc"><div style="font-size:36px">✏️</div><div style="margin:8px 0;color:#b0b0d0">ตั้งชื่อ</div><input id="tutNm" type="text" value="ผู้กล้า" maxlength="20" style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #00f0ff;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit"></div>';
+    _M('✏️ ชื่อ',h,[{label:'💾',cls:'btn-g',action:'var n=document.getElementById("tutNm").value.trim();if(n){var s=_S();if(s){s.player.name=n;_W();}closeModal();if(typeof renderMenu==="function")renderMenu();}'},{label:'ข้าม',cls:'btn-o',action:'closeModal();if(typeof renderMenu==="function")renderMenu();'}]);
+  },300);
+};
+setTimeout(function(){var seen=false;try{seen=localStorage.getItem(TUT_KEY)==='1';}catch(e){}if(!seen)setTimeout(function(){showTut(0);},2000);},1500);
 
 /* ============================================================
-   PART 14: MODE MENU INJECTION
+   PART 10: DETAIL PANELS (คลาส/สัตว์ ดูรายละเอียด)
    ============================================================ */
-try{
-  if(typeof renderModeMenu==='function'){
-    var _mm=renderModeMenu;
-    window.renderModeMenu=function(){
-      _mm.apply(this,arguments);
-      setTimeout(function(){
-        var el=document.getElementById('gameContent');if(!el)return;
-        var grid=el.querySelector('.mgrid');if(!grid)return;
-        grid.querySelectorAll('.mq-new-mode').forEach(function(n){try{n.remove();}catch(e){}});
-        var extra='<div class="mcard mq-new-mode" onclick="startTimeAttack()"><span class="me">⏱️</span><div class="mi"><div class="mn">Time Attack</div><div class="md">ตอบ 20 ข้อ 60 วิ</div></div></div>'+
-          '<div class="mcard mq-new-mode" onclick="startEndless()"><span class="me">♾️</span><div class="mi"><div class="mn">Endless</div><div class="md">บอสไม่ตาย</div></div></div>'+
-          '<div class="mcard mq-new-mode" onclick="startBossRush()"><span class="me">💀</span><div class="mi"><div class="mn">Boss Rush</div><div class="md">10 บอส</div></div></div>'+
-          '<div class="mcard mq-new-mode" onclick="startMockExam()"><span class="me">🎓</span><div class="mi"><div class="mn">Mock Exam</div><div class="md">สอบ 20 ข้อ</div></div></div>';
-        grid.insertAdjacentHTML('beforeend',extra);
-      },50);
-    };
-  }
-}catch(e){}
+window.__mqPetDetail=function(k){
+  try{
+    var p=Pets[k];if(!p)return;
+    var bmap={dmg:'⚔️ DMG',crit:'💥 CRIT',hp:'❤️ HP',combo:'🔥 COMBO',gold:'💰 ทอง',exp:'📚 EXP',both:'⚔️ DMG+CRIT',all:'✨ ทุกอย่าง'};
+    var val=p.bonus==='hp'?'+'+p.amt:'+'+Math.round(p.amt*100)+'%';
+    var spec='';if(p.special)for(var pid in p.special){try{var pd=PASSIVES[pid];if(pd)spec+='<div class="detail-row"><span class="detail-label">'+pd.name+' Lv.'+p.special[pid]+'</span><span class="detail-value">'+pd.desc.replace('{v}',(p.special[pid]*pd.per).toFixed(2))+'</span></div>';}catch(e){}}
+    var s=_S();var owned=s&&s.myPets.indexOf(k)>-1;
+    var h='<div style="text-align:left;font-size:12px;line-height:1.6"><div class="tc" style="margin-bottom:12px"><div style="font-size:56px">'+p.emoji+'</div><div style="font-size:18px;font-weight:700;color:#00f0ff;margin-top:4px">'+p.name+'</div></div><div style="font-weight:700;color:#ffe600;margin-bottom:4px">📖 คำอธิบาย</div><div style="color:#b0b0d0;margin-bottom:12px">'+p.desc+'</div><div style="font-weight:700;color:#39ff14;margin-bottom:4px">⚡ โบนัส</div><div class="detail-row"><span class="detail-label">'+(bmap[p.bonus]||p.bonus)+'</span><span class="detail-value" style="color:#39ff14">'+val+'</span></div>';
+    if(spec)h+='<div style="font-weight:700;color:#b537f2;margin:12px 0 4px">🌟 พาสซีฟพิเศษ</div>'+spec;
+    h+='<div style="font-weight:700;color:#ff8c00;margin:12px 0 4px">📍 ได้จากที่ไหน</div><div style="color:#b0b0d0">🐾 ร้านสัตว์ · <b style="color:#ffe600">'+p.cost+'🪙</b></div><div style="color:#b0b0d0">หรือ 🎰 กาชา (200🪙)</div>'+(owned?'<div style="color:#39ff14;margin-top:8px">✅ คุณมีแล้ว</div>':'')+'</div>';
+    _M('🐾 '+p.name,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+  }catch(e){}
+};
+window.__mqClsDetail=function(k){
+  try{
+    var all={};if(typeof BaseClasses!=='undefined')for(var x in BaseClasses)all[x]=BaseClasses[x];
+    if(typeof AdvanceClasses!=='undefined')for(var x2 in AdvanceClasses)all[x2]=AdvanceClasses[x2];
+    var c=all[k];if(!c)return;
+    var sk='';if(c.skills)for(var i=0;i<c.skills.length;i++){try{var sd=SKILLS[c.skills[i]];if(sd)sk+='<div class="detail-row"><span class="detail-label">'+sd.name+'</span><span class="detail-value">CD '+sd.cd+'s · '+sd.cost+'🪙</span></div>';}catch(e){}}
+    var ps='';if(c.passives)for(var pid in c.passives){try{var pd=PASSIVES[pid];if(pd)ps+='<div class="detail-row"><span class="detail-label">'+pd.name+' Lv.'+c.passives[pid]+'</span><span class="detail-value">'+pd.desc.replace('{v}',(c.passives[pid]*pd.per).toFixed(2))+'</span></div>';}catch(e){}}
+    var h='<div style="text-align:left;font-size:12px;line-height:1.6"><div class="tc" style="margin-bottom:12px"><div style="font-size:56px">'+c.emoji+'</div><div style="font-size:18px;font-weight:700;color:#00f0ff;margin-top:4px">'+c.name+'</div></div><div style="font-weight:700;color:#ffe600;margin-bottom:4px">📖</div><div style="color:#b0b0d0;margin-bottom:12px">'+c.desc+'</div><div style="font-weight:700;color:#39ff14;margin-bottom:4px">📊 ค่าพลัง</div><div class="detail-row"><span class="detail-label">HP</span><span class="detail-value">'+(c.hp>=0?'+':'')+c.hp+'</span></div><div class="detail-row"><span class="detail-label">DMG</span><span class="detail-value">x'+c.dmg+'</span></div><div class="detail-row"><span class="detail-label">CRIT</span><span class="detail-value">'+Math.round(c.crit*100)+'%</span></div><div class="detail-row"><span class="detail-label">CMUL</span><span class="detail-value">x'+c.cmul+'</span></div>';
+    if(sk)h+='<div style="font-weight:700;color:#b537f2;margin:12px 0 4px">⚔️ สกิล</div>'+sk;
+    if(ps)h+='<div style="font-weight:700;color:#ff006e;margin:12px 0 4px">🔥 พาสซีฟ</div>'+ps;
+    h+='<div style="font-weight:700;color:#ff8c00;margin:12px 0 4px">📍 ได้จากที่ไหน</div>';
+    if((c.unlock||1)<=1)h+='<div style="color:#39ff14">✅ ปลดล็อกแล้ว</div>';
+    else h+='<div style="color:#b0b0d0">🔒 Lv.<b style="color:#ffe600">'+c.unlock+'</b> หรือ 💎 กาชา (500🪙)</div>';
+    h+='</div>';
+    _M('⚔️ '+c.name,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+  }catch(e){}
+};
 
 /* ============================================================
-   PART 15: MODAL FUNCTIONS
+   PART 11: UI FUNCTIONS (Daily/Ach/PetEvo/CM/Sets/LB/Report/Geo)
    ============================================================ */
-function openDaily(){
+window.__mqDaily=function(){
   DQ.ensure();
   var h='<div style="text-align:left;font-size:13px"><div class="tc" style="margin-bottom:12px"><div style="font-size:36px">🎯</div><b>ภารกิจรายวัน</b></div>';
-  DQ.tasks.forEach(function(t,i){
-    var pct=Math.min(100,Math.round(t.prog/t.g*100));
-    h+='<div class="si col" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b>'+t.t+'</b>'+(t.claimed?'<span class="bdg bdg-g">✅</span>':t.done?'<span class="bdg bdg-gold">รับได้</span>':'')+'</div>';
-    h+='<div class="pb" style="margin-top:6px"><div class="pbf" style="width:'+pct+'%"></div></div>';
-    h+='<div class="ts" style="color:#b0b0d0;margin-top:4px">'+t.prog+'/'+t.g+' · '+t.r+'🪙</div>';
-    if(t.done&&!t.claimed)h+='<button class="btn btn-xs btn-gold mt2 wf" onclick="__dq30.claim('+i+')">💰 รับ</button>';
-    h+='</div>';
-  });
-  h+='</div>';
-  modal('🎯 Daily Quest',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-}
-window.__dq30={claim:function(i){var r=DQ.claim(i);if(r>0){sfx('gold');ft(window.innerWidth/2,window.innerHeight*0.4,'+'+r+'🪙','gold');}closeM();setTimeout(openDaily,150);}};
+  DQ.t.forEach(function(t,i){var pct=Math.min(100,Math.round(t.prog/t.g*100));
+    h+='<div class="si col" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b>'+t.t+'</b>'+(t.claimed?'<span class="bdg bdg-g">✅</span>':t.done?'<span class="bdg bdg-gold">รับได้</span>':'')+'</div><div class="pb" style="margin-top:6px"><div class="pbf" style="width:'+pct+'%"></div></div><div class="ts" style="color:#b0b0d0;margin-top:4px">'+t.prog+'/'+t.g+' · '+t.r+'🪙</div>';
+    if(t.done&&!t.claimed)h+='<button class="btn btn-xs btn-gold mt2 wf" onclick="__mqDqClaim('+i+')">💰 รับ</button>';
+    h+='</div>';});
+  h+='</div>';_M('🎯 Daily Quest',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.__mqDqClaim=function(i){var r=DQ.claim(i);if(r>0){_A('gold');_F(window.innerWidth/2,window.innerHeight*0.4,'+'+r+'🪙','gold');}_C();setTimeout(window.__mqDaily,150);};
 
-function openAch(){
+window.__mqAch=function(){
   var h='<div style="text-align:left;font-size:12px">';var c=0;for(var k in ACHD)c++;
   h+='<div class="tc" style="margin-bottom:10px"><div style="font-size:36px">🏅</div><b>'+c+'/'+ACH.length+'</b></div>';
-  ACH.forEach(function(a){var has=!!ACHD[a.id];
-    h+='<div class="si" style="'+(has?'background:rgba(57,255,20,0.08);border-color:rgba(57,255,20,0.4);':'opacity:0.55;')+'"><div style="flex:1"><b>'+a.n+'</b><div class="ts" style="color:#b0b0d0">'+a.d+'</div></div><div style="color:'+(has?'#39ff14':'#b0b0d0')+';font-weight:700">'+(has?'✅':'🔒')+'</div></div>';
-  });
-  h+='</div>';
-  modal('🏅 Achievement',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-}
-function openPetEvo(){
-  var s=gs();if(!s)return;
-  var h='<div style="text-align:left;font-size:12px"><div class="tc" style="margin-bottom:10px"><div style="font-size:36px">🐾</div><b>วิวัฒนาการสัตว์</b></div>';
-  if(!s.myPets||!s.myPets.length)h+='<div class="tc" style="color:#b0b0d0;padding:16px">ยังไม่มีสัตว์</div>';
-  else s.myPets.slice(0,20).forEach(function(k){var p=(typeof Pets!=='undefined'&&Pets[k])?Pets[k]:null;if(!p)return;
-    var lv=PE.lv(k),ex=PE.ex(k),nd=PE.need(lv),pct=lv>=5?100:Math.round(ex/nd*100);
+  ACH.forEach(function(a){var has=!!ACHD[a.id];h+='<div class="si" style="'+(has?'background:rgba(57,255,20,0.08);border-color:rgba(57,255,20,0.4);':'opacity:0.55;')+'"><div style="flex:1"><b>'+a.n+'</b><div class="ts" style="color:#b0b0d0">'+a.d+'</div></div><div style="color:'+(has?'#39ff14':'#b0b0d0')+';font-weight:700">'+(has?'✅':'🔒')+'</div></div>';});
+  h+='</div>';_M('🏅 Achievement',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.__mqPetEvo=function(){
+  var s=_S();if(!s)return;var h='<div style="text-align:left;font-size:12px"><div class="tc" style="margin-bottom:10px"><div style="font-size:36px">🐾</div><b>วิวัฒนาการสัตว์</b></div>';
+  if(!s.myPets.length)h+='<div class="tc" style="color:#b0b0d0;padding:16px">ยังไม่มีสัตว์</div>';
+  else s.myPets.slice(0,20).forEach(function(k){var p=Pets[k];if(!p)return;var lv=PE.lv(k),ex=PE.ex(k),nd=PE.need(lv),pct=lv>=5?100:Math.round(ex/nd*100);
     h+='<div class="si col"><div style="display:flex;justify-content:space-between"><b>'+p.emoji+' '+p.name+'</b><b style="color:#ffe600">Lv.'+lv+(lv>=5?' MAX':'')+'</b></div>';
     if(lv<5)h+='<div class="pb" style="margin-top:4px"><div class="pbf" style="width:'+pct+'%"></div></div><div class="ts" style="color:#b0b0d0">'+ex+'/'+nd+' EXP</div>';
     h+='</div>';});
-  h+='</div>';modal('🐾 Pet Evolution',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-}
-function openClassMastery(){
-  var s=gs();if(!s)return;
+  h+='</div>';_M('🐾 Pet Evolution',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.__mqCM=function(){
   var h='<div style="text-align:left;font-size:12px"><div class="tc" style="margin-bottom:10px"><div style="font-size:36px">⭐</div><b>Class Mastery</b></div>';
   var all={};try{if(typeof BaseClasses!=='undefined')for(var k in BaseClasses)all[k]=BaseClasses[k];}catch(e){}
   try{if(typeof AdvanceClasses!=='undefined')for(var k2 in AdvanceClasses)all[k2]=AdvanceClasses[k2];}catch(e){}
@@ -2089,177 +1883,156 @@ function openClassMastery(){
     h+='<div class="si col"><div style="display:flex;justify-content:space-between"><b>'+c.emoji+' '+c.name+'</b><b style="color:#ffe600">Lv.'+lv+(lv>=10?' MAX':'')+'</b></div>';
     if(lv<10)h+='<div class="pb" style="margin-top:4px"><div class="pbf" style="width:'+pct+'%"></div></div>';
     h+='</div>';});
-  h+='</div>';modal('⭐ Class Mastery',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-}
-function openSets(){
-  var active=getSet();var s=gs();if(!s||!s.inv)return;
-  var t=0;for(var k in s.inv)t+=s.inv[k];
+  h+='</div>';_M('⭐ Class Mastery',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.__mqSets=function(){
+  var active=getSet();var s=_S();if(!s)return;var t=0;for(var k in s.inv)t+=s.inv[k];
   var h='<div style="text-align:left;font-size:12px"><div class="tc" style="margin-bottom:10px"><div style="font-size:36px">💍</div><b>Item Sets</b></div><div class="tc" style="margin-bottom:10px">รวม: <b style="color:#00f0ff">Lv.'+t+'</b></div>';
-  SETS.forEach(function(x){var a=active.id===x.id;
-    h+='<div class="si col" style="'+(a?'background:rgba(57,255,20,0.08);border-color:rgba(57,255,20,0.4);':'opacity:0.7;')+'"><div style="display:flex;justify-content:space-between"><b>'+x.n+'</b>'+(a?'<span class="bdg bdg-g">✅</span>':'<span class="bdg bdg-b">Lv.'+x.need+'+</span>')+'</div><div class="ts" style="color:#b0b0d0">'+x.bonus+'</div></div>';});
-  h+='</div>';modal('💍 Item Sets',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
-}
-function openLeaderboard(){
+  SETS.forEach(function(x){var a=active.id===x.id;h+='<div class="si col" style="'+(a?'background:rgba(57,255,20,0.08);border-color:rgba(57,255,20,0.4);':'opacity:0.7;')+'"><div style="display:flex;justify-content:space-between"><b>'+x.n+'</b>'+(a?'<span class="bdg bdg-g">✅</span>':'<span class="bdg bdg-b">Lv.'+x.need+'+</span>')+'</div><div class="ts" style="color:#b0b0d0">'+x.bonus+'</div></div>';});
+  h+='</div>';_M('💍 Item Sets',h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+window.__mqLB=function(){
   var el=document.getElementById('gameContent');if(!el)return;
-  var me=gs()?gs().player.name:'?';var myR=LB.rank(me);var d=LB.data;
-  var h='<h3>🏆 จัดอันดับ</h3>';
-  h+='<div class="sbar" style="background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border-color:#00f0ff"><span>👤 <b>'+me+'</b></span><span>#'+(myR||'-')+'/'+d.length+'</span></div>';
+  var me=(_S()&&_S().player.name)||'?',myR=LB.rank(me),d=LB.data;
+  var h='<h3>🏆 จัดอันดับ</h3><div class="sbar" style="background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border-color:#00f0ff"><span>👤 <b>'+me+'</b></span><span>#'+(myR||'-')+'/'+d.length+'</span></div>';
   if(!d.length)h+='<div class="tp tc" style="padding:30px;color:#b0b0d0">ยังไม่มีข้อมูล</div>';
-  else d.slice(0,20).forEach(function(r,i){var rank=i+1;var isMe=r.name===me;var m=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
-    var st=rank===1?'background:rgba(255,215,0,0.2);border-color:#ffd700':rank===2?'background:rgba(192,192,192,0.15)':rank===3?'background:rgba(205,127,50,0.15)':'';
-    h+='<div class="si" style="'+st+(isMe?';border:2px solid #00f0ff':'')+'"><div style="min-width:44px;text-align:center;font-size:'+(rank<=3?'22px':'14px')+';font-weight:900">'+m+'</div>';
-    h+='<div style="flex:1"><div style="font-weight:700;font-size:13px">'+r.name+(isMe?' <span class="bdg bdg-b" style="font-size:9px">คุณ</span>':'')+'</div>';
-    h+='<div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+r.plv+' · 🎯'+r.accuracy+'%</div></div>';
-    h+='<div style="text-align:right"><div style="font-weight:700;color:#ffe600;font-size:14px">'+r.score.toLocaleString()+'</div></div></div>';});
-  h+='<button class="btn btn-g wf mt3" onclick="__lb30.submitNow()">📤 ส่งคะแนน</button>';
-  h+='<button class="btn btn-r wf mt2" onclick="__lb30.clear()">🗑️ ล้าง</button>';
-  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
+  else d.slice(0,20).forEach(function(r,i){var rank=i+1,isMe=r.name===me,m=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+    h+='<div class="si" style="'+((rank===1?'background:rgba(255,215,0,0.2)':rank===2?'background:rgba(192,192,192,0.15)':rank===3?'background:rgba(205,127,50,0.15)':''))+(isMe?';border:2px solid #00f0ff':'')+'"><div style="min-width:44px;text-align:center;font-size:'+(rank<=3?'22px':'14px')+';font-weight:900">'+m+'</div><div style="flex:1"><div style="font-weight:700;font-size:13px">'+r.name+(isMe?' <span class="bdg bdg-b" style="font-size:9px">คุณ</span>':'')+'</div><div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+r.plv+' · 🎯'+r.accuracy+'%</div></div><div style="text-align:right"><div style="font-weight:700;color:#ffe600;font-size:14px">'+(r.score||0).toLocaleString()+'</div></div></div>';});
+  h+='<button class="btn btn-g wf mt3" onclick="submitScore();__mqLB()">📤 ส่งคะแนน</button><button class="btn btn-r wf mt2" onclick="if(confirm(\'ล้าง?\')){LB.clear();__mqLB();}">🗑️ ล้าง</button><button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
   el.innerHTML=h;el.scrollTop=0;
-}
-window.__lb30={submitNow:function(){submitScore();var me=gs().player.name;var r=LB.rank(me);alert(r>0?'✅ อันดับ #'+r:'❌');openLeaderboard();},
-clear:function(){if(!confirm('ล้างอันดับ?'))return;LB.clear();openLeaderboard();}};
-
-function openStatsReport(){
+};
+window.__mqReport=function(){
   var el=document.getElementById('gameContent');if(!el)return;
   var r=buildReport();if(!r)return;
-  var h='<h3>📄 รายงานสถิติ</h3>';
-  h+='<div class="tp" style="background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(181,55,242,0.1));border-color:#00f0ff"><div class="tc" style="font-size:14px;font-weight:700;margin-bottom:6px">👤 '+r.p.name+'</div>';
-  h+='<div class="tc ts" style="color:#b0b0d0;margin-bottom:8px">'+r.cls.emoji+' '+r.cls.name+' · 🐾 '+r.pet.emoji+' '+r.pet.name+'</div>';
-  h+='<div class="sbar" style="background:rgba(0,0,0,0.3);margin-bottom:0"><span>⭐ Lv.<b class="sv">'+r.p.plv+'</b></span><span>💀 RB<b class="sv">'+r.p.rebirth+'</b></span><span>🏆 #<b class="sv">'+(r.lb.rank||'-')+'</b>/'+r.lb.total+'</span></div></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">💰 คะแนน / ทอง</h3>';
-  h+='<div class="si"><span>⭐ คะแนน</span><b class="sg">'+r.p.score.toLocaleString()+'</b></div>';
-  h+='<div class="si"><span>🪙 ทอง</span><b class="sg">'+r.p.gold.toLocaleString()+'</b></div>';
-  h+='<div class="si"><span>🔥 คอมโบ</span><b class="sv">'+r.p.maxCombo+'</b></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">✅ ตอบ</h3>';
-  h+='<div class="si"><span>✅ ถูก</span><b style="color:#39ff14">'+r.p.tc+'</b></div>';
-  h+='<div class="si"><span>❌ ผิด</span><b style="color:#ff006e">'+r.p.tw+'</b></div>';
-  h+='<div class="si"><span>🎯 แม่น</span><b style="color:'+(r.p.acc>=70?'#39ff14':r.p.acc>=40?'#ffe600':'#ff006e')+'">'+r.p.acc+'%</b></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📈 คืบหน้า</h3>';
-  h+='<div class="si"><span>📚 ด่าน</span><b>'+r.pr.cd+'/'+r.pr.ct+'</b></div>';
-  h+='<div class="si"><span>👑 บอส</span><b>'+r.pr.bk+'/'+r.pr.bt+'</b></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#b537f2">🎁 สะสม</h3>';
-  h+='<div class="si"><span>🐾 สัตว์</span><b>'+r.col.pets+'/'+r.col.pt+'</b></div>';
-  h+='<div class="si"><span>⚔️ คลาส</span><b>'+r.col.cls+'/'+r.col.ct+'</b></div>';
-  h+='<div class="si"><span>🌟 rare</span><b>'+r.col.rare+'</b></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#ff8c00">🎮 โหมดพิเศษ</h3>';
-  h+='<div class="si"><span>🧩 Pattern</span><b>'+r.ex.pat+'</b></div>';
-  h+='<div class="si"><span>⚖️ Balance</span><b>'+r.ex.bal+'</b></div>';
-  h+='<div class="si"><span>🎯 Greater/Lesser</span><b>'+r.ex.cmp+'</b></div>';
-  h+='<div class="si"><span>🎲 Target24</span><b>'+r.ex.t24+'</b></div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">🔧 อุปกรณ์</h3>';
-  r.eq.forEach(function(e){var pct=Math.round(e.lv/e.max*100);h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+e.name+'</span><b>Lv.'+e.lv+'/'+e.max+'</b></div><div class="pb" style="margin-top:4px"><div class="pbf" style="width:'+pct+'%"></div></div></div>';});
+  var h='<h3>📄 รายงานสถิติ</h3><div class="tp" style="background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(181,55,242,0.1));border-color:#00f0ff"><div class="tc" style="font-size:14px;font-weight:700;margin-bottom:6px">👤 '+r.p.name+'</div><div class="tc ts" style="color:#b0b0d0;margin-bottom:8px">'+r.cls.emoji+' '+r.cls.name+' · 🐾 '+r.pet.emoji+' '+r.pet.name+'</div><div class="sbar" style="background:rgba(0,0,0,0.3);margin-bottom:0"><span>⭐ Lv.<b class="sv">'+r.p.plv+'</b></span><span>💀 RB<b class="sv">'+r.p.rebirth+'</b></span><span>🏆 #<b class="sv">'+(r.lb.rank||'-')+'</b></span></div></div>';
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">💰 คะแนน</h3><div class="si"><span>⭐</span><b class="sg">'+r.p.score.toLocaleString()+'</b></div><div class="si"><span>🪙</span><b class="sg">'+r.p.gold.toLocaleString()+'</b></div><div class="si"><span>🔥</span><b class="sv">'+r.p.maxCombo+'</b></div>';
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">✅ ตอบ</h3><div class="si"><span>✅ ถูก</span><b style="color:#39ff14">'+r.p.tc+'</b></div><div class="si"><span>❌ ผิด</span><b style="color:#ff006e">'+r.p.tw+'</b></div><div class="si"><span>🎯 แม่น</span><b style="color:'+(r.p.acc>=70?'#39ff14':'#ffe600')+'">'+r.p.acc+'%</b></div>';
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📈 คืบหน้า</h3><div class="si"><span>📚 ด่าน</span><b>'+r.pr.cd+'/'+r.pr.ct+'</b></div><div class="si"><span>👑 บอส</span><b>'+r.pr.bk+'/'+r.pr.bt+'</b></div>';
+  h+='<h3 class="mt3" style="font-size:14px;color:#b537f2">🎁 สะสม</h3><div class="si"><span>🐾 สัตว์</span><b>'+r.col.pets+'/'+r.col.pt+'</b></div><div class="si"><span>⚔️ คลาส</span><b>'+r.col.cls+'/'+r.col.ct+'</b></div>';
+  h+='<h3 class="mt3" style="font-size:14px;color:#ff8c00">🎮 โหมด</h3><div class="si"><span>🧩</span><b>'+r.ex.pat+'</b></div><div class="si"><span>⚖️</span><b>'+r.ex.bal+'</b></div><div class="si"><span>🎯</span><b>'+r.ex.cmp+'</b></div><div class="si"><span>🎲</span><b>'+r.ex.t24+'</b></div>';
   h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">📚 รายบท</h3>';
-  r.ch.forEach(function(c){var cl=c.acc>=70?'bdg-g':c.acc>=40?'bdg-b':'bdg-r';
-    h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+c.icon+' บท '+c.id+'</span><span class="bdg '+cl+'">'+c.acc+'%</span></div><div class="ts" style="color:#b0b0d0">✅'+c.correct+' ❌'+c.wrong+' · '+c.done+'/5'+(c.boss?' 👑':'')+'</div></div>';});
-  h+='<div class="tc ts mt3" style="color:#b0b0d0">📅 '+new Date(r.at).toLocaleString('th-TH')+'</div>';
-  h+='<button class="btn btn-g wf mt3" onclick="__rp30.copyText()">📋 คัดลอกข้อความ</button>';
-  h+='<button class="btn btn-y wf mt2" onclick="__rp30.copyJson()">📦 คัดลอก JSON</button>';
-  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
+  r.ch.forEach(function(c){var cl=c.acc>=70?'bdg-g':c.acc>=40?'bdg-b':'bdg-r';h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+c.icon+' บท '+c.id+'</span><span class="bdg '+cl+'">'+c.acc+'%</span></div><div class="ts" style="color:#b0b0d0">✅'+c.correct+' ❌'+c.wrong+' · '+c.done+'/5</div></div>';});
+  h+='<button class="btn btn-g wf mt3" onclick="__mqReportCopy()">📋 คัดลอกข้อความ</button><button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
   el.innerHTML=h;el.scrollTop=0;
-}
-window.__rp30={copyText:function(){
-  var r=buildReport();if(!r)return;
-  var L=[],s='═══════════════════════════════════════';
-  L.push(s,'       📊 MATH QUEST — รายงาน','            สร้างโดย ธนวัฒน์',s,'');
-  L.push('👤 '+r.p.name);L.push('⚔️ '+r.cls.emoji+' '+r.cls.name);L.push('🐾 '+r.pet.emoji+' '+r.pet.name);
-  L.push('⭐ Lv.'+r.p.plv+' 💀 RB'+r.p.rebirth);L.push('🏆 #'+(r.lb.rank||'-')+'/'+r.lb.total,'');
-  L.push('── คะแนน ──');L.push('⭐ '+r.p.score.toLocaleString());L.push('🪙 '+r.p.gold.toLocaleString());L.push('🔥 '+r.p.maxCombo,'');
-  L.push('── ตอบ ──');L.push('✅ '+r.p.tc+' ❌ '+r.p.tw);L.push('🎯 '+r.p.acc+'%','');
-  L.push('── คืบหน้า ──');L.push('📚 '+r.pr.cd+'/'+r.pr.ct);L.push('👑 '+r.pr.bk+'/'+r.pr.bt,'');
-  L.push('── สะสม ──');L.push('🐾 '+r.col.pets+'/'+r.col.pt);L.push('⚔️ '+r.col.cls+'/'+r.col.ct,'');
-  L.push('── โหมด ──');L.push('🧩 '+r.ex.pat+' ⚖️ '+r.ex.bal+' 🎯 '+r.ex.cmp+' 🎲 '+r.ex.t24,'');
+};
+window.__mqReportCopy=function(){
+  var r=buildReport();if(!r)return;var L=[],s='═══════════════════════════════════════';
+  L.push(s,'   📊 MATH QUEST — รายงาน','        สร้างโดย ธนวัฒน์',s,'');
+  L.push('👤 '+r.p.name,'⚔️ '+r.cls.emoji+' '+r.cls.name,'🐾 '+r.pet.emoji+' '+r.pet.name,'⭐ Lv.'+r.p.plv+' 💀 RB'+r.p.rebirth,'');
+  L.push('── คะแนน ──','⭐ '+r.p.score.toLocaleString(),'🪙 '+r.p.gold.toLocaleString(),'🔥 '+r.p.maxCombo,'');
+  L.push('── ตอบ ──','✅ '+r.p.tc+' ❌ '+r.p.tw,'🎯 '+r.p.acc+'%','');
+  L.push('── คืบหน้า ──','📚 '+r.pr.cd+'/'+r.pr.ct,'👑 '+r.pr.bk+'/'+r.pr.bt,'');
   L.push('── บท ──');r.ch.forEach(function(c){L.push(c.icon+' บท'+c.id+': '+c.acc+'%');});
   L.push('','📅 '+new Date(r.at).toLocaleString('th-TH'),s);
   var txt=L.join('\n');
   try{if(navigator.clipboard)navigator.clipboard.writeText(txt).then(function(){alert('✅ คัดลอกแล้ว');}).catch(function(){prompt('คัดลอก:',txt);});else prompt('คัดลอก:',txt);}catch(e){prompt('คัดลอก:',txt);}
-},copyJson:function(){
-  var r=buildReport();if(!r)return;
-  var j=JSON.stringify(r,null,2);
-  try{if(navigator.clipboard)navigator.clipboard.writeText(j).then(function(){alert('✅ JSON');}).catch(function(){prompt('JSON:',j);});else prompt('JSON:',j);}catch(e){prompt('JSON:',j);}
-}};
+};
 
-function openGeomMenu(){
+/* GEOMETRY UI */
+var GQ={topic:null,r:1,max:10,s:0,cur:null,ans:false};
+window.__mqGeo=function(){
   var el=document.getElementById('gameContent');if(!el)return;
-  var h='<h3>📐 การแปลงทางเรขาคณิต</h3><div class="ts mb2" style="color:#b0b0d0">สรุป + แบบทดสอบ 4 หัวข้อ</div>';
-  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">📖 สรุป</h3>';
-  ['translate','reflect','rotate','dilate'].forEach(function(k){var g=GEOM[k];
-    h+='<div class="si" onclick="__gm30.show(\''+k+'\')" style="cursor:pointer"><div style="flex:1"><b>'+g.i+' '+g.t+'</b><div class="ts" style="color:#b0b0d0">'+g.p.length+' จุด · '+g.e.length+' ตัวอย่าง</div></div><span style="color:#00f0ff">▶</span></div>';});
-  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">🎯 แบบทดสอบ (10 ข้อ)</h3>';
-  [['translate','➡️ เลื่อนขนาน'],['reflect','🪞 สะท้อน'],['rotate','🔄 หมุน'],['dilate','🔍 ย่อ/ขยาย']].forEach(function(t){
-    h+='<button class="btn btn-o wf mt2" onclick="__gm30.start(\''+t[0]+'\')">'+t[1]+'</button>';});
+  var h='<h3>📐 การแปลงทางเรขาคณิต</h3>';
+  ['translate','reflect','rotate','dilate'].forEach(function(k){var g=GEO[k];
+    h+='<div class="si" onclick="__mqGeoShow(\''+k+'\')" style="cursor:pointer"><div style="flex:1"><b>'+g.i+' '+g.t+'</b><div class="ts" style="color:#b0b0d0">'+g.p.length+' จุด</div></div><span style="color:#00f0ff">▶</span></div>';});
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">🎯 แบบทดสอบ</h3>';
+  [['translate','➡️ เลื่อนขนาน'],['reflect','🪞 สะท้อน'],['rotate','🔄 หมุน'],['dilate','🔍 ย่อ/ขยาย']].forEach(function(t){h+='<button class="btn btn-o wf mt2" onclick="__mqGeoStart(\''+t[0]+'\')">'+t[1]+'</button>';});
   h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับ</button>';
   el.innerHTML=h;el.scrollTop=0;
-}
-var GQ={topic:null,r:1,max:10,s:0,cur:null,ans:false};
-window.__gm30={
-show:function(k){var g=GEOM[k];if(!g)return;
-  var h='<div style="text-align:left;font-size:12px;line-height:1.6"><div class="tc" style="margin-bottom:8px"><div style="font-size:32px">'+g.i+'</div></div>';
-  h+='<div style="font-weight:700;color:#00f0ff">📖 '+g.t+'</div><div style="color:#b0b0d0;margin-bottom:10px">'+g.d+'</div>';
-  h+='<div style="font-weight:700;color:#ffe600;margin:8px 0 4px">🔑 จุดสำคัญ</div><ul style="padding-left:18px">'+g.p.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
-  h+='<div style="font-weight:700;color:#b537f2;margin:8px 0 4px">📐 สูตร</div><div style="padding:8px;background:rgba(181,55,242,0.1);border-radius:8px;font-family:monospace;font-size:11px">'+g.f.map(function(x){return '<div>'+x+'</div>';}).join('')+'</div>';
-  h+='<div style="font-weight:700;color:#39ff14;margin:8px 0 4px">📝 ตัวอย่าง</div><ul style="padding-left:18px">'+g.e.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></div>';
-  modal('📚 '+g.t,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);},
-start:function(t){GQ.topic=t;GQ.r=1;GQ.s=0;nextGQ();goS('geomQuiz');renderGQ();sfx('win');},
-submit:function(){
-  if(GQ.ans||!GQ.cur)return;
-  var i=document.getElementById('gqI');if(!i)return;var v=i.value.trim();if(!v)return;
-  GQ.ans=true;i.disabled=true;
-  var ua=v.replace(/\s+/g,'').toLowerCase();var ca=String(GQ.cur.a).replace(/\s+/g,'').toLowerCase();
-  if(ua===ca){sfx('correct');GQ.s+=10;gold(20);}
-  else sfx('wrong');
-  GQ.r++;
-  setTimeout(function(){if(GQ.r>GQ.max){endGQ();return;}nextGQ();renderGQ();},600);
-},
-hint:function(){if(!GQ.cur)return;ft(window.innerWidth/2,window.innerHeight*0.3,'💡 '+GQ.cur.h,'heal');},
-exit:function(){if(!confirm('ออก?'))return;GQ.topic=null;openGeomMenu();}
 };
-function nextGQ(){try{GQ.cur=genGeom(GQ.topic);}catch(e){GQ.cur={q:'?',a:'?',h:''};}GQ.ans=false;}
-function renderGQ(){
+window.__mqGeoShow=function(k){var g=GEO[k];if(!g)return;var h='<div style="text-align:left;font-size:12px;line-height:1.6"><div class="tc" style="margin-bottom:8px"><div style="font-size:32px">'+g.i+'</div></div><div style="font-weight:700;color:#00f0ff">📖 '+g.t+'</div><div style="color:#b0b0d0;margin-bottom:10px">'+g.d+'</div><div style="font-weight:700;color:#ffe600;margin:8px 0 4px">🔑 จุดสำคัญ</div><ul style="padding-left:18px">'+g.p.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul><div style="font-weight:700;color:#39ff14;margin:8px 0 4px">📝 ตัวอย่าง</div><ul style="padding-left:18px">'+g.e.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></div>';_M('📚 '+g.t,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);};
+window.__mqGeoStart=function(t){GQ.topic=t;GQ.r=1;GQ.s=0;nextGQ();_G('geomQuiz');renderGQ();_A('win');};
+function nextGQ(){try{GQ.cur=genGeo(GQ.topic);}catch(e){GQ.cur={q:'?',a:'?',h:''};}GQ.ans=false;}
+function renderGQ(){var el=document.getElementById('gameContent');if(!el)return;var names={translate:'➡️',reflect:'🪞',rotate:'🔄',dilate:'🔍'};el.innerHTML='<h3>'+names[GQ.topic]+' '+GEO[GQ.topic].t+'</h3><div class="sbar"><span>ข้อ <span class="sv">'+GQ.r+'/'+GQ.max+'</span></span><span>คะแนน <span class="sg">'+GQ.s+'</span></span></div><div class="qp"><div class="qd">'+GQ.cur.q+'</div><div class="air"><input class="ai" id="gqI" placeholder="x,y" '+(GQ.ans?'disabled':'')+'><button class="btn btn-g" onclick="__mqGeoSub()">✓</button></div></div><button class="btn btn-y wf mt2" onclick="__mqGeoHint()">💡</button><button class="btn btn-o wf mt2" onclick="__mqGeoExit()">✖ ออก</button>';var i=document.getElementById('gqI');if(i){i.focus();i.addEventListener('keydown',function(e){if(e.key==='Enter')window.__mqGeoSub();});}el.scrollTop=0;}
+window.__mqGeoSub=function(){if(GQ.ans||!GQ.cur)return;var i=document.getElementById('gqI');if(!i)return;var v=i.value.trim();if(!v)return;GQ.ans=true;i.disabled=true;var ua=v.replace(/\s+/g,''),ca=String(GQ.cur.a).replace(/\s+/g,'');if(ua===ca){_A('correct');GQ.s+=10;_GOLD(20);}else _A('wrong');GQ.r++;setTimeout(function(){if(GQ.r>GQ.max){_A('win');_M('🏆 จบ!','<div class="tc">'+GQ.s+'/'+(GQ.max*10)+'</div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();__mqGeoStart("'+GQ.topic+'")'},{label:'กลับ',cls:'btn-o',action:'closeModal();__mqGeo()'}]);return;}nextGQ();renderGQ();},600);};
+window.__mqGeoHint=function(){if(!GQ.cur)return;_F(window.innerWidth/2,window.innerHeight*0.3,'💡 '+GQ.cur.h,'heal');};
+window.__mqGeoExit=function(){if(!confirm('ออก?'))return;GQ.topic=null;window.__mqGeo();};
+
+/* ============================================================
+   PART 12: HOOKS + MENU INJECTION
+   ============================================================ */
+try{if(typeof endBattle==='function'){var _eb=endBattle;window.endBattle=function(){_eb.apply(this,arguments);try{var s=_S();if(s&&s.player&&s.player.bossHp<=0){DQ.add('win3',1);if(s.player.lv===5)DQ.add('boss1',1);DQ.add('gold1k',30);if(s.epet)PE.add(s.epet,5);CM.add(s.pclass,5);submitScore();}}catch(e){}};}}catch(e){}
+try{if(typeof addExp==='function'){var _ae=addExp;window.addExp=function(n){var l0=0;try{l0=_S().player.plv;}catch(e){}_ae.apply(this,arguments);try{var l1=_S().player.plv;if(l1>l0)DQ.add('lvlup',l1-l0);}catch(e){}};}}catch(e){}
+
+function injectMenu(){
   var el=document.getElementById('gameContent');if(!el)return;
-  var names={translate:'➡️ เลื่อนขนาน',reflect:'🪞 สะท้อน',rotate:'🔄 หมุน',dilate:'🔍 ย่อ/ขยาย'};
-  el.innerHTML='<h3>'+names[GQ.topic]+'</h3>'+
-  '<div class="sbar"><span>ข้อ <span class="sv">'+GQ.r+'/'+GQ.max+'</span></span><span>คะแนน <span class="sg">'+GQ.s+'</span></span></div>'+
-  '<div class="qp"><div class="qd">'+GQ.cur.q+'</div><div class="air"><input class="ai" id="gqI" placeholder="x,y" '+(GQ.ans?'disabled':'')+'><button class="btn btn-g" onclick="__gm30.submit()">✓</button></div></div>'+
-  '<button class="btn btn-y wf mt2" onclick="__gm30.hint()">💡 คำใบ้</button>'+
-  '<button class="btn btn-o wf mt2" onclick="__gm30.exit()">✖ ออก</button>';
-  var i=document.getElementById('gqI');if(i){i.focus();i.addEventListener('keydown',function(e){if(e.key==='Enter')window.__gm30.submit();});}
-  el.scrollTop=0;
+  if(typeof currentScreen!=='undefined'&&currentScreen!=='menu')return;
+  /* dedup */
+  var seen={};
+  el.querySelectorAll('button.btn').forEach(function(b){var t=(b.textContent||'').replace(/\s+/g,'').trim();if(!t)return;if(seen[t])try{b.remove();}catch(e){}else seen[t]=true;});
+  /* clear custom */
+  el.querySelectorAll('.mqbtn').forEach(function(b){try{b.remove();}catch(e){}});
+  var back=el.querySelector('button:last-of-type');
+  function add(id,txt,cls,fn){
+    if(document.getElementById(id))return;
+    var b=document.createElement('button');b.id=id;b.className='btn '+cls+' wf mt2 mqbtn';b.textContent=txt;b.onclick=fn;
+    if(back&&back.parentNode===el)el.insertBefore(b,back);else el.appendChild(b);
+  }
+  DQ.ensure();var cc=0;DQ.t.forEach(function(t){if(t.done&&!t.claimed)cc++;});
+  add('mqb-daily','🎯 ภารกิจรายวัน'+(cc>0?' ('+cc+')':''),cc>0?'btn-gold':'btn-o',window.__mqDaily);
+  var ac=0;for(var k in ACHD)ac++;
+  add('mqb-ach','🏅 เหรียญ ('+ac+'/'+ACH.length+')','btn-y',window.__mqAch);
+  add('mqb-pe','🐾 วิวัฒนาการสัตว์','btn-o',window.__mqPetEvo);
+  add('mqb-cm','⭐ Class Mastery','btn-pur',window.__mqCM);
+  add('mqb-sets','💍 Item Sets','btn-o',window.__mqSets);
+  add('mqb-lb','🏆 จัดอันดับ','btn-gold',window.__mqLB);
+  add('mqb-rp','📄 รายงานสถิติ','btn-y',window.__mqReport);
+  add('mqb-geo','📐 การแปลงทางเรขาคณิต','btn-pur',window.__mqGeo);
+  add('mqb-tut','📖 Tutorial','btn-o',function(){showTut(0);});
+  /* footer */
+  if(!el.querySelector('.mqfoot')){var f=document.createElement('div');f.className='mqfoot';f.style.cssText='text-align:center;margin-top:20px;padding:10px;font-size:11px;color:#b0b0d0;border-top:1px dashed rgba(255,255,255,0.15)';f.innerHTML='✨ สร้างโดย <b style="color:#00f0ff">ธนวัฒน์</b> ✨';el.appendChild(f);}
 }
-function endGQ(){sfx('win');modal('🏆 จบ!','<div class="tc"><div style="font-size:56px">🏆</div><div>'+GQ.s+'/'+(GQ.max*10)+'</div></div>',[{label:'เล่นใหม่',cls:'btn-g',action:'closeModal();__gm30.start("'+GQ.topic+'")'},{label:'กลับ',cls:'btn-o',action:"closeModal();openGeomMenu()"}]);}
+try{if(typeof renderMenu==='function'){var _rm=renderMenu;window.renderMenu=function(){_rm.apply(this,arguments);setTimeout(injectMenu,50);setTimeout(injectMenu,200);};}}catch(e){}
+setInterval(injectMenu,2000);
 
-function changeName(){
-  var cur=(gs()?gs().player.name:'')||'ผู้กล้า';
-  var h='<div class="tc"><div style="font-size:36px">✏️</div><div style="margin:8px 0;color:#b0b0d0">ตั้งชื่อผู้เล่น</div>'+
-  '<input id="nmI" type="text" value="'+cur+'" maxlength="20" style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #00f0ff;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit" autocomplete="off"></div>';
-  modal('✏️ ชื่อ',h,[
-    {label:'💾 บันทึก',cls:'btn-g',action:'var n=document.getElementById("nmI").value.trim();if(n&&gs()){gs().player.name=n;ws();closeModal();if(typeof currentScreen!=="undefined"&&currentScreen==="menu")renderMenu();}'},
-    {label:'ปิด',cls:'btn-o',action:'closeModal()'}
-  ]);
-  setTimeout(function(){var e=document.getElementById('nmI');if(e)e.focus();},200);
+/* Mode menu */
+try{if(typeof renderModeMenu==='function'){var _mm=renderModeMenu;window.renderModeMenu=function(){_mm.apply(this,arguments);setTimeout(function(){var el=document.getElementById('gameContent');if(!el)return;var grid=el.querySelector('.mgrid');if(!grid)return;grid.querySelectorAll('.mqmode').forEach(function(n){try{n.remove();}catch(e){}});grid.insertAdjacentHTML('beforeend','<div class="mcard mqmode" onclick="__mqStartTA()"><span class="me">⏱️</span><div class="mi"><div class="mn">Time Attack</div><div class="md">20 ข้อ 60 วิ</div></div></div><div class="mcard mqmode" onclick="__mqStartEN()"><span class="me">♾️</span><div class="mi"><div class="mn">Endless</div><div class="md">บอสไม่ตาย</div></div></div><div class="mcard mqmode" onclick="__mqStartBR()"><span class="me">💀</span><div class="mi"><div class="mn">Boss Rush</div><div class="md">10 บอส</div></div></div><div class="mcard mqmode" onclick="__mqStartME()"><span class="me">🎓</span><div class="mi"><div class="mn">Mock Exam</div><div class="md">สอบ 20 ข้อ</div></div></div>');},50);};}}catch(e){}
+
+/* Info buttons in class/pet cards */
+try{if(typeof renderClassSelect==='function'){var _rc=renderClassSelect;window.renderClassSelect=function(){_rc.apply(this,arguments);setTimeout(function(){var el=document.getElementById('gameContent');if(!el)return;el.querySelectorAll('.ccard').forEach(function(card){if(card.querySelector('.mqi'))return;var oc=card.getAttribute('onclick')||'';var m=oc.match(/selectClass\('([^']+)'\)/);if(!m)return;var b=document.createElement('div');b.className='mqi';b.textContent='ℹ️';b.style.cssText='position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,240,255,0.2);border:1px solid #00f0ff;color:#00f0ff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:5';b.onclick=function(e){e.stopPropagation();e.preventDefault();window.__mqClsDetail(m[1]);};card.style.position='relative';card.appendChild(b);});},50);};}}catch(e){}
+try{if(typeof renderPetShop==='function'){var _rp=renderPetShop;window.renderPetShop=function(){_rp.apply(this,arguments);setTimeout(function(){var el=document.getElementById('gameContent');if(!el)return;var allP=[];try{allP=Object.keys(Pets);}catch(e){}el.querySelectorAll('.pcard').forEach(function(card){if(card.querySelector('.mqi'))return;var txt=card.textContent||'';var found=null;allP.forEach(function(k){if(Pets[k]&&txt.indexOf(Pets[k].name)>-1&&!found)found=k;});if(!found)return;var b=document.createElement('div');b.className='mqi';b.textContent='ℹ️';b.style.cssText='position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,240,255,0.2);border:1px solid #00f0ff;color:#00f0ff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:5';b.onclick=function(e){e.stopPropagation();e.preventDefault();window.__mqPetDetail(found);};card.style.position='relative';card.appendChild(b);});},50);};}}catch(e){}
+
+/* Back button */
+var PARENT={chapters:'menu',inventory:'menu',shop:'menu',petshop:'menu',gachaPet:'menu',gachaClass:'menu',upgrade:'menu',class:'menu',skillTree:'menu',rebirth:'menu',stats:'menu',settings:'menu',modes:'menu'};
+function addBack(){
+  try{var cur=typeof currentScreen!=='undefined'?currentScreen:'';if(!PARENT[cur]){var old=document.getElementById('__mqback');if(old&&old.parentNode)old.parentNode.removeChild(old);return;}
+    if(document.getElementById('__mqback'))return;
+    var b=document.createElement('div');b.id='__mqback';b.textContent='◀ กลับ';
+    b.style.cssText='position:fixed;bottom:20px;left:10px;z-index:9996;padding:10px 16px;background:linear-gradient(135deg,#00c6ff,#0072ff);color:#fff;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 15px rgba(0,114,255,0.5)';
+    b.onclick=function(){_G(PARENT[cur]);};
+    document.body.appendChild(b);
+  }catch(e){}
 }
+setInterval(addBack,800);
 
-/* ============================================================
-   PART 16: LOGIN POPUP
-   ============================================================ */
+/* Help button */
 setTimeout(function(){
-  var r=LS.check();
-  if(r)setTimeout(function(){
-    modal('🎁 Login Streak!','<div class="tc"><div style="font-size:56px">🎁</div><div>วัน '+r.days+' ติดต่อกัน</div><div style="color:#ffe600;margin-top:8px">+'+r.reward+'🪙</div></div>',
-      [{label:'รับ',cls:'btn-gold',action:'closeModal();var rr=LS.claim();if(rr>0){sfx("gold");ft(innerWidth/2,innerHeight*0.4,"+"+rr+"🪙","gold");}'}]);
-  },2500);
-},1500);
+  if(document.getElementById('__mqhelp'))return;
+  var b=document.createElement('div');b.id='__mqhelp';b.textContent='?';
+  b.style.cssText='position:fixed;bottom:20px;right:10px;z-index:9996;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#b537f2,#7b2ff7);color:#fff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(181,55,242,0.5)';
+  b.onclick=function(){
+    var h='<div style="text-align:left;font-size:13px;line-height:1.7"><div style="font-weight:700;color:#00f0ff;margin-bottom:8px">📖 ช่วยเหลือ</div><div style="padding:8px;background:rgba(0,240,255,0.08);border-radius:8px;margin-bottom:8px"><b>🎮 วิธีเล่น:</b><br>1. กด ⚔️ ผจญภัย<br>2. เลือกบท → ด่าน<br>3. ตอบคำถามให้ถูก</div><div style="padding:8px;background:rgba(57,255,20,0.08);border-radius:8px;margin-bottom:8px"><b>💰 เก็บเงิน:</b><br>• ชนะด่าน = ทอง<br>• คอมโบ = ทองเพิ่ม</div><div style="padding:8px;background:rgba(255,230,0,0.08);border-radius:8px;margin-bottom:8px"><b>🐾 สัตว์:</b> ซื้อที่ร้าน · กด ℹ️ ดู</div><div style="padding:8px;background:rgba(181,55,242,0.08);border-radius:8px"><b>⚔️ คลาส:</b> เปลี่ยนได้ · กด ℹ️ ดู</div></div>';
+    _M('❓ ช่วยเหลือ',h,[{label:'📖 Tutorial',cls:'btn-g',action:'closeModal();showTut(0);'},{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+  };
+  document.body.appendChild(b);
+},2000);
 
-/* ============================================================
-   PART 17: BOOT
-   ============================================================ */
+/* Creator in start screen */
+function setCreator(){
+  try{var ov=document.getElementById('startOverlay');if(!ov)return;var sc=ov.querySelector('.sc');if(!sc||sc.querySelector('.mqc'))return;
+    var t=document.createElement('div');t.className='mqc';t.style.cssText='margin-top:14px;padding:8px 12px;background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border:1px solid rgba(0,240,255,0.4);border-radius:10px;font-size:12px;color:#00f0ff;font-weight:700';
+    t.innerHTML='✨ สร้างโดย <b style="color:#ffe600">ธนวัฒน์</b> ✨';sc.appendChild(t);
+  }catch(e){}
+}
+setTimeout(setCreator,300);setTimeout(setCreator,1500);
+
+/* Login streak popup */
+setTimeout(function(){var r=LS.check();if(r)setTimeout(function(){_M('🎁 Login Streak!','<div class="tc"><div style="font-size:56px">🎁</div><div>วัน '+r.days+' ติดกัน</div><div style="color:#ffe600;margin-top:8px">+'+r.reward+'🪙</div></div>',[{label:'รับ',cls:'btn-gold',action:'closeModal();var rr=LS.claim();if(rr>0){_A("gold");_F(innerWidth/2,innerHeight*0.4,"+"+rr+"🪙","gold");}'}]);},2500);},1500);
+
+/* BOOT */
 PE.save();CM.save();checkAch();
-setTimeout(function(){try{setCreator();injectMenu();}catch(e){}},500);
-setTimeout(function(){try{setCreator();injectMenu();}catch(e){}},1500);
-
-console.info('✅ MQ v30 MEGA loaded');
-console.info('   Pets 20 + Classes 20 + Daily + Ach + Login + PetEvo + CM + Sets');
-console.info('   Leaderboard + Stats + TimeAttack + Endless + BossRush + MockExam');
-console.info('   Geometry + ม.1/ม.3 + Creator: ธนวัฒน์');
+setTimeout(injectMenu,500);setTimeout(injectMenu,1500);
+console.info('✅ MEGA PACK loaded · Pets+Classes+Daily+Ach+Login+Evo+CM+Sets+LB+Report+4Modes+Geo+Tutorial+Safety');
 })();
   </script>
 </body>
