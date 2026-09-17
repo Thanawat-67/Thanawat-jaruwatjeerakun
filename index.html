@@ -2027,5 +2027,1143 @@ try{
 console.info('✅ Geometry Transformation loaded · 4 topics · 10+ quiz patterns');
 })();
   </script>
+  <script>
+"use strict";
+/* ============================================================
+   EXTRA PACK v12 — Leaderboard + Statistics Report
+   วางต่อจาก script สุดท้ายของเกม ก่อน </body>
+   ============================================================ */
+(function(){
+"use strict";
+
+/* ============================================================
+   ส่วนที่ 1: LEADERBOARD (จัดอันดับ)
+   ============================================================ */
+var LB_KEY='mq_leaderboard_v1';
+var LB_MAX=50; /* เก็บสูงสุด 50 คน */
+
+var Leaderboard={
+  data:[],
+  load:function(){
+    try{
+      var d=JSON.parse(localStorage.getItem(LB_KEY)||'[]');
+      if(Array.isArray(d))this.data=d;
+    }catch(e){this.data=[];}
+    return this.data;
+  },
+  save:function(){
+    try{localStorage.setItem(LB_KEY,JSON.stringify(this.data));}catch(e){}
+  },
+  /* เพิ่ม entry ใหม่ หรืออัพเดทถ้ามีชื่อเดิม */
+  submit:function(entry){
+    if(!entry||!entry.name)return;
+    var idx=-1;
+    for(var i=0;i<this.data.length;i++){
+      if(this.data[i].name===entry.name){idx=i;break;}
+    }
+    var now=Date.now();
+    if(idx>-1){
+      /* อัพเดทถ้าดีกว่าเดิม */
+      var cur=this.data[idx];
+      var updated=false;
+      if((entry.score||0)>cur.score){cur.score=entry.score;updated=true;}
+      if((entry.plv||1)>cur.plv){cur.plv=entry.plv;updated=true;}
+      if((entry.rebirth||0)>cur.rebirth){cur.rebirth=entry.rebirth;updated=true;}
+      if((entry.maxCombo||0)>cur.maxCombo){cur.maxCombo=entry.maxCombo;updated=true;}
+      if((entry.totalCorrect||0)>cur.totalCorrect){cur.totalCorrect=entry.totalCorrect;updated=true;}
+      cur.updatedAt=now;
+      if(updated)cur.lastImproved=now;
+    }else{
+      this.data.push({
+        name:entry.name,
+        score:entry.score||0,
+        plv:entry.plv||1,
+        rebirth:entry.rebirth||0,
+        maxCombo:entry.maxCombo||0,
+        totalCorrect:entry.totalCorrect||0,
+        totalWrong:entry.totalWrong||0,
+        accuracy:entry.accuracy||0,
+        gold:entry.gold||0,
+        classId:entry.classId||'warrior',
+        petId:entry.petId||null,
+        createdAt:now,
+        updatedAt:now,
+        lastImproved:now
+      });
+    }
+    /* เรียงตาม score */
+    this.data.sort(function(a,b){return b.score-a.score;});
+    /* ตัดเกิน */
+    if(this.data.length>LB_MAX)this.data.length=LB_MAX;
+    this.save();
+    return idx>-1;
+  },
+  /* ดึงอันดับของชื่อ */
+  getRank:function(name){
+    for(var i=0;i<this.data.length;i++){
+      if(this.data[i].name===name)return i+1;
+    }
+    return 0;
+  },
+  clear:function(){this.data=[];this.save();}
+};
+Leaderboard.load();
+
+/* ----- Auto-submit เมื่อจบเกม ----- */
+function submitMyScore(){
+  try{
+    if(typeof state==='undefined'||!state||!state.player)return;
+    var total=state.player.tc+state.player.tw;
+    var acc=total>0?Math.round(state.player.tc/total*1000)/10:0;
+    Leaderboard.submit({
+      name:state.player.name||'ผู้กล้า',
+      score:state.player.score||0,
+      plv:state.player.plv||1,
+      rebirth:state.player.rebirth||0,
+      maxCombo:state.player.maxCombo||0,
+      totalCorrect:state.player.tc||0,
+      totalWrong:state.player.tw||0,
+      accuracy:acc,
+      gold:state.player.gold||0,
+      classId:state.pclass||'warrior',
+      petId:state.epet||null
+    });
+  }catch(e){console.warn('submit score:',e.message);}
+}
+
+/* submit ทุก 30 วิ */
+setInterval(submitMyScore,30000);
+/* submit ตอนปิด */
+window.addEventListener('beforeunload',submitMyScore);
+
+/* ============================================================
+   ส่วนที่ 2: RANKING UI
+   ============================================================ */
+function getClassName(id){
+  try{
+    if(typeof BaseClasses!=='undefined'&&BaseClasses[id])return BaseClasses[id].emoji+' '+BaseClasses[id].name;
+    if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[id])return AdvanceClasses[id].emoji+' '+AdvanceClasses[id].name;
+  }catch(e){}
+  return '❔ ?';
+}
+function getPetName(id){
+  try{
+    if(id&&typeof Pets!=='undefined'&&Pets[id])return Pets[id].emoji+' '+Pets[id].name;
+  }catch(e){}
+  return '—';
+}
+function medalFor(rank){
+  if(rank===1)return '🥇';
+  if(rank===2)return '🥈';
+  if(rank===3)return '🥉';
+  return '#'+rank;
+}
+function formatNumber(n){
+  if(n>=1000000)return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+function timeAgo(t){
+  var diff=Date.now()-t;
+  if(diff<60000)return 'เมื่อสักครู่';
+  if(diff<3600000)return Math.floor(diff/60000)+' นาทีที่แล้ว';
+  if(diff<86400000)return Math.floor(diff/3600000)+' ชั่วโมงที่แล้ว';
+  if(diff<2592000000)return Math.floor(diff/86400000)+' วันที่แล้ว';
+  return Math.floor(diff/2592000000)+' เดือนที่แล้ว';
+}
+
+window.openLeaderboard=function(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+
+  var me=(typeof state!=='undefined'&&state&&state.player)?state.player.name:'ผู้กล้า';
+  var myRank=Leaderboard.getRank(me);
+  var data=Leaderboard.data;
+
+  var h='<h3>🏆 จัดอันดับ</h3>';
+
+  /* ---- My rank ---- */
+  h+='<div class="sbar" style="background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border-color:#00f0ff">';
+  h+='<span>👤 <b>'+me+'</b></span>';
+  h+='<span>อันดับ: <b style="color:#ffe600">'+(myRank>0?'#'+myRank:'—')+'</b>/'+data.length+'</span>';
+  h+='</div>';
+
+  /* ---- Tab buttons ---- */
+  h+='<div class="sbar" style="font-size:11px;padding:6px">';
+  h+='<span>📊 ทั้งหมด '+data.length+' คน</span>';
+  h+='<span>🏅 TOP '+Math.min(10,data.length)+'</span>';
+  h+='</div>';
+
+  if(!data.length){
+    h+='<div class="tp tc" style="padding:30px;color:#b0b0d0">ยังไม่มีข้อมูล<br><span class="ts">เล่นเกมเพื่อเข้าอันดับ</span></div>';
+  }else{
+    /* ---- Top list ---- */
+    data.slice(0,20).forEach(function(row,i){
+      var rank=i+1;
+      var isMe=row.name===me;
+      var medal=medalFor(rank);
+      var medalStyle='';
+      if(rank===1)medalStyle='background:rgba(255,215,0,0.2);border-color:#ffd700';
+      else if(rank===2)medalStyle='background:rgba(192,192,192,0.15);border-color:#c0c0c0';
+      else if(rank===3)medalStyle='background:rgba(205,127,50,0.15);border-color:#cd7f32';
+      h+='<div class="si" style="'+medalStyle+(isMe?';border:2px solid #00f0ff':'')+'">';
+      h+='<div style="min-width:44px;text-align:center;font-size:'+(rank<=3?'22px':'14px')+';font-weight:900">'+medal+'</div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-weight:700;font-size:13px">'+row.name+(isMe?' <span class="bdg bdg-b" style="font-size:9px">คุณ</span>':'')+'</div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+row.plv+' · 💀RB'+row.rebirth+' · 🎯'+row.accuracy+'%</div>';
+      h+='</div>';
+      h+='<div style="text-align:right">';
+      h+='<div style="font-weight:700;color:#ffe600;font-size:14px">'+formatNumber(row.score)+'</div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:9px">🔥'+row.maxCombo+'</div>';
+      h+='</div>';
+      h+='</div>';
+    });
+
+    /* ---- My entry (if not in top 20) ---- */
+    if(myRank>20){
+      h+='<div class="tc ts" style="color:#b0b0d0;margin:8px 0">⋯⋯⋯</div>';
+      var myRow=data[myRank-1];
+      h+='<div class="si" style="border:2px solid #00f0ff">';
+      h+='<div style="min-width:44px;text-align:center;font-size:14px;font-weight:900">#'+myRank+'</div>';
+      h+='<div style="flex:1"><div style="font-weight:700;font-size:13px">'+myRow.name+' <span class="bdg bdg-b" style="font-size:9px">คุณ</span></div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+myRow.plv+' · 🎯'+myRow.accuracy+'%</div></div>';
+      h+='<div style="text-align:right"><div style="font-weight:700;color:#ffe600;font-size:14px">'+formatNumber(myRow.score)+'</div></div>';
+      h+='</div>';
+    }
+  }
+
+  /* ---- Actions ---- */
+  h+='<button class="btn btn-g wf mt3" onclick="__lb.submitNow()">📤 ส่งคะแนนปัจจุบัน</button>';
+  h+='<button class="btn btn-y wf mt2" onclick="openStatsReport()">📄 ดูรายงานสถิติ</button>';
+  h+='<button class="btn btn-r wf mt2" onclick="__lb.confirmClear()">🗑️ ล้างอันดับทั้งหมด</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับเมนู</button>';
+
+  el.innerHTML=h;el.scrollTop=0;
+};
+
+window.__lb={
+  submitNow:function(){
+    submitMyScore();
+    var me=state.player.name||'ผู้กล้า';
+    var r=Leaderboard.getRank(me);
+    if(r>0)alert('✅ ส่งคะแนนสำเร็จ!\nอันดับของคุณ: #'+r);
+    else alert('❌ ไม่สำเร็จ');
+    openLeaderboard();
+  },
+  confirmClear:function(){
+    showModal('⚠️ ยืนยัน','<div class="tc">ล้างอันดับทั้งหมด?<br><span class="ts" style="color:#ff006e">ไม่สามารถกู้คืนได้</span></div>',
+      [{label:'❌ ยกเลิก',cls:'btn-o',action:'closeModal()'},
+       {label:'🗑️ ล้าง',cls:'btn-r',action:'__lb.clear()'}]);
+  },
+  clear:function(){
+    Leaderboard.clear();
+    closeModal();
+    Audio.sfx.wrong();
+    openLeaderboard();
+  }
+};
+
+/* ============================================================
+   ส่วนที่ 3: STATISTICS REPORT (รายงานสถิติ)
+   ============================================================ */
+function buildReport(){
+  var s=state;
+  var P=s.player;
+  var total=P.tc+P.tw;
+  var acc=total>0?Math.round(P.tc/total*1000)/10:0;
+
+  /* chapter breakdown */
+  var chapters=[];
+  try{
+    if(typeof Chapters!=='undefined'){
+      Chapters.forEach(function(ch){
+        var st=s.stats[ch.id]||{correct:0,wrong:0};
+        var t=st.correct+st.wrong;
+        var a=t>0?Math.round(st.correct/t*1000)/10:0;
+        chapters.push({
+          id:ch.id,
+          name:ch.name,
+          icon:ch.icon,
+          correct:st.correct,
+          wrong:st.wrong,
+          accuracy:a,
+          done:(s.completed[ch.id]||[]).length,
+          boss:s.bossKills.indexOf(ch.id)>-1
+        });
+      });
+    }
+  }catch(e){}
+
+  /* equipment */
+  var equip=[];
+  try{
+    if(typeof EQUIP!=='undefined'){
+      for(var slot in EQUIP){
+        equip.push({
+          key:slot,
+          name:EQUIP[slot].name,
+          level:s.inv[slot]||0,
+          max:EQUIP[slot].max
+        });
+      }
+    }
+  }catch(e){}
+
+  /* class */
+  var cls={id:s.pclass,name:'?',emoji:'❔'};
+  try{
+    if(typeof BaseClasses!=='undefined'&&BaseClasses[s.pclass]){cls={id:s.pclass,name:BaseClasses[s.pclass].name,emoji:BaseClasses[s.pclass].emoji};}
+    else if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[s.pclass]){cls={id:s.pclass,name:AdvanceClasses[s.pclass].name,emoji:AdvanceClasses[s.pclass].emoji};}
+  }catch(e){}
+
+  /* pet */
+  var pet={id:s.epet,name:'—',emoji:'—'};
+  try{
+    if(s.epet&&typeof Pets!=='undefined'&&Pets[s.epet]){pet={id:s.epet,name:Pets[s.epet].name,emoji:Pets[s.epet].emoji};}
+  }catch(e){}
+
+  var s2=s.stats2||{};
+
+  return {
+    player:{
+      name:P.name,
+      score:P.score,
+      gold:P.gold,
+      plv:P.plv,
+      rebirth:P.rebirth,
+      maxCombo:P.maxCombo,
+      totalCorrect:P.tc,
+      totalWrong:P.tw,
+      accuracy:acc,
+      skillPoints:P.skillPoints||0
+    },
+    progress:{
+      chaptersCompleted:Object.values(s.completed).reduce(function(a,arr){return a+arr.length;},0),
+      chaptersTotal:(typeof Chapters!=='undefined'?Chapters.length:10)*5,
+      bossesKilled:s.bossKills.length,
+      bossesTotal:(typeof Chapters!=='undefined'?Chapters.length:10)
+    },
+    collection:{
+      pets:Array.isArray(s.myPets)?s.myPets.length:0,
+      petsTotal:(typeof Pets!=='undefined'?Object.keys(Pets).length:0),
+      classes:Array.isArray(s.myGClasses)?s.myGClasses.length+3:3,
+      classesTotal:(typeof AdvanceClasses!=='undefined'?Object.keys(AdvanceClasses).length+3:3),
+      rareItems:Array.isArray(s.rareItems)?s.rareItems.length:0,
+      passiveNodes:s.skillTree?Object.keys(s.skillTree).length:0
+    },
+    extras:{
+      patternsSolved:s2.patternsSolved||0,
+      balanceSolved:s2.balanceSolved||0,
+      comparisonsSolved:s2.comparisonsSolved||0,
+      twentyFourSolved:s2.twentyFourSolved||0,
+      maxDamage:s2.maxDamage||0,
+      totalDamage:s2.totalDamage||0
+    },
+    chapters:chapters,
+    equipment:equip,
+    class:cls,
+    pet:pet,
+    wrongLog:(s.wrongLog||[]).slice(0,10),
+    leaderboard:{
+      rank:Leaderboard.getRank(P.name),
+      total:Leaderboard.data.length
+    },
+    generatedAt:Date.now()
+  };
+}
+
+window.openStatsReport=function(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var r=buildReport();
+
+  var h='<h3>📄 รายงานสถิติ</h3>';
+
+  /* ---- Player card ---- */
+  h+='<div class="tp" style="background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(181,55,242,0.1));border-color:#00f0ff">';
+  h+='<div class="tc" style="font-size:14px;font-weight:700;margin-bottom:6px">👤 '+r.player.name+'</div>';
+  h+='<div class="tc ts" style="color:#b0b0d0;margin-bottom:8px">'+r.class.emoji+' '+r.class.name+' · 🐾 '+r.pet.emoji+' '+r.pet.name+'</div>';
+  h+='<div class="sbar" style="background:rgba(0,0,0,0.3);margin-bottom:0">';
+  h+='<span>⭐ Lv.<b class="sv">'+r.player.plv+'</b></span>';
+  h+='<span>💀 RB<b class="sv">'+r.player.rebirth+'</b></span>';
+  h+='<span>🏆 #<b class="sv">'+(r.leaderboard.rank>0?r.leaderboard.rank:'—')+'</b>/'+r.leaderboard.total+'</span>';
+  h+='</div></div>';
+
+  /* ---- Core stats ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">📊 คะแนน / ทอง</h3>';
+  h+='<div class="si"><span>⭐ คะแนนรวม</span><b class="sg">'+r.player.score.toLocaleString()+'</b></div>';
+  h+='<div class="si"><span>🪙 ทอง</span><b class="sg">'+r.player.gold.toLocaleString()+'</b></div>';
+  h+='<div class="si"><span>🔥 คอมโบสูงสุด</span><b class="sv">'+r.player.maxCombo+'</b></div>';
+  h+='<div class="si"><span>💎 แต้มสกิล</span><b class="sv">'+r.player.skillPoints+'</b></div>';
+
+  /* ---- Answer stats ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">✅ ตอบถูก / ผิด</h3>';
+  h+='<div class="si"><span>✅ ตอบถูก</span><b style="color:#39ff14">'+r.player.totalCorrect+'</b></div>';
+  h+='<div class="si"><span>❌ ตอบผิด</span><b style="color:#ff006e">'+r.player.totalWrong+'</b></div>';
+  h+='<div class="si"><span>🎯 ความแม่นยำ</span><b style="color:'+(r.player.accuracy>=70?'#39ff14':r.player.accuracy>=40?'#ffe600':'#ff006e')+'">'+r.player.accuracy+'%</b></div>';
+
+  /* ---- Progress ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📈 ความคืบหน้า</h3>';
+  var pr=r.progress;
+  var prPct=Math.round(pr.chaptersCompleted/pr.chaptersTotal*100);
+  h+='<div class="si col">';
+  h+='<div style="display:flex;justify-content:space-between"><span>📚 ด่านที่ผ่าน</span><b>'+pr.chaptersCompleted+'/'+pr.chaptersTotal+' ('+prPct+'%)</b></div>';
+  h+='<div class="pb" style="margin-top:6px"><div class="pbf" style="width:'+prPct+'%"></div></div>';
+  h+='</div>';
+  h+='<div class="si"><span>👑 บอสที่ปราบ</span><b>'+pr.bossesKilled+'/'+pr.bossesTotal+'</b></div>';
+
+  /* ---- Collection ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#b537f2">🎁 ของสะสม</h3>';
+  var co=r.collection;
+  h+='<div class="si"><span>🐾 สัตว์เลี้ยง</span><b>'+co.pets+'/'+co.petsTotal+'</b></div>';
+  h+='<div class="si"><span>⚔️ คลาส</span><b>'+co.classes+'/'+co.classesTotal+'</b></div>';
+  h+='<div class="si"><span>🌟 ของหายาก</span><b>'+co.rareItems+'</b></div>';
+  h+='<div class="si"><span>🌟 โหนดพาสซีฟ</span><b>'+co.passiveNodes+'</b></div>';
+
+  /* ---- Extras ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ff8c00">🎮 โหมดพิเศษ</h3>';
+  var ex=r.extras;
+  h+='<div class="si"><span>🧩 Pattern</span><b>'+ex.patternsSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>⚖️ Balance</span><b>'+ex.balanceSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>🎯 Greater/Lesser</span><b>'+ex.comparisonsSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>🎲 Target 24</span><b>'+ex.twentyFourSolved+' ข้อ</b></div>';
+
+  /* ---- Equipment ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">🔧 อุปกรณ์</h3>';
+  r.equipment.forEach(function(e){
+    var pct=Math.round(e.level/e.max*100);
+    h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+e.name+'</span><b>Lv.'+e.level+'/'+e.max+'</b></div>';
+    h+='<div class="pb" style="margin-top:4px"><div class="pbf" style="width:'+pct+'%"></div></div></div>';
+  });
+
+  /* ---- Chapter breakdown ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">📚 รายบท</h3>';
+  r.chapters.forEach(function(c){
+    var cls2=c.accuracy>=70?'bdg-g':c.accuracy>=40?'bdg-b':'bdg-r';
+    h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+c.icon+' บท '+c.id+': '+c.name+'</span><span class="bdg '+cls2+'">'+c.accuracy+'%</span></div>';
+    h+='<div class="ts" style="color:#b0b0d0">✅'+c.correct+' ❌'+c.wrong+' · ด่าน '+c.done+'/5'+(c.boss?' · 👑':'')+'</div></div>';
+  });
+
+  /* ---- Recent wrong ---- */
+  if(r.wrongLog.length){
+    h+='<h3 class="mt3" style="font-size:14px;color:#ff006e">❌ ผิดล่าสุด 10 ข้อ</h3>';
+    r.wrongLog.forEach(function(w){
+      h+='<div class="si col" style="font-size:12px"><div style="font-weight:600">'+w.q+'</div>';
+      h+='<div class="ts" style="color:#ff006e">❌ คุณ: '+w.user+'</div>';
+      h+='<div class="ts" style="color:#39ff14">✅ เฉลย: '+w.correct+'</div></div>';
+    });
+  }
+
+  /* ---- Timestamp ---- */
+  var d=new Date(r.generatedAt);
+  h+='<div class="tc ts mt3" style="color:#b0b0d0">📅 ออกรายงาน: '+d.toLocaleString('th-TH')+'</div>';
+
+  /* ---- Actions ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📤 ส่งออก</h3>';
+  h+='<button class="btn btn-g wf" onclick="__report.copyText()">📋 คัดลอกรายงาน (ข้อความ)</button>';
+  h+='<button class="btn btn-y wf mt2" onclick="__report.copyJson()">📦 คัดลอก JSON</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="openLeaderboard()">🏆 ดูอันดับ</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับเมนู</button>';
+
+  el.innerHTML=h;el.scrollTop=0;
+};
+
+/* ============================================================
+   ส่วนที่ 4: ส่งออกรายงาน
+   ============================================================ */
+function reportToText(){
+  var r=buildReport();
+  var lines=[];
+  var sep='═══════════════════════════════════════';
+
+  lines.push(sep);
+  lines.push('       📊 MATH QUEST — รายงานสถิติ');
+  lines.push('            สร้างโดย ธนวัฒน์');
+  lines.push(sep);
+  lines.push('');
+  lines.push('👤 ผู้เล่น: '+r.player.name);
+  lines.push('⚔️ คลาส: '+r.class.emoji+' '+r.class.name);
+  lines.push('🐾 สัตว์เลี้ยง: '+r.pet.emoji+' '+r.pet.name);
+  lines.push('⭐ Level: '+r.player.plv+'  💀 Rebirth: '+r.player.rebirth);
+  lines.push('🏆 อันดับ: '+(r.leaderboard.rank>0?'#'+r.leaderboard.rank:'—')+'/'+r.leaderboard.total);
+  lines.push('');
+  lines.push('── คะแนน / ทอง ──');
+  lines.push('⭐ คะแนนรวม: '+r.player.score.toLocaleString());
+  lines.push('🪙 ทอง: '+r.player.gold.toLocaleString());
+  lines.push('🔥 คอมโบสูงสุด: '+r.player.maxCombo);
+  lines.push('💎 แต้มสกิล: '+r.player.skillPoints);
+  lines.push('');
+  lines.push('── ตอบถูก / ผิด ──');
+  lines.push('✅ ตอบถูก: '+r.player.totalCorrect+' ข้อ');
+  lines.push('❌ ตอบผิด: '+r.player.totalWrong+' ข้อ');
+  lines.push('🎯 ความแม่นยำ: '+r.player.accuracy+'%');
+  lines.push('');
+  lines.push('── ความคืบหน้า ──');
+  lines.push('📚 ด่านผ่าน: '+r.progress.chaptersCompleted+'/'+r.progress.chaptersTotal);
+  lines.push('👑 บอสปราบ: '+r.progress.bossesKilled+'/'+r.progress.bossesTotal);
+  lines.push('');
+  lines.push('── ของสะสม ──');
+  lines.push('🐾 สัตว์: '+r.collection.pets+'/'+r.collection.petsTotal);
+  lines.push('⚔️ คลาส: '+r.collection.classes+'/'+r.collection.classesTotal);
+  lines.push('🌟 ของหายาก: '+r.collection.rareItems);
+  lines.push('🌟 โหนดพาสซีฟ: '+r.collection.passiveNodes);
+  lines.push('');
+  lines.push('── โหมดพิเศษ ──');
+  lines.push('🧩 Pattern: '+r.extras.patternsSolved);
+  lines.push('⚖️ Balance: '+r.extras.balanceSolved);
+  lines.push('🎯 Greater/Lesser: '+r.extras.comparisonsSolved);
+  lines.push('🎲 Target24: '+r.extras.twentyFourSolved);
+  lines.push('');
+  lines.push('── อุปกรณ์ ──');
+  r.equipment.forEach(function(e){lines.push(e.name+': Lv.'+e.level+'/'+e.max);});
+  lines.push('');
+  lines.push('── รายบท ──');
+  r.chapters.forEach(function(c){
+    lines.push(c.icon+' บท '+c.id+' '+c.name+': '+c.accuracy+'% (✅'+c.correct+' ❌'+c.wrong+')');
+  });
+  lines.push('');
+  lines.push('📅 ออกรายงาน: '+new Date(r.generatedAt).toLocaleString('th-TH'));
+  lines.push(sep);
+
+  return lines.join('\n');
+}
+
+window.__report={
+  copyText:function(){
+    var txt=reportToText();
+    try{
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(txt).then(function(){
+          alert('✅ คัดลอกรายงานแล้ว!\nสามารถวางในโน้ต/LINE/Google Docs');
+        }).catch(function(){prompt('คัดลอก (แตะค้าง → Copy):',txt);});
+      }else{
+        prompt('คัดลอก (แตะค้าง → Copy):',txt);
+      }
+    }catch(e){prompt('คัดลอก:',txt);}
+  },
+  copyJson:function(){
+    var r=buildReport();
+    var json=JSON.stringify(r,null,2);
+    try{
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(json).then(function(){alert('✅ คัดลอก JSON แล้ว');}).catch(function(){prompt('JSON:',json);});
+      }else{prompt('JSON:',json);}
+    }catch(e){prompt('JSON:',json);}
+  }
+};
+
+/* ============================================================
+   ส่วนที่ 5: Auto-submit ตอนจบเกม (hook endBattle)
+   ============================================================ */
+try{
+  if(typeof endBattle==='function'){
+    var _origEnd=endBattle;
+    window.endBattle=function(){
+      _origEnd.apply(this,arguments);
+      setTimeout(submitMyScore,500);
+    };
+  }
+}catch(e){}
+
+/* ============================================================
+   ส่วนที่ 6: แทรกปุ่มในเมนู
+   ============================================================ */
+function injectMenu(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var back=el.querySelector('button:last-of-type');
+
+  var btnLb=document.createElement('button');
+  btnLb.className='btn btn-gold wf mt2';
+  var myRank=Leaderboard.getRank(state.player.name||'ผู้กล้า');
+  btnLb.textContent='🏆 จัดอันดับ'+(myRank>0?' (# '+myRank+')':'')+' · '+Leaderboard.data.length+' คน';
+  btnLb.onclick=window.openLeaderboard;
+  if(back&&back.parentNode===el)el.insertBefore(btnLb,back);else el.appendChild(btnLb);
+
+  var btnRp=document.createElement('button');
+  btnRp.className='btn btn-y wf mt2';
+  btnRp.textContent='📄 รายงานสถิติ';
+  btnRp.onclick=window.openStatsReport;
+  if(back&&back.parentNode===el)el.insertBefore(btnRp,back);else el.appendChild(btnRp);
+}
+try{
+  if(typeof renderMenu==='function'){
+    var _o=renderMenu;
+    window.renderMenu=function(){_o.apply(this,arguments);setTimeout(injectMenu,20);};
+  }
+}catch(e){}
+
+console.info('✅ v12 loaded · Leaderboard + Stats Report');
+})();
+  </script>
+  <script>
+"use strict";
+/* ============================================================
+   EXTRA PACK v12 — Leaderboard + Statistics Report
+   วางต่อจาก script สุดท้ายของเกม ก่อน </body>
+   ============================================================ */
+(function(){
+"use strict";
+
+/* ============================================================
+   ส่วนที่ 1: LEADERBOARD (จัดอันดับ)
+   ============================================================ */
+var LB_KEY='mq_leaderboard_v1';
+var LB_MAX=50; /* เก็บสูงสุด 50 คน */
+
+var Leaderboard={
+  data:[],
+  load:function(){
+    try{
+      var d=JSON.parse(localStorage.getItem(LB_KEY)||'[]');
+      if(Array.isArray(d))this.data=d;
+    }catch(e){this.data=[];}
+    return this.data;
+  },
+  save:function(){
+    try{localStorage.setItem(LB_KEY,JSON.stringify(this.data));}catch(e){}
+  },
+  /* เพิ่ม entry ใหม่ หรืออัพเดทถ้ามีชื่อเดิม */
+  submit:function(entry){
+    if(!entry||!entry.name)return;
+    var idx=-1;
+    for(var i=0;i<this.data.length;i++){
+      if(this.data[i].name===entry.name){idx=i;break;}
+    }
+    var now=Date.now();
+    if(idx>-1){
+      /* อัพเดทถ้าดีกว่าเดิม */
+      var cur=this.data[idx];
+      var updated=false;
+      if((entry.score||0)>cur.score){cur.score=entry.score;updated=true;}
+      if((entry.plv||1)>cur.plv){cur.plv=entry.plv;updated=true;}
+      if((entry.rebirth||0)>cur.rebirth){cur.rebirth=entry.rebirth;updated=true;}
+      if((entry.maxCombo||0)>cur.maxCombo){cur.maxCombo=entry.maxCombo;updated=true;}
+      if((entry.totalCorrect||0)>cur.totalCorrect){cur.totalCorrect=entry.totalCorrect;updated=true;}
+      cur.updatedAt=now;
+      if(updated)cur.lastImproved=now;
+    }else{
+      this.data.push({
+        name:entry.name,
+        score:entry.score||0,
+        plv:entry.plv||1,
+        rebirth:entry.rebirth||0,
+        maxCombo:entry.maxCombo||0,
+        totalCorrect:entry.totalCorrect||0,
+        totalWrong:entry.totalWrong||0,
+        accuracy:entry.accuracy||0,
+        gold:entry.gold||0,
+        classId:entry.classId||'warrior',
+        petId:entry.petId||null,
+        createdAt:now,
+        updatedAt:now,
+        lastImproved:now
+      });
+    }
+    /* เรียงตาม score */
+    this.data.sort(function(a,b){return b.score-a.score;});
+    /* ตัดเกิน */
+    if(this.data.length>LB_MAX)this.data.length=LB_MAX;
+    this.save();
+    return idx>-1;
+  },
+  /* ดึงอันดับของชื่อ */
+  getRank:function(name){
+    for(var i=0;i<this.data.length;i++){
+      if(this.data[i].name===name)return i+1;
+    }
+    return 0;
+  },
+  clear:function(){this.data=[];this.save();}
+};
+Leaderboard.load();
+
+/* ----- Auto-submit เมื่อจบเกม ----- */
+function submitMyScore(){
+  try{
+    if(typeof state==='undefined'||!state||!state.player)return;
+    var total=state.player.tc+state.player.tw;
+    var acc=total>0?Math.round(state.player.tc/total*1000)/10:0;
+    Leaderboard.submit({
+      name:state.player.name||'ผู้กล้า',
+      score:state.player.score||0,
+      plv:state.player.plv||1,
+      rebirth:state.player.rebirth||0,
+      maxCombo:state.player.maxCombo||0,
+      totalCorrect:state.player.tc||0,
+      totalWrong:state.player.tw||0,
+      accuracy:acc,
+      gold:state.player.gold||0,
+      classId:state.pclass||'warrior',
+      petId:state.epet||null
+    });
+  }catch(e){console.warn('submit score:',e.message);}
+}
+
+/* submit ทุก 30 วิ */
+setInterval(submitMyScore,30000);
+/* submit ตอนปิด */
+window.addEventListener('beforeunload',submitMyScore);
+
+/* ============================================================
+   ส่วนที่ 2: RANKING UI
+   ============================================================ */
+function getClassName(id){
+  try{
+    if(typeof BaseClasses!=='undefined'&&BaseClasses[id])return BaseClasses[id].emoji+' '+BaseClasses[id].name;
+    if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[id])return AdvanceClasses[id].emoji+' '+AdvanceClasses[id].name;
+  }catch(e){}
+  return '❔ ?';
+}
+function getPetName(id){
+  try{
+    if(id&&typeof Pets!=='undefined'&&Pets[id])return Pets[id].emoji+' '+Pets[id].name;
+  }catch(e){}
+  return '—';
+}
+function medalFor(rank){
+  if(rank===1)return '🥇';
+  if(rank===2)return '🥈';
+  if(rank===3)return '🥉';
+  return '#'+rank;
+}
+function formatNumber(n){
+  if(n>=1000000)return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+function timeAgo(t){
+  var diff=Date.now()-t;
+  if(diff<60000)return 'เมื่อสักครู่';
+  if(diff<3600000)return Math.floor(diff/60000)+' นาทีที่แล้ว';
+  if(diff<86400000)return Math.floor(diff/3600000)+' ชั่วโมงที่แล้ว';
+  if(diff<2592000000)return Math.floor(diff/86400000)+' วันที่แล้ว';
+  return Math.floor(diff/2592000000)+' เดือนที่แล้ว';
+}
+
+window.openLeaderboard=function(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+
+  var me=(typeof state!=='undefined'&&state&&state.player)?state.player.name:'ผู้กล้า';
+  var myRank=Leaderboard.getRank(me);
+  var data=Leaderboard.data;
+
+  var h='<h3>🏆 จัดอันดับ</h3>';
+
+  /* ---- My rank ---- */
+  h+='<div class="sbar" style="background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border-color:#00f0ff">';
+  h+='<span>👤 <b>'+me+'</b></span>';
+  h+='<span>อันดับ: <b style="color:#ffe600">'+(myRank>0?'#'+myRank:'—')+'</b>/'+data.length+'</span>';
+  h+='</div>';
+
+  /* ---- Tab buttons ---- */
+  h+='<div class="sbar" style="font-size:11px;padding:6px">';
+  h+='<span>📊 ทั้งหมด '+data.length+' คน</span>';
+  h+='<span>🏅 TOP '+Math.min(10,data.length)+'</span>';
+  h+='</div>';
+
+  if(!data.length){
+    h+='<div class="tp tc" style="padding:30px;color:#b0b0d0">ยังไม่มีข้อมูล<br><span class="ts">เล่นเกมเพื่อเข้าอันดับ</span></div>';
+  }else{
+    /* ---- Top list ---- */
+    data.slice(0,20).forEach(function(row,i){
+      var rank=i+1;
+      var isMe=row.name===me;
+      var medal=medalFor(rank);
+      var medalStyle='';
+      if(rank===1)medalStyle='background:rgba(255,215,0,0.2);border-color:#ffd700';
+      else if(rank===2)medalStyle='background:rgba(192,192,192,0.15);border-color:#c0c0c0';
+      else if(rank===3)medalStyle='background:rgba(205,127,50,0.15);border-color:#cd7f32';
+      h+='<div class="si" style="'+medalStyle+(isMe?';border:2px solid #00f0ff':'')+'">';
+      h+='<div style="min-width:44px;text-align:center;font-size:'+(rank<=3?'22px':'14px')+';font-weight:900">'+medal+'</div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-weight:700;font-size:13px">'+row.name+(isMe?' <span class="bdg bdg-b" style="font-size:9px">คุณ</span>':'')+'</div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+row.plv+' · 💀RB'+row.rebirth+' · 🎯'+row.accuracy+'%</div>';
+      h+='</div>';
+      h+='<div style="text-align:right">';
+      h+='<div style="font-weight:700;color:#ffe600;font-size:14px">'+formatNumber(row.score)+'</div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:9px">🔥'+row.maxCombo+'</div>';
+      h+='</div>';
+      h+='</div>';
+    });
+
+    /* ---- My entry (if not in top 20) ---- */
+    if(myRank>20){
+      h+='<div class="tc ts" style="color:#b0b0d0;margin:8px 0">⋯⋯⋯</div>';
+      var myRow=data[myRank-1];
+      h+='<div class="si" style="border:2px solid #00f0ff">';
+      h+='<div style="min-width:44px;text-align:center;font-size:14px;font-weight:900">#'+myRank+'</div>';
+      h+='<div style="flex:1"><div style="font-weight:700;font-size:13px">'+myRow.name+' <span class="bdg bdg-b" style="font-size:9px">คุณ</span></div>';
+      h+='<div class="ts" style="color:#b0b0d0;font-size:10px">⭐Lv.'+myRow.plv+' · 🎯'+myRow.accuracy+'%</div></div>';
+      h+='<div style="text-align:right"><div style="font-weight:700;color:#ffe600;font-size:14px">'+formatNumber(myRow.score)+'</div></div>';
+      h+='</div>';
+    }
+  }
+
+  /* ---- Actions ---- */
+  h+='<button class="btn btn-g wf mt3" onclick="__lb.submitNow()">📤 ส่งคะแนนปัจจุบัน</button>';
+  h+='<button class="btn btn-y wf mt2" onclick="openStatsReport()">📄 ดูรายงานสถิติ</button>';
+  h+='<button class="btn btn-r wf mt2" onclick="__lb.confirmClear()">🗑️ ล้างอันดับทั้งหมด</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับเมนู</button>';
+
+  el.innerHTML=h;el.scrollTop=0;
+};
+
+window.__lb={
+  submitNow:function(){
+    submitMyScore();
+    var me=state.player.name||'ผู้กล้า';
+    var r=Leaderboard.getRank(me);
+    if(r>0)alert('✅ ส่งคะแนนสำเร็จ!\nอันดับของคุณ: #'+r);
+    else alert('❌ ไม่สำเร็จ');
+    openLeaderboard();
+  },
+  confirmClear:function(){
+    showModal('⚠️ ยืนยัน','<div class="tc">ล้างอันดับทั้งหมด?<br><span class="ts" style="color:#ff006e">ไม่สามารถกู้คืนได้</span></div>',
+      [{label:'❌ ยกเลิก',cls:'btn-o',action:'closeModal()'},
+       {label:'🗑️ ล้าง',cls:'btn-r',action:'__lb.clear()'}]);
+  },
+  clear:function(){
+    Leaderboard.clear();
+    closeModal();
+    Audio.sfx.wrong();
+    openLeaderboard();
+  }
+};
+
+/* ============================================================
+   ส่วนที่ 3: STATISTICS REPORT (รายงานสถิติ)
+   ============================================================ */
+function buildReport(){
+  var s=state;
+  var P=s.player;
+  var total=P.tc+P.tw;
+  var acc=total>0?Math.round(P.tc/total*1000)/10:0;
+
+  /* chapter breakdown */
+  var chapters=[];
+  try{
+    if(typeof Chapters!=='undefined'){
+      Chapters.forEach(function(ch){
+        var st=s.stats[ch.id]||{correct:0,wrong:0};
+        var t=st.correct+st.wrong;
+        var a=t>0?Math.round(st.correct/t*1000)/10:0;
+        chapters.push({
+          id:ch.id,
+          name:ch.name,
+          icon:ch.icon,
+          correct:st.correct,
+          wrong:st.wrong,
+          accuracy:a,
+          done:(s.completed[ch.id]||[]).length,
+          boss:s.bossKills.indexOf(ch.id)>-1
+        });
+      });
+    }
+  }catch(e){}
+
+  /* equipment */
+  var equip=[];
+  try{
+    if(typeof EQUIP!=='undefined'){
+      for(var slot in EQUIP){
+        equip.push({
+          key:slot,
+          name:EQUIP[slot].name,
+          level:s.inv[slot]||0,
+          max:EQUIP[slot].max
+        });
+      }
+    }
+  }catch(e){}
+
+  /* class */
+  var cls={id:s.pclass,name:'?',emoji:'❔'};
+  try{
+    if(typeof BaseClasses!=='undefined'&&BaseClasses[s.pclass]){cls={id:s.pclass,name:BaseClasses[s.pclass].name,emoji:BaseClasses[s.pclass].emoji};}
+    else if(typeof AdvanceClasses!=='undefined'&&AdvanceClasses[s.pclass]){cls={id:s.pclass,name:AdvanceClasses[s.pclass].name,emoji:AdvanceClasses[s.pclass].emoji};}
+  }catch(e){}
+
+  /* pet */
+  var pet={id:s.epet,name:'—',emoji:'—'};
+  try{
+    if(s.epet&&typeof Pets!=='undefined'&&Pets[s.epet]){pet={id:s.epet,name:Pets[s.epet].name,emoji:Pets[s.epet].emoji};}
+  }catch(e){}
+
+  var s2=s.stats2||{};
+
+  return {
+    player:{
+      name:P.name,
+      score:P.score,
+      gold:P.gold,
+      plv:P.plv,
+      rebirth:P.rebirth,
+      maxCombo:P.maxCombo,
+      totalCorrect:P.tc,
+      totalWrong:P.tw,
+      accuracy:acc,
+      skillPoints:P.skillPoints||0
+    },
+    progress:{
+      chaptersCompleted:Object.values(s.completed).reduce(function(a,arr){return a+arr.length;},0),
+      chaptersTotal:(typeof Chapters!=='undefined'?Chapters.length:10)*5,
+      bossesKilled:s.bossKills.length,
+      bossesTotal:(typeof Chapters!=='undefined'?Chapters.length:10)
+    },
+    collection:{
+      pets:Array.isArray(s.myPets)?s.myPets.length:0,
+      petsTotal:(typeof Pets!=='undefined'?Object.keys(Pets).length:0),
+      classes:Array.isArray(s.myGClasses)?s.myGClasses.length+3:3,
+      classesTotal:(typeof AdvanceClasses!=='undefined'?Object.keys(AdvanceClasses).length+3:3),
+      rareItems:Array.isArray(s.rareItems)?s.rareItems.length:0,
+      passiveNodes:s.skillTree?Object.keys(s.skillTree).length:0
+    },
+    extras:{
+      patternsSolved:s2.patternsSolved||0,
+      balanceSolved:s2.balanceSolved||0,
+      comparisonsSolved:s2.comparisonsSolved||0,
+      twentyFourSolved:s2.twentyFourSolved||0,
+      maxDamage:s2.maxDamage||0,
+      totalDamage:s2.totalDamage||0
+    },
+    chapters:chapters,
+    equipment:equip,
+    class:cls,
+    pet:pet,
+    wrongLog:(s.wrongLog||[]).slice(0,10),
+    leaderboard:{
+      rank:Leaderboard.getRank(P.name),
+      total:Leaderboard.data.length
+    },
+    generatedAt:Date.now()
+  };
+}
+
+window.openStatsReport=function(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var r=buildReport();
+
+  var h='<h3>📄 รายงานสถิติ</h3>';
+
+  /* ---- Player card ---- */
+  h+='<div class="tp" style="background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(181,55,242,0.1));border-color:#00f0ff">';
+  h+='<div class="tc" style="font-size:14px;font-weight:700;margin-bottom:6px">👤 '+r.player.name+'</div>';
+  h+='<div class="tc ts" style="color:#b0b0d0;margin-bottom:8px">'+r.class.emoji+' '+r.class.name+' · 🐾 '+r.pet.emoji+' '+r.pet.name+'</div>';
+  h+='<div class="sbar" style="background:rgba(0,0,0,0.3);margin-bottom:0">';
+  h+='<span>⭐ Lv.<b class="sv">'+r.player.plv+'</b></span>';
+  h+='<span>💀 RB<b class="sv">'+r.player.rebirth+'</b></span>';
+  h+='<span>🏆 #<b class="sv">'+(r.leaderboard.rank>0?r.leaderboard.rank:'—')+'</b>/'+r.leaderboard.total+'</span>';
+  h+='</div></div>';
+
+  /* ---- Core stats ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">📊 คะแนน / ทอง</h3>';
+  h+='<div class="si"><span>⭐ คะแนนรวม</span><b class="sg">'+r.player.score.toLocaleString()+'</b></div>';
+  h+='<div class="si"><span>🪙 ทอง</span><b class="sg">'+r.player.gold.toLocaleString()+'</b></div>';
+  h+='<div class="si"><span>🔥 คอมโบสูงสุด</span><b class="sv">'+r.player.maxCombo+'</b></div>';
+  h+='<div class="si"><span>💎 แต้มสกิล</span><b class="sv">'+r.player.skillPoints+'</b></div>';
+
+  /* ---- Answer stats ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">✅ ตอบถูก / ผิด</h3>';
+  h+='<div class="si"><span>✅ ตอบถูก</span><b style="color:#39ff14">'+r.player.totalCorrect+'</b></div>';
+  h+='<div class="si"><span>❌ ตอบผิด</span><b style="color:#ff006e">'+r.player.totalWrong+'</b></div>';
+  h+='<div class="si"><span>🎯 ความแม่นยำ</span><b style="color:'+(r.player.accuracy>=70?'#39ff14':r.player.accuracy>=40?'#ffe600':'#ff006e')+'">'+r.player.accuracy+'%</b></div>';
+
+  /* ---- Progress ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📈 ความคืบหน้า</h3>';
+  var pr=r.progress;
+  var prPct=Math.round(pr.chaptersCompleted/pr.chaptersTotal*100);
+  h+='<div class="si col">';
+  h+='<div style="display:flex;justify-content:space-between"><span>📚 ด่านที่ผ่าน</span><b>'+pr.chaptersCompleted+'/'+pr.chaptersTotal+' ('+prPct+'%)</b></div>';
+  h+='<div class="pb" style="margin-top:6px"><div class="pbf" style="width:'+prPct+'%"></div></div>';
+  h+='</div>';
+  h+='<div class="si"><span>👑 บอสที่ปราบ</span><b>'+pr.bossesKilled+'/'+pr.bossesTotal+'</b></div>';
+
+  /* ---- Collection ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#b537f2">🎁 ของสะสม</h3>';
+  var co=r.collection;
+  h+='<div class="si"><span>🐾 สัตว์เลี้ยง</span><b>'+co.pets+'/'+co.petsTotal+'</b></div>';
+  h+='<div class="si"><span>⚔️ คลาส</span><b>'+co.classes+'/'+co.classesTotal+'</b></div>';
+  h+='<div class="si"><span>🌟 ของหายาก</span><b>'+co.rareItems+'</b></div>';
+  h+='<div class="si"><span>🌟 โหนดพาสซีฟ</span><b>'+co.passiveNodes+'</b></div>';
+
+  /* ---- Extras ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ff8c00">🎮 โหมดพิเศษ</h3>';
+  var ex=r.extras;
+  h+='<div class="si"><span>🧩 Pattern</span><b>'+ex.patternsSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>⚖️ Balance</span><b>'+ex.balanceSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>🎯 Greater/Lesser</span><b>'+ex.comparisonsSolved+' ข้อ</b></div>';
+  h+='<div class="si"><span>🎲 Target 24</span><b>'+ex.twentyFourSolved+' ข้อ</b></div>';
+
+  /* ---- Equipment ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">🔧 อุปกรณ์</h3>';
+  r.equipment.forEach(function(e){
+    var pct=Math.round(e.level/e.max*100);
+    h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+e.name+'</span><b>Lv.'+e.level+'/'+e.max+'</b></div>';
+    h+='<div class="pb" style="margin-top:4px"><div class="pbf" style="width:'+pct+'%"></div></div></div>';
+  });
+
+  /* ---- Chapter breakdown ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#39ff14">📚 รายบท</h3>';
+  r.chapters.forEach(function(c){
+    var cls2=c.accuracy>=70?'bdg-g':c.accuracy>=40?'bdg-b':'bdg-r';
+    h+='<div class="si col"><div style="display:flex;justify-content:space-between"><span>'+c.icon+' บท '+c.id+': '+c.name+'</span><span class="bdg '+cls2+'">'+c.accuracy+'%</span></div>';
+    h+='<div class="ts" style="color:#b0b0d0">✅'+c.correct+' ❌'+c.wrong+' · ด่าน '+c.done+'/5'+(c.boss?' · 👑':'')+'</div></div>';
+  });
+
+  /* ---- Recent wrong ---- */
+  if(r.wrongLog.length){
+    h+='<h3 class="mt3" style="font-size:14px;color:#ff006e">❌ ผิดล่าสุด 10 ข้อ</h3>';
+    r.wrongLog.forEach(function(w){
+      h+='<div class="si col" style="font-size:12px"><div style="font-weight:600">'+w.q+'</div>';
+      h+='<div class="ts" style="color:#ff006e">❌ คุณ: '+w.user+'</div>';
+      h+='<div class="ts" style="color:#39ff14">✅ เฉลย: '+w.correct+'</div></div>';
+    });
+  }
+
+  /* ---- Timestamp ---- */
+  var d=new Date(r.generatedAt);
+  h+='<div class="tc ts mt3" style="color:#b0b0d0">📅 ออกรายงาน: '+d.toLocaleString('th-TH')+'</div>';
+
+  /* ---- Actions ---- */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">📤 ส่งออก</h3>';
+  h+='<button class="btn btn-g wf" onclick="__report.copyText()">📋 คัดลอกรายงาน (ข้อความ)</button>';
+  h+='<button class="btn btn-y wf mt2" onclick="__report.copyJson()">📦 คัดลอก JSON</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="openLeaderboard()">🏆 ดูอันดับ</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับเมนู</button>';
+
+  el.innerHTML=h;el.scrollTop=0;
+};
+
+/* ============================================================
+   ส่วนที่ 4: ส่งออกรายงาน
+   ============================================================ */
+function reportToText(){
+  var r=buildReport();
+  var lines=[];
+  var sep='═══════════════════════════════════════';
+
+  lines.push(sep);
+  lines.push('       📊 MATH QUEST — รายงานสถิติ');
+  lines.push('            สร้างโดย ธนวัฒน์');
+  lines.push(sep);
+  lines.push('');
+  lines.push('👤 ผู้เล่น: '+r.player.name);
+  lines.push('⚔️ คลาส: '+r.class.emoji+' '+r.class.name);
+  lines.push('🐾 สัตว์เลี้ยง: '+r.pet.emoji+' '+r.pet.name);
+  lines.push('⭐ Level: '+r.player.plv+'  💀 Rebirth: '+r.player.rebirth);
+  lines.push('🏆 อันดับ: '+(r.leaderboard.rank>0?'#'+r.leaderboard.rank:'—')+'/'+r.leaderboard.total);
+  lines.push('');
+  lines.push('── คะแนน / ทอง ──');
+  lines.push('⭐ คะแนนรวม: '+r.player.score.toLocaleString());
+  lines.push('🪙 ทอง: '+r.player.gold.toLocaleString());
+  lines.push('🔥 คอมโบสูงสุด: '+r.player.maxCombo);
+  lines.push('💎 แต้มสกิล: '+r.player.skillPoints);
+  lines.push('');
+  lines.push('── ตอบถูก / ผิด ──');
+  lines.push('✅ ตอบถูก: '+r.player.totalCorrect+' ข้อ');
+  lines.push('❌ ตอบผิด: '+r.player.totalWrong+' ข้อ');
+  lines.push('🎯 ความแม่นยำ: '+r.player.accuracy+'%');
+  lines.push('');
+  lines.push('── ความคืบหน้า ──');
+  lines.push('📚 ด่านผ่าน: '+r.progress.chaptersCompleted+'/'+r.progress.chaptersTotal);
+  lines.push('👑 บอสปราบ: '+r.progress.bossesKilled+'/'+r.progress.bossesTotal);
+  lines.push('');
+  lines.push('── ของสะสม ──');
+  lines.push('🐾 สัตว์: '+r.collection.pets+'/'+r.collection.petsTotal);
+  lines.push('⚔️ คลาส: '+r.collection.classes+'/'+r.collection.classesTotal);
+  lines.push('🌟 ของหายาก: '+r.collection.rareItems);
+  lines.push('🌟 โหนดพาสซีฟ: '+r.collection.passiveNodes);
+  lines.push('');
+  lines.push('── โหมดพิเศษ ──');
+  lines.push('🧩 Pattern: '+r.extras.patternsSolved);
+  lines.push('⚖️ Balance: '+r.extras.balanceSolved);
+  lines.push('🎯 Greater/Lesser: '+r.extras.comparisonsSolved);
+  lines.push('🎲 Target24: '+r.extras.twentyFourSolved);
+  lines.push('');
+  lines.push('── อุปกรณ์ ──');
+  r.equipment.forEach(function(e){lines.push(e.name+': Lv.'+e.level+'/'+e.max);});
+  lines.push('');
+  lines.push('── รายบท ──');
+  r.chapters.forEach(function(c){
+    lines.push(c.icon+' บท '+c.id+' '+c.name+': '+c.accuracy+'% (✅'+c.correct+' ❌'+c.wrong+')');
+  });
+  lines.push('');
+  lines.push('📅 ออกรายงาน: '+new Date(r.generatedAt).toLocaleString('th-TH'));
+  lines.push(sep);
+
+  return lines.join('\n');
+}
+
+window.__report={
+  copyText:function(){
+    var txt=reportToText();
+    try{
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(txt).then(function(){
+          alert('✅ คัดลอกรายงานแล้ว!\nสามารถวางในโน้ต/LINE/Google Docs');
+        }).catch(function(){prompt('คัดลอก (แตะค้าง → Copy):',txt);});
+      }else{
+        prompt('คัดลอก (แตะค้าง → Copy):',txt);
+      }
+    }catch(e){prompt('คัดลอก:',txt);}
+  },
+  copyJson:function(){
+    var r=buildReport();
+    var json=JSON.stringify(r,null,2);
+    try{
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(json).then(function(){alert('✅ คัดลอก JSON แล้ว');}).catch(function(){prompt('JSON:',json);});
+      }else{prompt('JSON:',json);}
+    }catch(e){prompt('JSON:',json);}
+  }
+};
+
+/* ============================================================
+   ส่วนที่ 5: Auto-submit ตอนจบเกม (hook endBattle)
+   ============================================================ */
+try{
+  if(typeof endBattle==='function'){
+    var _origEnd=endBattle;
+    window.endBattle=function(){
+      _origEnd.apply(this,arguments);
+      setTimeout(submitMyScore,500);
+    };
+  }
+}catch(e){}
+
+/* ============================================================
+   ส่วนที่ 6: แทรกปุ่มในเมนู
+   ============================================================ */
+function injectMenu(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var back=el.querySelector('button:last-of-type');
+
+  var btnLb=document.createElement('button');
+  btnLb.className='btn btn-gold wf mt2';
+  var myRank=Leaderboard.getRank(state.player.name||'ผู้กล้า');
+  btnLb.textContent='🏆 จัดอันดับ'+(myRank>0?' (# '+myRank+')':'')+' · '+Leaderboard.data.length+' คน';
+  btnLb.onclick=window.openLeaderboard;
+  if(back&&back.parentNode===el)el.insertBefore(btnLb,back);else el.appendChild(btnLb);
+
+  var btnRp=document.createElement('button');
+  btnRp.className='btn btn-y wf mt2';
+  btnRp.textContent='📄 รายงานสถิติ';
+  btnRp.onclick=window.openStatsReport;
+  if(back&&back.parentNode===el)el.insertBefore(btnRp,back);else el.appendChild(btnRp);
+}
+try{
+  if(typeof renderMenu==='function'){
+    var _o=renderMenu;
+    window.renderMenu=function(){_o.apply(this,arguments);setTimeout(injectMenu,20);};
+  }
+}catch(e){}
+
+console.info('✅ v12 loaded · Leaderboard + Stats Report');
+})();
+  </script>
 </body>
   </html>
