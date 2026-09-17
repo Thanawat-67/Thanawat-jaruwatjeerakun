@@ -1498,5 +1498,374 @@ window.addEventListener('error',function(e){console.warn('Runtime error:',e.mess
 bootGame();
 console.log('✅ Math Quest loaded');
 </script>
+  <script>
+"use strict";
+/* ============================================================
+   EXTRA GEOMETRY: การแปลงทางเรขาคณิต ม.1
+   วางต่อจาก script สุดท้ายของเกม ก่อน </body>
+   ============================================================ */
+(function(){
+
+/* ---------- สรุป 4 หัวข้อ ---------- */
+var GEOM = {
+translate:{
+  title:'การเลื่อนขนาน (Translation)', icon:'➡️', grade:'ม.1',
+  def:'การเลื่อนจุด/รูปทุกจุดไปในทิศทางเดียวกัน ด้วยระยะทางเท่ากัน (เวกเตอร์ (a,b))',
+  points:[
+    'P(x, y) เลื่อนด้วยเวกเตอร์ (a,b) → P\'(x+a, y+b)',
+    'a > 0 เลื่อนขวา, a < 0 เลื่อนซ้าย',
+    'b > 0 เลื่อนขึ้น, b < 0 เลื่อนลง',
+    'รูปที่ได้เท่ากันทุกประการกับรูปเดิม (ขนาด+รูปร่างเท่าเดิม)',
+    'ทิศทางของด้านทุกด้านยังขนานกันเหมือนเดิม',
+    'การเลื่อนขนานไม่เปลี่ยนพื้นที่'
+  ],
+  formulas:[
+    'P(x,y) → P\'(x+a, y+b)',
+    'ตัวอย่าง: (3,5) เลื่อน (2,-3) → (5,2)',
+    'ตัวอย่าง: (-1,4) เลื่อน (5,1) → (4,5)'
+  ],
+  examples:[
+    'จุด A(2,3) เลื่อน (4,1) → A\'(6,4)',
+    'จุด B(-1,5) เลื่อน (-3,2) → B\'(-4,7)',
+    'จุด C(0,0) เลื่อน (5,-2) → C\'(5,-2)',
+    'รูปสามเหลี่ยมเลื่อนทุกจุด → รูปใหม่เท่ากันทุกประการ'
+  ],
+  mistakes:[
+    'ลบเครื่องหมายผิด เช่น (3,5) เลื่อน (-2,1) → (1,6) ถูก',
+    'สลับ a กับ b'
+  ]
+},
+reflect:{
+  title:'การสะท้อน (Reflection)', icon:'🪞', grade:'ม.1',
+  def:'การพลิกรูปข้ามเส้นตรง (แกนสะท้อน) ทำให้รูปกลับด้าน',
+  points:[
+    'สะท้อนแกน x: (x,y) → (x,-y) — y เปลี่ยนเครื่องหมาย',
+    'สะท้อนแกน y: (x,y) → (-x,y) — x เปลี่ยนเครื่องหมาย',
+    'สะท้อนจุดกำเนิด: (x,y) → (-x,-y)',
+    'สะท้อนเส้น y = x: (x,y) → (y,x) — สลับ x กับ y',
+    'สะท้อนเส้น y = -x: (x,y) → (-y,-x)',
+    'สะท้อนเส้น x = k: (x,y) → (2k-x, y)',
+    'สะท้อนเส้น y = k: (x,y) → (x, 2k-y)',
+    'รูปที่ได้เท่ากันทุกประการ แต่ทิศทางกลับด้าน'
+  ],
+  formulas:[
+    'แกน x: (x,y) → (x,-y)',
+    'แกน y: (x,y) → (-x,y)',
+    'y = x: (x,y) → (y,x)',
+    'y = -x: (x,y) → (-y,-x)',
+    'x = k: (x,y) → (2k-x, y)',
+    'y = k: (x,y) → (x, 2k-y)'
+  ],
+  examples:[
+    'A(3,5) สะท้อนแกน x → A\'(3,-5)',
+    'A(3,5) สะท้อนแกน y → A\'(-3,5)',
+    'A(3,5) สะท้อน y=x → A\'(5,3)',
+    'A(3,5) สะท้อน y=-x → A\'(-5,-3)',
+    'A(3,5) สะท้อน x=2 → A\'(1,5)',
+    'A(3,5) สะท้อน y=1 → A\'(3,-3)'
+  ],
+  mistakes:[
+    'สลับแกน x กับแกน y',
+    'ลืมเปลี่ยนเครื่องหมาย',
+    'สะท้อน x=k แล้วลืม 2k-x'
+  ]
+},
+rotate:{
+  title:'การหมุน (Rotation)', icon:'🔄', grade:'ม.1',
+  def:'การหมุนจุดรอบจุดศูนย์กลาง O ด้วยมุม θ (ทวน/ตามเข็มนาฬิกา)',
+  points:[
+    'หมุน 90° ทวนเข็มนาฬิการอบ (0,0): (x,y) → (-y, x)',
+    'หมุน 180°: (x,y) → (-x, -y)',
+    'หมุน 90° ตามเข็มนาฬิกา: (x,y) → (y, -x)',
+    'หมุน 270° ทวนเข็ม (= 90° ตามเข็ม): (x,y) → (y, -x)',
+    'หมุน 270° ตามเข็ม (= 90° ทวนเข็ม): (x,y) → (-y, x)',
+    'การหมุนรักษาขนาดและรูปร่าง',
+    'ทิศทางทวนเข็มนาฬิกา = บวก, ตามเข็ม = ลบ'
+  ],
+  formulas:[
+    '90° CCW: (x,y) → (-y, x)',
+    '180°: (x,y) → (-x, -y)',
+    '90° CW: (x,y) → (y, -x)',
+    '270° CCW: (x,y) → (y, -x)',
+    '270° CW: (x,y) → (-y, x)'
+  ],
+  examples:[
+    'A(2,3) หมุน 90° CCW → A\'(-3,2)',
+    'A(2,3) หมุน 180° → A\'(-2,-3)',
+    'A(2,3) หมุน 90° CW → A\'(3,-2)',
+    'A(2,3) หมุน 270° CCW → A\'(3,-2)',
+    'A(2,3) หมุน 360° → A\'(2,3)'
+  ],
+  mistakes:[
+    'สับสนทิศทางทวน/ตามเข็ม',
+    'จำสูตร 90° CCW ผิด (ต้องเป็น (-y, x) ไม่ใช่ (y,-x))'
+  ]
+},
+dilate:{
+  title:'การย่อ/ขยาย (Dilation)', icon:'🔍', grade:'ม.1',
+  def:'การย่อหรือขยายรูปจากจุดศูนย์กลาง ด้วยอัตราส่วน k',
+  points:[
+    'ย่อ/ขยายจากจุดกำเนิด (0,0): (x,y) → (kx, ky)',
+    'k > 1 = ขยาย',
+    '0 < k < 1 = ย่อ',
+    'k < 0 = สะท้อน + ย่อ/ขยาย',
+    'k = 1 = คงเดิม',
+    'ย่อ/ขยายจากจุด C(a,b): (x,y) → (a + k(x-a), b + k(y-b))',
+    'รูปที่ได้ "คล้าย" กัน (similar) แต่ขนาดต่าง',
+    'มุมทุกมุมยังเท่าเดิม'
+  ],
+  formulas:[
+    'จาก (0,0): (x,y) → (kx, ky)',
+    'จาก C(a,b): (x,y) → (a+k(x-a), b+k(y-b))',
+    'ตัวอย่าง: (4,6) ย่อ k=1/2 → (2,3)',
+    'ตัวอย่าง: (4,6) ขยาย k=2 → (8,12)'
+  ],
+  examples:[
+    'A(4,6) ย่อ k=1/2 → A\'(2,3)',
+    'A(4,6) ขยาย k=2 → A\'(8,12)',
+    'A(4,6) k=-1 → A\'(-4,-6)',
+    'A(4,6) จาก C(2,2) ด้วย k=2 → A\'(6,10)',
+    'A(4,6) จาก C(2,2) ด้วย k=1/2 → A\'(3,4)'
+  ],
+  mistakes:[
+    'สับสน k > 1 กับ k < 1',
+    'ลืมบวก/ลบจุดศูนย์กลาง C'
+  ]
+}};
+
+/* ---------- โจทย์ ---------- */
+function genTranslate(){
+  var a=R(1,5)*(Math.random()<0.5?-1:1);
+  var b=R(1,5)*(Math.random()<0.5?-1:1);
+  var x=R(-8,8),y=R(-8,8);
+  var ax=R(2,4);
+  var types=[
+    function(){return{q:'A('+x+','+y+') เลื่อน ('+a+','+b+') → (x+a, y+b)',a:(x+a)+','+(y+b),h:'x\'='+(x+a)+', y\'='+(y+b)};},
+    function(){return{q:'A('+x+','+y+') เลื่อนขวา '+ax+' → จุดใหม่?',a:(x+ax)+','+y,h:'ขวา → x+'+ax};},
+    function(){return{q:'A('+x+','+y+') เลื่อนขึ้น '+ax+' → จุดใหม่?',a:x+','+(y+ax),h:'ขึ้น → y+'+ax};},
+    function(){return{q:'A('+x+','+y+') เลื่อนซ้าย '+ax+' → จุดใหม่?',a:(x-ax)+','+y,h:'ซ้าย → x-'+ax};},
+    function(){return{q:'A('+x+','+y+') เลื่อนลง '+ax+' → จุดใหม่?',a:x+','+(y-ax),h:'ลง → y-'+ax};}
+  ];
+  return pick(types)();
+}
+function genReflect(){
+  var x=R(1,10),y=R(1,10);
+  var xs=Math.random()<0.5?-x:x;
+  var ys=Math.random()<0.5?-y:y;
+  var k=R(1,5);
+  var types=[
+    function(){return{q:'A('+xs+','+ys+') สะท้อนแกน x → ?',a:xs+','+(-ys),h:'แกน x → y เปลี่ยนเครื่องหมาย'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อนแกน y → ?',a:(-xs)+','+ys,h:'แกน y → x เปลี่ยนเครื่องหมาย'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อนจุดกำเนิด → ?',a:(-xs)+','+(-ys),h:'= (-x, -y)'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อน y = x → ?',a:ys+','+xs,h:'y=x → สลับ x,y'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อน y = -x → ?',a:(-ys)+','+(-xs),h:'y=-x → (-y,-x)'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อน x = '+k+' → ?',a:(2*k-xs)+','+ys,h:'= (2k-x, y)'};},
+    function(){return{q:'A('+xs+','+ys+') สะท้อน y = '+k+' → ?',a:xs+','+(2*k-ys),h:'= (x, 2k-y)'};}
+  ];
+  return pick(types)();
+}
+function genRotate(){
+  var x=R(1,10)*(Math.random()<0.5?-1:1);
+  var y=R(1,10)*(Math.random()<0.5?-1:1);
+  var types=[
+    function(){return{q:'A('+x+','+y+') หมุน 90° ทวนเข็ม (0,0) → ?',a:(-y)+','+x,h:'90° CCW → (-y, x)'};},
+    function(){return{q:'A('+x+','+y+') หมุน 180° (0,0) → ?',a:(-x)+','+(-y),h:'180° → (-x, -y)'};},
+    function(){return{q:'A('+x+','+y+') หมุน 90° ตามเข็ม (0,0) → ?',a:y+','+(-x),h:'90° CW → (y, -x)'};},
+    function(){return{q:'A('+x+','+y+') หมุน 270° ทวนเข็ม → ?',a:y+','+(-x),h:'270° CCW = 90° CW'};},
+    function(){return{q:'A('+x+','+y+') หมุน 270° ตามเข็ม → ?',a:(-y)+','+x,h:'270° CW = 90° CCW'};},
+    function(){return{q:'A('+x+','+y+') หมุน 360° → ?',a:x+','+y,h:'360° = คงเดิม'};}
+  ];
+  return pick(types)();
+}
+function genDilate(){
+  var x=R(2,10),y=R(2,10);
+  var xs=x*(Math.random()<0.5?-1:1);
+  var ys=y*(Math.random()<0.5?-1:1);
+  var kp=pick([2,3,4]);
+  var kn=pick([2,3,4]);
+  var types=[
+    function(){return{q:'A('+xs+','+ys+') ขยาย k='+kp+' จาก (0,0) → ?',a:(xs*kp)+','+(ys*kp),h:'= (kx, ky)'};},
+    function(){return{q:'A('+(xs*kn)+','+(ys*kn)+') ย่อ k=1/'+kn+' → ?',a:xs+','+ys,h:'= (x/k, y/k)'};},
+    function(){return{q:'A('+xs+','+ys+') k=-1 → ?',a:(-xs)+','+(-ys),h:'k=-1 → กลับเครื่องหมาย'};},
+    function(){return{q:'A(4,6) k=1/2 → ?',a:'2,3',h:'= (2, 3)'};},
+    function(){return{q:'A(3,5) k=2 → ?',a:'6,10',h:'= (6, 10)'};}
+  ];
+  return pick(types)();
+}
+
+/* ---------- Quiz Runner ---------- */
+var GQ={topic:null,round:1,max:10,score:0,cur:null,answered:false};
+
+var TOPICS={
+translate:{name:'➡️ เลื่อนขนาน',gen:genTranslate},
+reflect:{name:'🪞 สะท้อน',gen:genReflect},
+rotate:{name:'🔄 หมุน',gen:genRotate},
+dilate:{name:'🔍 ย่อ/ขยาย',gen:genDilate}
+};
+
+window.startGeomQuiz=function(topic){
+  GQ.topic=topic;GQ.round=1;GQ.score=0;GQ.answered=false;
+  newGeomQ();currentScreen='geomQuiz';renderGeomQuiz();Audio.sfx.win();
+};
+function newGeomQ(){GQ.cur=TOPICS[GQ.topic].gen();GQ.answered=false;}
+function renderGeomQuiz(){
+  if(!GQ.topic)return;
+  var t=TOPICS[GQ.topic];
+  var content=$('gameContent');if(!content)return;
+  content.innerHTML=
+    '<h3>'+t.name+'</h3>'+
+    '<div class="sbar"><span>ข้อ <span class="sv">'+GQ.round+'/'+GQ.max+'</span></span><span>คะแนน <span class="sg">'+GQ.score+'</span></span></div>'+
+    '<div class="qp"><div class="qd">'+GQ.cur.q+'</div>'+
+    '<div class="air"><input class="ai" id="geomInp" placeholder="x,y" autocomplete="off" '+(GQ.answered?'disabled':'')+'>'+
+    '<button class="btn btn-g" onclick="geomSubmit()" '+(GQ.answered?'disabled':'')+'>✓</button></div>'+
+    '<div class="fbm" id="geomFb"></div></div>'+
+    '<button class="btn btn-y wf mt2" onclick="geomHint()">💡 คำใบ้</button>'+
+    '<button class="btn btn-o wf mt2" onclick="geomExit()">✖ ออก</button>';
+  var inp=$('geomInp');
+  if(inp){inp.focus();inp.addEventListener('keydown',function(e){if(e.key==='Enter')geomSubmit();});}
+  content.scrollTop=0;
+}
+window.geomSubmit=function(){
+  if(GQ.answered)return;
+  var inp=$('geomInp');if(!inp)return;var v=inp.value.trim();if(!v)return;
+  GQ.answered=true;inp.disabled=true;
+  var ua=v.replace(/\s+/g,'');
+  var ca=String(GQ.cur.a).replace(/\s+/g,'');
+  if(ua===ca){
+    Audio.sfx.correct();GQ.score+=10;
+    var gold=Math.round(20*getGoldMul());state.player.gold+=gold;state.player.score+=15;
+    Save.write(state);
+    var fb=$('geomFb');if(fb){fb.textContent='✅ ถูก! +'+gold+'🪙';fb.style.color='var(--ng)';}
+    Particles.burst(window.innerWidth/2,window.innerHeight/2,{count:25,speed:6});
+    setTimeout(nextGeomQ,800);
+  }else{
+    Audio.sfx.wrong();
+    var fb2=$('geomFb');
+    if(fb2){fb2.textContent='❌ เฉลย: ('+GQ.cur.a+')';fb2.style.color='var(--np)';}
+    floatText(window.innerWidth/2,window.innerHeight*0.4,'❌','critdmg');
+    setTimeout(nextGeomQ,1800);
+  }
+};
+function nextGeomQ(){
+  GQ.round++;
+  if(GQ.round>GQ.max){
+    Audio.sfx.win();
+    showModal('🏆 จบ!','<div class="tc"><div style="font-size:56px">🏆</div><div>คะแนน: '+GQ.score+'/'+(GQ.max*10)+'</div></div>',[
+      {label:'เล่นใหม่',cls:'btn-g',action:'closeModal();startGeomQuiz("'+GQ.topic+'")'},
+      {label:'กลับ',cls:'btn-o',action:"closeModal();openGeomMenu()"}
+    ]);
+    return;
+  }
+  newGeomQ();renderGeomQuiz();
+}
+window.geomHint=function(){
+  if(!GQ.cur)return;
+  floatText(window.innerWidth/2,window.innerHeight*0.3,'💡 '+GQ.cur.h,'heal');
+};
+window.geomExit=function(){
+  if(!confirm('ออก?'))return;
+  GQ.topic=null;openGeomMenu();
+};
+
+/* ---------- Summsry Modal ---------- */
+window.showGeomSummary=function(key){
+  var k=GEOM[key];if(!k)return;
+  var h='<div style="text-align:left;font-size:12px;line-height:1.6">'+
+    '<div class="tc" style="margin-bottom:8px"><div style="font-size:32px">'+k.icon+'</div><div class="bdg bdg-b">'+k.grade+'</div></div>'+
+    '<div style="font-weight:700;color:#00f0ff;margin-bottom:4px">📖 '+k.title+'</div>'+
+    '<div style="color:#b0b0d0;margin-bottom:10px">'+k.def+'</div>'+
+    '<div style="font-weight:700;color:#ffe600;margin:8px 0 4px">🔑 จุดสำคัญ</div>'+
+    '<ul style="padding-left:18px;margin-bottom:10px">'+k.points.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ul>'+
+    '<div style="font-weight:700;color:#b537f2;margin:8px 0 4px">📐 สูตร</div>'+
+    '<div style="padding:8px;background:rgba(181,55,242,0.1);border-radius:8px;font-family:monospace;font-size:11px">'+k.formulas.map(function(f){return '<div>'+f+'</div>';}).join('')+'</div>'+
+    '<div style="font-weight:700;color:#39ff14;margin:8px 0 4px">📝 ตัวอย่าง</div>'+
+    '<ul style="padding-left:18px;margin-bottom:10px">'+k.examples.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul>'+
+    '<div style="font-weight:700;color:#ff006e;margin:8px 0 4px">⚠️ ข้อผิดพลาดบ่อย</div>'+
+    '<ul style="padding-left:18px">'+k.mistakes.map(function(m){return '<li>'+m+'</li>';}).join('')+'</ul></div>';
+  showModal('📚 '+k.title,h,[{label:'ปิด',cls:'btn-o',action:'closeModal()'}]);
+};
+
+/* ---------- Menu ---------- */
+window.openGeomMenu=function(){
+  var el=$('gameContent');if(!el)return;
+  var h='<h3>📐 การแปลงทางเรขาคณิต</h3>'+
+    '<div class="ts mb2" style="color:#b0b0d0">สรุป + แบบทดสอบ 4 หัวข้อ</div>';
+
+  /* Summary section */
+  h+='<h3 class="mt3" style="font-size:14px;color:#00f0ff">📖 สรุป</h3>';
+  var keys=['translate','reflect','rotate','dilate'];
+  keys.forEach(function(k){
+    var g=GEOM[k];
+    h+='<div class="si" onclick="showGeomSummary(\''+k+'\')" style="cursor:pointer">'+
+       '<div style="flex:1"><b>'+g.icon+' '+g.title+'</b>'+
+       '<div class="ts" style="color:#b0b0d0">'+g.points.length+' จุด · '+g.examples.length+' ตัวอย่าง</div></div>'+
+       '<span style="color:#00f0ff">▶</span></div>';
+  });
+
+  /* Quiz section */
+  h+='<h3 class="mt3" style="font-size:14px;color:#ffe600">🎯 แบบทดสอบ (10 ข้อ)</h3>';
+  keys.forEach(function(k){
+    var t=TOPICS[k];
+    h+='<button class="btn btn-o wf mt2" onclick="startGeomQuiz(\''+k+'\')">'+t.name+'</button>';
+  });
+
+  h+='<button class="btn btn-g wf mt3" onclick="startGeomQuiz(pickGeomTopic())">🎲 สุ่มทุกหัวข้อ</button>';
+  h+='<button class="btn btn-o wf mt2" onclick="go(\'menu\')">🔙 กลับเมนู</button>';
+  el.innerHTML=h;el.scrollTop=0;
+};
+window.pickGeomTopic=function(){
+  var ks=['translate','reflect','rotate','dilate'];
+  return ks[R(0,3)];
+};
+
+/* ---------- Hook into menu ---------- */
+try{
+  if(typeof renderMenu==='function'){
+    var _orig=renderMenu;
+    window.renderMenu=function(){
+      _orig.apply(this,arguments);
+      var el=$('gameContent');if(!el)return;
+      var back=el.querySelector('button:last-of-type');
+      var btn=document.createElement('button');
+      btn.className='btn btn-pur wf mt2';
+      btn.textContent='📐 การแปลงทางเรขาคณิต';
+      btn.onclick=window.openGeomMenu;
+      if(back&&back.parentNode===el)el.insertBefore(btn,back);else el.appendChild(btn);
+    };
+  }
+}catch(e){}
+
+/* ---------- Add generators to game's Generators ---------- */
+try{
+  if(typeof Generators!=='undefined'&&Generators){
+    /* Add as chapter 11 */
+    Generators[11]=[
+      function(){var a=R(1,5)*(Math.random()<0.5?-1:1);var b=R(1,5)*(Math.random()<0.5?-1:1);var x=R(-8,8),y=R(-8,8);
+        return{q:'A('+x+','+y+') เลื่อน ('+a+','+b+') → (x+a, y+b)',a:(x+a)+','+(y+b),h:'x\'='+(x+a)+', y\'='+(y+b)};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') สะท้อนแกน x → ?',a:x+','+(-y),h:'y เปลี่ยนเครื่องหมาย'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') สะท้อนแกน y → ?',a:(-x)+','+y,h:'x เปลี่ยนเครื่องหมาย'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') สะท้อนจุดกำเนิด → ?',a:(-x)+','+(-y),h:'= (-x, -y)'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') สะท้อน y = x → ?',a:y+','+x,h:'สลับ x กับ y'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') หมุน 90° ทวนเข็ม → ?',a:(-y)+','+x,h:'= (-y, x)'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') หมุน 180° → ?',a:(-x)+','+(-y),h:'= (-x, -y)'};},
+      function(){var x=R(1,10),y=R(1,10);
+        return{q:'A('+x+','+y+') หมุน 90° ตามเข็ม → ?',a:y+','+(-x),h:'= (y, -x)'};},
+      function(){var x=R(2,8),y=R(2,8);var kp=pick([2,3]);
+        return{q:'A('+x+','+y+') ขยาย k='+kp+' → ?',a:(x*kp)+','+(y*kp),h:'= (kx, ky)'};},
+      function(){var x=R(2,8),y=R(2,8);var kn=pick([2,3]);
+        return{q:'A('+(x*kn)+','+(y*kn)+') ย่อ k=1/'+kn+' → ?',a:x+','+y,h:'= (x/k, y/k)'};}
+    ];
+  }
+}catch(e){console.warn('Geom generators:',e.message);}
+
+console.info('✅ Geometry Transformation loaded · 4 topics · 10+ quiz patterns');
+})();
+  </script>
 </body>
   </html>
