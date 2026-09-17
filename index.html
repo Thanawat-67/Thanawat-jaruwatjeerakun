@@ -1500,6 +1500,166 @@ console.log('✅ Math Quest loaded');
 </script>
   <script>
 "use strict";
+/* EXTRA PACK v10 — Pets + Classes + Creator */
+(function(){
+"use strict";
+
+/* ============================================================
+   1. เปลี่ยนชื่อหน้าเข้าเกม → ทำโดย ธนวัฒน์
+   ============================================================ */
+setTimeout(function(){
+  try{
+    var ov=document.getElementById('startOverlay');
+    if(!ov)return;
+    var sc=ov.querySelector('.sc');
+    if(!sc)return;
+    /* ลบของเดิม */
+    var oldSub=sc.querySelector('.ssub');
+    if(oldSub)oldSub.textContent='พิชิตจักรวาลคณิตศาสตร์ ม.2';
+    /* เพิ่ม creator */
+    if(!sc.querySelector('.creator-tag')){
+      var tag=document.createElement('div');
+      tag.className='creator-tag';
+      tag.style.cssText='margin-top:14px;padding:8px 12px;background:linear-gradient(135deg,rgba(0,240,255,0.15),rgba(181,55,242,0.15));border:1px solid rgba(0,240,255,0.4);border-radius:10px;font-size:12px;color:#00f0ff;font-weight:700;letter-spacing:1px';
+      tag.innerHTML='✨ สร้างโดย <b style="color:#ffe600">ธนวัฒน์</b> ✨';
+      sc.appendChild(tag);
+    }
+  }catch(e){}
+},300);
+
+/* ============================================================
+   2. สัตว์เลี้ยงใหม่ 20 ตัว (ถูกสุด → แพงสุด)
+   ============================================================ */
+var NEW_PETS={
+/* --- ถูกมาก --- */
+leng:{id:'leng',name:'เล้ง',emoji:'🐛',cost:1,bonus:'dmg',amt:0.01,desc:'DMG+1% · อ่อนสุดในปฐพี',shop:true},
+mote:{id:'mote',name:'ตัวเล็ก',emoji:'🐜',cost:10,bonus:'hp',amt:1,desc:'HP+1',shop:true},
+ant:{id:'ant',name:'มดงาน',emoji:'🐜',cost:20,bonus:'gold',amt:0.02,desc:'ทอง+2%',shop:true},
+snail:{id:'snail',name:'หอยทาก',emoji:'🐌',cost:30,bonus:'hp',amt:3,desc:'HP+3',shop:true},
+worm:{id:'worm',name:'ไส้เดือน',emoji:'🪱',cost:40,bonus:'dmg',amt:0.03,desc:'DMG+3%',shop:true},
+mouse:{id:'mouse',name:'หนู',emoji:'🐭',cost:50,bonus:'crit',amt:0.02,desc:'CRIT+2%',shop:true},
+sparrow:{id:'sparrow',name:'นกกระจอก',emoji:'🐦',cost:60,bonus:'combo',amt:0.1,desc:'COMBO+10%',shop:true},
+
+/* --- กลาง --- */
+heriang:{id:'heriang',name:'เหรียง',emoji:'🦅',cost:150,bonus:'both',amt:0.15,desc:'DMG+15% CRIT+15% · แข็งแกร่ง',shop:true},
+chicken:{id:'chicken',name:'ไก่',emoji:'🐔',cost:100,bonus:'dmg',amt:0.08,desc:'DMG+8%',shop:true},
+pig:{id:'pig',name:'หมู',emoji:'🐷',cost:120,bonus:'hp',amt:12,desc:'HP+12',shop:true},
+cow:{id:'cow',name:'วัว',emoji:'🐮',cost:130,bonus:'hp',amt:15,desc:'HP+15',shop:true},
+sheep:{id:'sheep',name:'แกะ',emoji:'🐑',cost:140,bonus:'crit',amt:0.06,desc:'CRIT+6%',shop:true},
+monkey:{id:'monkey',name:'ลิง',emoji:'🐵',cost:160,bonus:'combo',amt:0.5,desc:'COMBO+50%',shop:true},
+wolf2:{id:'wolf2',name:'หมาป่าเงิน',emoji:'🐺',cost:200,bonus:'dmg',amt:0.18,desc:'DMG+18%',shop:true},
+tiger:{id:'tiger',name:'เสือ',emoji:'🐯',cost:250,bonus:'both',amt:0.2,desc:'DMG+20% CRIT+20%',shop:true},
+bear:{id:'bear',name:'หมี',emoji:'🐻',cost:280,bonus:'hp',amt:35,desc:'HP+35',shop:true},
+shark:{id:'shark',name:'ฉลาม',emoji:'🦈',cost:320,bonus:'dmg',amt:0.25,desc:'DMG+25%',shop:true},
+
+/* --- แพงมาก แข็งสุด --- */
+tawan:{id:'tawan',name:'ตะวัน',emoji:'☀️',cost:9999,bonus:'all',amt:1.0,desc:'🌟 DMG+100% CRIT+100% COMBO+100% · แข็งสุดในปฐพี',shop:true},
+tawanKing:{id:'tawanKing',name:'ราชาตะวัน',emoji:'🌞',cost:99999,bonus:'all',amt:2.0,desc:'👑 แข็งสุดในจักรวาล · +200% ทุกอย่าง'}
+};
+
+/* เพิ่มเข้า Pets */
+if(typeof Pets!=='undefined'){
+  for(var pk in NEW_PETS) Pets[pk]=NEW_PETS[pk];
+  /* เพิ่มเข้า gacha pool */
+  if(typeof GachaPets!=='undefined'){
+    ['tawanKing'].forEach(function(k){ if(GachaPets.indexOf(k)<0) GachaPets.push(k); });
+  }
+}
+
+/* ============================================================
+   3. คลาสใหม่ 18 ตัว (ถูกสุด → แข็งสุด)
+   ============================================================ */
+var NEW_CLASSES={
+/* --- tier 1 อ่อน (ฟรี) --- */
+lengClass:{id:'lengClass',name:'เล้ง',emoji:'🐛',unlock:1,hp:-40,dmg:0.3,crit:0,cmul:1.5,skills:['slash','guard'],passives:{},desc:'🐛 อ่อนสุด DMG-70% HP-40'},
+weakSword:{id:'weakSword',name:'นักดาบมือใหม่',emoji:'🗡️',unlock:1,hp:-20,dmg:0.5,crit:0,cmul:2,skills:['slash','guard'],passives:{},desc:'DMG-50% HP-20'},
+farmBoy:{id:'farmBoy',name:'เด็กชาวนา',emoji:'🌾',unlock:1,hp:-10,dmg:0.6,crit:0.05,cmul:2,skills:['slash','heal'],passives:{hpRegen:1},desc:'HP-10 DMG-40%'},
+townGuard:{id:'townGuard',name:'ยามเมือง',emoji:'🛡️',unlock:5,hp:20,dmg:0.8,crit:0.05,cmul:2.5,skills:['slash','guard'],passives:{shieldStart:1},desc:'HP+20 DMG-20%'},
+
+/* --- tier 2 กลาง --- */
+knight:{id:'knight',name:'อัศวิน',emoji:'⚔️',unlock:10,hp:30,dmg:1.2,crit:0.1,cmul:3,skills:['slash','guard'],passives:{shieldStart:1,hpRegen:2},desc:'HP+30 DMG+20%'},
+archer:{id:'archer',name:'นักธนู',emoji:'🏹',unlock:10,hp:5,dmg:1.15,crit:0.25,cmul:3.5,skills:['backstab','dodge'],passives:{critDmg:2,multiHit:1},desc:'CRIT+25%'},
+wizard2:{id:'wizard2',name:'พ่อมด',emoji:'🧙‍♂️',unlock:15,hp:0,dmg:1.1,crit:0.3,cmul:4,skills:['fireball','heal'],passives:{critDmg:2,mana:2},desc:'CRIT+30% CMUL×4'},
+priest:{id:'priest',name:'นักบวช',emoji:'⛪',unlock:15,hp:40,dmg:1,crit:0.1,cmul:3,skills:['holyLight','heal'],passives:{hpRegen:4,revive:1},desc:'HP+40 รักษา'},
+pirate:{id:'pirate',name:'โจรสลัด',emoji:'🏴‍☠️',unlock:20,hp:15,dmg:1.3,crit:0.25,cmul:3.5,skills:['slash','backstab'],passives:{lifesteal:2,goldBonus:3},desc:'DMG+30% ทอง+'},
+
+/* --- tier 3 แข็ง (ชื่อ เหรียง) --- */
+heriangClass:{id:'heriangClass',name:'เหรียง',emoji:'🦅',unlock:30,hp:60,dmg:1.8,crit:0.35,cmul:5,skills:['holySmite','radiance'],passives:{hpRegen:5,critDmg:5,shieldStart:2},desc:'🦅 HP+60 DMG+80% CRIT+35% · แข็งแกร่ง'},
+paladinKing:{id:'paladinKing',name:'ราชาอัศวิน',emoji:'👑',unlock:40,hp:80,dmg:1.7,crit:0.25,cmul:5,skills:['holySmite','divineShield'],passives:{shieldStart:3,revive:2,hpRegen:5},desc:'HP+80 DMG+70%'},
+archWizard:{id:'archWizard',name:'มหาเวทเทพ',emoji:'🧙‍♂️',unlock:40,hp:20,dmg:1.9,crit:0.45,cmul:6,skills:['arcaneBlast','meteor'],passives:{critDmg:6,mana:4},desc:'DMG+90% CRIT+45%'},
+
+/* --- tier 4 (ชื่อ ตะวัน) --- */
+tawanClass:{id:'tawanClass',name:'ตะวัน',emoji:'☀️',unlock:60,hp:150,dmg:3.0,crit:0.6,cmul:8,skills:['judgment','oblivion'],passives:{lifesteal:8,critDmg:10,execute:3,revive:3,shieldStart:3,hpRegen:8,goldBonus:8,expBonus:8},desc:'☀️ แข็งสุด HP+150 DMG+200% CRIT+60% CMUL×8'},
+sunEmperor:{id:'sunEmperor',name:'จักรพรรดิสุริยะ',emoji:'🌞',unlock:80,hp:200,dmg:3.5,crit:0.65,cmul:9,skills:['judgment','meteor'],passives:{lifesteal:10,critDmg:12,execute:3,revive:4,shieldStart:4,hpRegen:10},desc:'HP+200 DMG+250%'},
+godTawan:{id:'godTawan',name:'เทพตะวัน',emoji:'🌟',unlock:100,hp:300,dmg:4.0,crit:0.75,cmul:10,skills:['judgment','oblivion'],passives:{lifesteal:10,critDmg:15,execute:3,revive:5,shieldStart:5,hpRegen:15,goldBonus:15,expBonus:15,timeBonus:5},desc:'🌟 DMG+300% CRIT+75% CMUL×10 · แข็งสุด'},
+superTawan:{id:'superTawan',name:'ซุปเปอร์ตะวัน',emoji:'✨',unlock:150,hp:500,dmg:6.0,crit:0.9,cmul:15,skills:['judgment','oblivion'],passives:{lifesteal:10,critDmg:20,execute:3,revive:5,shieldStart:5,hpRegen:20,goldBonus:20,expBonus:20,timeBonus:5,mana:5},desc:'✨ แข็งสุดในปฐพี DMG+500%'}
+};
+
+/* เพิ่มเข้า AdvanceClasses */
+if(typeof AdvanceClasses!=='undefined'){
+  for(var ck in NEW_CLASSES) AdvanceClasses[ck]=NEW_CLASSES[ck];
+  /* เพิ่มเข้า gacha pool (ยกเว้น tier 1-2 ที่ unlock ได้เอง) */
+  if(typeof GachaClasses!=='undefined'){
+    ['knight','archer','wizard2','priest','pirate','paladinKing','archWizard','sunEmperor','godTawan','superTawan'].forEach(function(k){
+      if(GachaClasses.indexOf(k)<0) GachaClasses.push(k);
+    });
+  }
+}
+
+/* ============================================================
+   4. เพิ่มปุ่ม "เปลี่ยนชื่อผู้เล่น" ในเมนู
+   ============================================================ */
+window.changePlayerName=function(){
+  var cur=state.player.name||'ผู้กล้า';
+  var h='<div class="tc"><div style="font-size:36px">✏️</div>'+
+    '<div style="margin:8px 0;color:#b0b0d0">ตั้งชื่อผู้เล่น</div>'+
+    '<input id="nameInp" type="text" value="'+cur+'" maxlength="20" '+
+    'style="width:100%;padding:12px;font-size:16px;text-align:center;border-radius:10px;border:2px solid #00f0ff;background:rgba(0,0,0,0.5);color:#fff;font-family:Kanit,sans-serif" autocomplete="off"></div>';
+  if(typeof showModal==='function')showModal('✏️ ชื่อผู้เล่น',h,[
+    {label:'💾 บันทึก',cls:'btn-g',action:'var n=document.getElementById("nameInp").value.trim();if(n){state.player.name=n;Save.write(state);closeModal();if(currentScreen==="menu")renderMenu();}'},
+    {label:'ปิด',cls:'btn-o',action:'closeModal()'}
+  ]);
+  setTimeout(function(){var e=document.getElementById('nameInp');if(e)e.focus();},200);
+};
+
+/* ============================================================
+   5. แทรกปุ่มในเมนู
+   ============================================================ */
+function injectMenuExtra(){
+  var el=document.getElementById('gameContent');
+  if(!el)return;
+  var back=el.querySelector('button:last-of-type');
+  var btn=document.createElement('button');
+  btn.className='btn btn-o wf mt2';
+  btn.textContent='✏️ เปลี่ยนชื่อผู้เล่น';
+  btn.onclick=window.changePlayerName;
+  if(back&&back.parentNode===el)el.insertBefore(btn,back);else el.appendChild(btn);
+
+  /* Creator credit ด้านล่างเมนู */
+  if(!el.querySelector('.creator-foot')){
+    var foot=document.createElement('div');
+    foot.className='creator-foot';
+    foot.style.cssText='text-align:center;margin-top:20px;padding:10px;font-size:11px;color:#b0b0d0;border-top:1px dashed rgba(255,255,255,0.15)';
+    foot.innerHTML='✨ สร้างโดย <b style="color:#00f0ff">ธนวัฒน์</b> ✨';
+    el.appendChild(foot);
+  }
+}
+
+try{
+  if(typeof renderMenu==='function'){
+    var _orig=renderMenu;
+    window.renderMenu=function(){
+      _orig.apply(this,arguments);
+      setTimeout(injectMenuExtra,20);
+    };
+  }
+}catch(e){}
+
+console.info('✅ EXTRA v10 loaded · +20 pets · +18 classes · creator: ธนวัฒน์');
+})();
+       </script>
+  <script>
+"use strict";
 /* ============================================================
    EXTRA GEOMETRY: การแปลงทางเรขาคณิต ม.1
    วางต่อจาก script สุดท้ายของเกม ก่อน </body>
