@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Anime CG Romance - Live2D Style Dating Sim</title>
+<title>Moonlight Romance - Supaporn Edition</title>
 <style>
   :root {
-    --accent: #ff4d8d;
-    --accent-2: #9d5cff;
-    --glass: rgba(14, 10, 26, 0.82);
-    --border: rgba(255, 190, 225, 0.32);
-    --text: #fff5fa;
+    --pink: #ff4d94;
+    --violet: #8c52ff;
+    --glass-bg: rgba(14, 10, 24, 0.76);
+    --glass-border: rgba(255, 195, 225, 0.28);
+    --text-light: #fff6fa;
   }
 
   * {
@@ -19,15 +19,16 @@
     padding: 0;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #07040d;
+    background: #07040c;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--text);
+    color: var(--text-light);
   }
 
   #app {
@@ -43,215 +44,233 @@
     width: 100%;
     height: 100%;
     display: block;
-    cursor: grab;
+    z-index: 1;
+    touch-action: none;
   }
 
-  canvas:active {
-    cursor: grabbing;
-  }
-
-  /* Top Bar */
-  #top-bar {
+  /* Main UI Overlay - pointer-events: none prevents blocking canvas clicks */
+  #ui-layer {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
+    inset: 0;
     z-index: 10;
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px;
+    transition: opacity 0.25s ease;
+  }
+
+  /* Sleek Top Bar */
+  #top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
     flex-wrap: wrap;
   }
 
-  .hud-box {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 10px 14px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  .status-pill {
     pointer-events: auto;
-    min-width: 225px;
-  }
-
-  .stat-line {
     display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: #ffd6e7;
+    align-items: center;
+    gap: 14px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 99px;
+    padding: 8px 18px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
   }
 
-  .progress {
-    width: 100%;
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mini-bar {
+    width: 64px;
     height: 7px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
     border-radius: 99px;
     overflow: hidden;
-    margin-bottom: 8px;
   }
 
-  .progress:last-child {
-    margin-bottom: 0;
-  }
-
-  .progress-bar {
+  .mini-fill {
     height: 100%;
     border-radius: 99px;
     transition: width 0.25s ease;
   }
 
-  .bar-love { background: linear-gradient(90deg, #ff7eb3, #ff2e79); }
-  .bar-lust { background: linear-gradient(90deg, #b76bff, #ff5ca8); }
-  .bar-ecstasy { background: linear-gradient(90deg, #ffae42, #ff1e62); }
+  .fill-love { background: linear-gradient(90deg, #ff85b3, #ff2e7e); }
+  .fill-lust { background: linear-gradient(90deg, #b56bff, #ff4da6); }
+  .fill-climax { background: linear-gradient(90deg, #ffb347, #ff1e62); }
 
-  .toolbar {
+  .top-actions {
+    pointer-events: auto;
     display: flex;
-    gap: 7px;
+    align-items: center;
+    gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .pill-btn {
+    pointer-events: auto;
+    background: var(--glass-bg);
+    color: var(--text-light);
+    border: 1px solid var(--glass-border);
+    border-radius: 99px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    transition: all 0.18s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pill-btn:hover, .pill-btn.active {
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    border-color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 0 16px rgba(255, 77, 148, 0.55);
+  }
+
+  .pill-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Floating Toggle UI Button (Always clickable even when UI is hidden) */
+  #btn-toggle-ui {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 25;
     pointer-events: auto;
   }
 
-  .btn {
-    background: var(--glass);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px 13px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    backdrop-filter: blur(12px);
-    transition: all 0.18s ease;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  }
-
-  .btn:hover, .btn.active {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border-color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 0 16px rgba(255, 77, 141, 0.6);
-  }
-
-  /* Side Control Panels */
-  .side-panel {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 10px;
+  /* Bottom Section: Action Dock + Choices + Dialogue Box */
+  #bottom-dock {
+    width: min(820px, 95vw);
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    z-index: 10;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    gap: 10px;
   }
 
-  #left-panel { left: 12px; width: 148px; }
-  #right-panel { right: 12px; width: 162px; display: none; }
-
-  .panel-header {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #ff9ec4;
-    text-align: center;
-    margin-bottom: 2px;
-  }
-
-  /* Dialogue Area */
-  #bottom-area {
-    position: absolute;
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(880px, 94vw);
-    z-index: 12;
+  /* Unified Action Bar (Replaces cluttered side panels) */
+  #action-bar {
+    pointer-events: auto;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     gap: 8px;
-    transition: opacity 0.25s ease;
+    flex-wrap: wrap;
   }
 
-  #choices-box {
+  /* Story Choices */
+  #choices-list {
+    pointer-events: auto;
     display: flex;
     flex-direction: column;
     gap: 7px;
   }
 
-  .choice-item {
-    background: rgba(20, 12, 36, 0.9);
-    border: 1px solid rgba(255, 140, 190, 0.5);
-    color: #fff;
-    padding: 11px 16px;
-    border-radius: 12px;
+  .choice-card {
+    background: rgba(18, 12, 32, 0.88);
+    border: 1px solid rgba(255, 150, 200, 0.45);
+    color: #ffffff;
+    padding: 11px 18px;
+    border-radius: 14px;
     font-size: 14px;
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: all 0.18s ease;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(14px);
+    transition: all 0.16s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   }
 
-  .choice-item:hover {
-    background: linear-gradient(90deg, rgba(255, 77, 141, 0.88), rgba(157, 92, 255, 0.88));
+  .choice-card:hover {
+    background: linear-gradient(90deg, rgba(255, 77, 148, 0.9), rgba(140, 82, 255, 0.9));
+    border-color: #ffffff;
     transform: translateX(4px);
-    border-color: #fff;
   }
 
+  /* Sleek Dialogue Box */
   #vn-box {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 16px 22px;
-    min-height: 110px;
-    backdrop-filter: blur(16px);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+    pointer-events: auto;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 16px 22px 20px;
+    min-height: 104px;
+    backdrop-filter: blur(18px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
     cursor: pointer;
     position: relative;
+    transition: border-color 0.2s ease;
   }
 
-  #char-name {
-    display: inline-block;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  #vn-box:hover {
+    border-color: rgba(255, 210, 235, 0.65);
+  }
+
+  .vn-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  #speaker-badge {
+    background: linear-gradient(90deg, var(--pink), var(--violet));
     padding: 4px 14px;
     border-radius: 99px;
     font-size: 13px;
     font-weight: 700;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 10px rgba(255, 77, 141, 0.5);
+    box-shadow: 0 2px 10px rgba(255, 77, 148, 0.45);
+  }
+
+  #protagonist-tag {
+    font-size: 12px;
+    color: #ffc2dc;
+    font-weight: 600;
   }
 
   #vn-text {
     font-size: 15.5px;
-    line-height: 1.55;
-    color: #fff0f6;
+    line-height: 1.58;
+    color: #fff2f7;
   }
 
-  #vn-next {
+  #vn-prompt {
     position: absolute;
     right: 18px;
     bottom: 10px;
     font-size: 12px;
-    color: #ff9ec4;
-    animation: bounce 1.1s infinite;
+    color: #ff9ec7;
+    font-weight: 600;
+    animation: pulsePrompt 1.2s infinite;
   }
 
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.5; }
-    50% { transform: translateY(3px); opacity: 1; }
+  @keyframes pulsePrompt {
+    0%, 100% { opacity: 0.45; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(2px); }
   }
 
-  @media (max-width: 700px) {
-    #left-panel { top: auto; bottom: 140px; left: 8px; transform: none; width: 132px; }
-    #right-panel { top: auto; bottom: 140px; right: 8px; transform: none; width: 142px; }
+  @media (max-width: 680px) {
+    #top-bar { padding-right: 95px; }
+    .mini-bar { width: 44px; }
+    .pill-btn { padding: 7px 11px; font-size: 11.5px; }
     #vn-text { font-size: 14px; }
+    .choice-card { font-size: 13.5px; padding: 10px 14px; }
   }
 </style>
 </head>
@@ -260,72 +279,86 @@
 <div id="app">
   <canvas id="stage"></canvas>
 
-  <!-- Top HUD -->
-  <div id="top-bar">
-    <div class="hud-box">
-      <div class="stat-line"><span>💗 ความรัก (Affection)</span><span id="lbl-love">30%</span></div>
-      <div class="progress"><div id="bar-love" class="progress-bar bar-love" style="width:30%"></div></div>
-      <div class="stat-line"><span>🔥 ความเร่าร้อน (Lust)</span><span id="lbl-lust">20%</span></div>
-      <div class="progress"><div id="bar-lust" class="progress-bar bar-lust" style="width:20%"></div></div>
-      <div class="stat-line" id="row-ecstasy" style="display:none;"><span>💦 ความเสียวสะท้าน (Climax)</span><span id="lbl-ecstasy">0%</span></div>
-      <div class="progress" id="bar-ecstasy-wrap" style="display:none;"><div id="bar-ecstasy" class="progress-bar bar-ecstasy" style="width:0%"></div></div>
+  <!-- Always-accessible Toggle UI Button -->
+  <button class="pill-btn" id="btn-toggle-ui">👁️ ซ่อน UI</button>
+
+  <div id="ui-layer">
+    <!-- Top Sleek Status & Settings Bar -->
+    <div id="top-bar">
+      <div class="status-pill">
+        <div class="stat-item">
+          <span>💗</span>
+          <div class="mini-bar"><div id="fill-love" class="mini-fill fill-love" style="width:35%"></div></div>
+          <span id="txt-love">35%</span>
+        </div>
+        <div class="stat-item">
+          <span>🔥</span>
+          <div class="mini-bar"><div id="fill-lust" class="mini-fill fill-lust" style="width:25%"></div></div>
+          <span id="txt-lust">25%</span>
+        </div>
+        <div class="stat-item" id="climax-stat" style="display:none;">
+          <span>💦</span>
+          <div class="mini-bar"><div id="fill-climax" class="mini-fill fill-climax" style="width:0%"></div></div>
+          <span id="txt-climax">0%</span>
+        </div>
+      </div>
+
+      <div class="top-actions" style="margin-right: 100px;">
+        <button class="pill-btn" id="btn-char">👸 เอมิเลีย</button>
+        <button class="pill-btn" id="btn-outfit">👗 ชุดประจำตัว</button>
+        <button class="pill-btn" id="btn-camera">🔍 มุมกล้อง</button>
+        <button class="pill-btn" id="btn-hmode">🔥 ฉากรัก (H-Scene)</button>
+      </div>
     </div>
 
-    <div class="toolbar">
-      <button class="btn" id="btn-heroine">👸 นางเอก: เอมิเลีย (Emilia)</button>
-      <button class="btn" id="btn-outfit">👗 ชุด: ชุดประจำตัว</button>
-      <button class="btn" id="btn-zoom">🔍 มุมกล้อง: ครึ่งตัว</button>
-      <button class="btn" id="btn-hscene">🔥 โหมดฉากรัก (H-Scene)</button>
-      <button class="btn" id="btn-hide-ui">👁️ ซ่อนข้อความ</button>
-    </div>
-  </div>
+    <!-- Bottom Unified Dock -->
+    <div id="bottom-dock">
+      <!-- Dynamic Quick Action Bar (Switches cleanly between Normal Touch & H-Scene Controls) -->
+      <div id="action-bar"></div>
 
-  <!-- Left Touch Interaction Panel -->
-  <div class="side-panel" id="left-panel">
-    <div class="panel-header">สัมผัสเรือนร่าง</div>
-    <button class="btn" data-touch="head">👋 ลูบหัว / หูเอลฟ์</button>
-    <button class="btn" data-touch="lips">💋 จูบดูดดื่ม</button>
-    <button class="btn" data-touch="chest">💞 บีบเคล้นหน้าอก</button>
-    <button class="btn" data-touch="thighs">🦵 ลูบไล้ต้นขา</button>
-  </div>
+      <!-- Story Choices Container -->
+      <div id="choices-list"></div>
 
-  <!-- Right H-Scene Control Panel -->
-  <div class="side-panel" id="right-panel">
-    <div class="panel-header">จังหวะบทรัก</div>
-    <button class="btn active" data-speed="1">🌸 ช้าและลึกซึ้ง</button>
-    <button class="btn" data-speed="2">🔥 เร่าร้อนแนบชิด</button>
-    <button class="btn" data-speed="3">⚡ รัวเร็วสุดขีด</button>
-    <div class="panel-header" style="margin-top:4px;">ท่าทาง (Pose)</div>
-    <button class="btn active" data-pose="normal">🛏️ โอบกอดบนเตียง</button>
-    <button class="btn" data-pose="cowgirl">🌙 ขย่มรักบนตัก</button>
-    <button class="btn" id="btn-climax" style="background:linear-gradient(90deg,#ff1e62,#ff9933);border-color:#fff;">💦 ปลดปล่อย (Climax)</button>
-  </div>
-
-  <!-- Bottom Dialogue Box -->
-  <div id="bottom-area">
-    <div id="choices-box"></div>
-    <div id="vn-box">
-      <div id="char-name">เอมิเลีย (Emilia)</div>
-      <div id="vn-text">กำลังโหลดฉาก...</div>
-      <div id="vn-next">คลิกเพื่อไปต่อ ▼</div>
+      <!-- Visual Novel Dialogue Box -->
+      <div id="vn-box">
+        <div class="vn-header">
+          <span id="speaker-badge">เอมิเลีย (Emilia)</span>
+          <span id="protagonist-tag">👤 ตัวเอก: สุพาพร</span>
+        </div>
+        <div id="vn-text">กำลังโหลด...</div>
+        <div id="vn-prompt">คลิกเพื่อไปต่อ ▼</div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 /**
- * High-Detail 2.5D Anime CG & Interactive H-Scene Engine
- * Features:
- * - Multi-layered Anime Anatomy (Teardrop breasts with independent dual-spring physics, V-jawline, collarbone, hourglass waist, garter stockings)
- * - 10-layer Anime Eyes with real-time cursor gaze tracking & heart pupils
- * - 3 Iconic Anime Heroines: Emilia, Rem, Echidna
+ * Moonlight Romance - Supaporn Edition
+ * Clean Minimal UI + Zero-Bug Input State Machine + High-Detail 2.5D Anime CG
  */
 
+const PROTAGONIST = 'สุพาพร';
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 
-// Web Audio Synthesizer for Heartbeat & Cute Voice/Touch SFX
-class AudioFX {
+// Safe roundRect helper for cross-browser compatibility
+function drawRoundedRect(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+}
+
+// Web Audio Synthesizer
+class SoundFX {
   constructor() { this.ctx = null; }
   init() {
     if (!this.ctx) {
@@ -334,168 +367,248 @@ class AudioFX {
     }
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
   }
-  tone(freq = 540, dur = 0.09, type = 'sine', vol = 0.06) {
+  play(freq = 560, dur = 0.08, type = 'sine', vol = 0.06) {
     this.init();
     if (!this.ctx) return;
-    const o = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    g.gain.setValueAtTime(vol, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-    o.connect(g);
-    g.connect(this.ctx.destination);
-    o.start();
-    o.stop(this.ctx.currentTime + dur);
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + dur);
   }
   heartbeat() {
-    this.tone(90, 0.12, 'sine', 0.13);
-    setTimeout(() => this.tone(72, 0.16, 'sine', 0.10), 115);
+    this.play(92, 0.11, 'sine', 0.13);
+    setTimeout(() => this.play(74, 0.15, 'sine', 0.1), 110);
   }
 }
-const sfx = new AudioFX();
+const sfx = new SoundFX();
 
-// Heroine Database (Emilia, Rem, Echidna)
+// Heroine Roster with tailored dialogues addressing "สุพาพร"
 const HEROINES = [
   {
     id: 'emilia',
-    name: 'เอมิเลีย (Emilia)',
-    hairTop: '#f8f6ff',
-    hairMid: '#e5def7',
-    hairBot: '#b8a9de',
-    hairShadow: '#9a88c7',
-    eyeTop: '#3a1c71',
-    eyeMid: '#7b42f6',
-    eyeBot: '#b490ff',
-    skinLight: '#fff7f4',
+    shortName: 'เอมิเลีย',
+    fullName: 'เอมิเลีย (Emilia)',
+    hairTop: '#faf8ff',
+    hairMid: '#e6dff7',
+    hairBot: '#b5a4de',
+    hairShade: '#9480c4',
+    eyeTop: '#36196b',
+    eyeMid: '#7c4dff',
+    eyeBot: '#b899ff',
+    skinLight: '#fff8f5',
     skinMid: '#ffe6de',
-    skinShade: '#efb9ad',
+    skinShade: '#efb8ac',
     outfitMain: '#ffffff',
-    outfitSub: '#7e42d4',
-    stockingColor: 'rgba(255, 250, 255, 0.88)',
+    outfitSub: '#8344db',
+    stocking: 'rgba(255, 250, 255, 0.9)',
     elfEars: true,
-    intro: '"ห้องนอนยามค่ำคืนดูเงียบสงบจังเลยนะ... พอมีเธออยู่ข้างๆ แบบนี้ ฉันรู้สึกอบอุ่นสุ๊ด...สุดไปเลยล่ะค่ะ"',
-    touchHead: '"อื้อ... ชอบเวลาเธอลูบผมกับปลายหูของฉันจังเลยค่ะ... รู้สึกจั๊กจี้แต่ก็มีความสุขสุ๊ด...สุดเลยล่ะ"',
-    touchLips: '"อื้อออ... จูบฉันแบบไม่ทันตั้งตัวเลยนะ... คนงกเงิ่น... ลมหายใจของเธอทำเอาฉันตัวอ่อนไปหมดแล้วค่ะ..."',
-    touchChest: '"อ๊ะ...! ดะ... เดี๋ยวสิคะ บีบหน้าอกฉันตรงๆ แบบนี้... หัวใจฉันเต้นแรงจนจะทะลุออกมาแล้วนะ... อื้ออ!"',
-    touchThighs: '"ยะ... อย่าลูบขอบถุงน่องขึ้นมาสูงขนาดนั้นสิคะ... ต้นขาของฉันสั่นไปหมดแล้วนะ..."',
-    hSlow: '"อื้อออ... จังหวะช้าๆ แนบชิดแบบนี้... ฉันรับรู้ถึงความอบอุ่นของเธอข้างในตัวฉันชัดสุ๊ด...สุดเลยค่ะ..."',
-    hFast: '"อ๊าา! อ๊ะ! เร็วไปแล้วค่ะ...! ฉันเสียวจนสมองขาวโพลนไปหมดแล้ว... กอดฉันแน่นๆ นะคะ!"',
-    hClimax: '"อ๊าาาาา!! มะ... ไม่ไหวแล้วค่ะ ฉันเสร็จแล้ว!! ข้างในมันร้อนและกระตุกไปหมดเลย... สุ๊ด...สุดยอดไปเลยค่ะ... แฮ่ก..."'
+    steps: [
+      {
+        text: `"คืนนี้พระจันทร์สวยจังเลยนะ... พอมีคุณ${PROTAGONIST}มานั่งอยู่ข้างๆ บนเตียงแบบนี้ ฉันรู้สึกอบอุ่นหัวใจสุ๊ด...สุดไปเลยล่ะค่ะ"`,
+        choices: [
+          { text: `💕 (${PROTAGONIST}) โอบไหล่เอมิเลียเข้ามาแนบอกแล้วลูบผมสีเงินเบาๆ`, love: 15, lust: 10, exp: 'smile', next: 1 },
+          { text: `👗 (${PROTAGONIST}) ช่วยปลดชุดของเอมิเลียออกให้เหลือแต่เดรสสายเดี่ยว`, love: 10, lust: 20, outfit: 1, exp: 'shy', next: 1 },
+          { text: `🔥 (${PROTAGONIST}) จูบเธออย่างดูดดื่มแล้วปลดชุดจนเหลือแค่ชุดชั้นในลูกไม้`, love: 15, lust: 30, outfit: 2, exp: 'aroused', next: 2 }
+        ]
+      },
+      {
+        text: `"ดะ... เดี๋ยวสิคะคุณ${PROTAGONIST} พอถูกจ้องใกล้ๆ แบบนี้ ร่างกายของฉันก็ร้อนผ่าวไปหมดเลย... คนงกเงิ่น... คืนนี้ช่วยอ่อนโยนกับฉันด้วยนะคะ"`,
+        choices: [
+          { text: `💋 (${PROTAGONIST}) พรมจูบจากซอกคอขาวเนียนลงมาที่เนินอกอวบอิ่ม`, love: 15, lust: 25, outfit: 2, exp: 'aroused', next: 2 },
+          { text: `🔥 (${PROTAGONIST}) ถอดเสื้อผ้าทั้งหมดแล้วเริ่มบทรักกับเอมิเลียทันที!`, love: 20, lust: 35, outfit: 3, startH: true }
+        ]
+      },
+      {
+        text: `"อื้อออ... สัมผัสของคุณ${PROTAGONIST}ทำเอาฉันตัวอ่อนไปหมดแล้วค่ะ... ฉันพร้อมแล้ว เข้ามาเป็นหนึ่งเดียวกับฉันเลยนะคะ..."`,
+        choices: [
+          { text: `🔥 (${PROTAGONIST}) ถอดชุดชั้นในออกจนเปลือยเปล่าแล้วแนบชิดเรือนร่าง (เข้าสู่ H-Scene)`, love: 20, lust: 30, outfit: 3, startH: true },
+          { text: `💞 (${PROTAGONIST}) เริ่มบทรักทั้งที่เธอยังสวมชุดชั้นในลูกไม้สุดเซ็กซี่ (เข้าสู่ H-Scene)`, love: 20, lust: 25, outfit: 2, startH: true }
+        ]
+      }
+    ],
+    touchHead: `"อื้อ... ชอบเวลาที่คุณ${PROTAGONIST}ลูบหัวกับปลายหูเอลฟ์ของฉันจังเลยค่ะ มีความสุขสุ๊ด...สุดเลยล่ะ"`,
+    touchLips: `"อื้อออ... คุณ${PROTAGONIST}จูบเก่งชะมัดเลย... ลมหายใจอุ่นๆ ของเธอทำเอาใจฉันละลายหมดแล้วค่ะ..."`,
+    touchChest: `"อ๊ะ...! คุณ${PROTAGONIST}คะ บีบหน้าอกฉันตรงๆ แบบนี้... หัวใจฉันเต้นแรงจนจะระเบิดอยู่แล้วนะ... อื้ออ!"`,
+    touchThighs: `"ยะ... อย่าลูบขอบถุงน่องขึ้นมาสูงขนาดนั้นสิคะคุณ${PROTAGONIST}... ต้นขาของฉันสั่นไปหมดแล้วนะ..."`,
+    hSlow: `"อื้อออ... คุณ${PROTAGONIST}คะ จังหวะช้าๆ ลึกๆ แบบนี้... ฉันรู้สึกถึงความรักของเธอเต็มไปหมดเลยค่ะ..."`,
+    hFast: `"อ๊าา! อ๊ะ! คุณ${PROTAGONIST} เร็วไปแล้วค่ะ...! ฉันเสียวจนหัวขาวโพลนไปหมดแล้ว... กอดฉันแน่นๆ นะคะ!"`,
+    hClimax: `"อ๊าาาาา!! มะ... ไม่ไหวแล้วค่ะคุณ${PROTAGONIST} ฉันเสร็จแล้ว!! ข้างในมันร้อนและกระตุกไปหมดเลย... สุ๊ด...สุดยอดไปเลยค่ะ... แฮ่ก..."`
   },
   {
     id: 'rem',
-    name: 'เรม (Rem)',
-    hairTop: '#b8e8ff',
+    shortName: 'เรม',
+    fullName: 'เรม (Rem)',
+    hairTop: '#c2ecff',
     hairMid: '#6ec3ff',
-    hairBot: '#3a86d6',
-    hairShadow: '#2b66ad',
-    eyeTop: '#164e9e',
-    eyeMid: '#3a8dff',
-    eyeBot: '#99d1ff',
-    skinLight: '#fff6f2',
+    hairBot: '#3682d4',
+    hairShade: '#265fa3',
+    eyeTop: '#144996',
+    eyeMid: '#3b8eff',
+    eyeBot: '#9cd4ff',
+    skinLight: '#fff7f3',
     skinMid: '#ffe3d8',
-    skinShade: '#eeb4a6',
-    outfitMain: '#1b1926',
+    skinShade: '#edb3a4',
+    outfitMain: '#1a1824',
     outfitSub: '#ffffff',
-    stockingColor: 'rgba(255, 255, 255, 0.9)',
+    stocking: 'rgba(255, 255, 255, 0.92)',
     elfEars: false,
-    intro: '"ให้เรมได้ปรนนิบัติคุณในห้องนอนคืนนี้นะคะ... ไม่ว่าคุณต้องการอะไร เรมพร้อมมอบให้ทั้งร่างกายและหัวใจเลยค่ะ"',
-    touchHead: '"งื้ออ... พอถูกคุณลูบหัวแบบนี้ เรมมีความสุขจนแทบละลายเลยค่ะ..."',
-    touchLips: '"อื้อออ... จูบของคุณหวานจังเลยค่ะ... เรมขอจูบตอบให้ลึกกว่านี้อีกนะคะ..."',
-    touchChest: '"อ๊าา...! หน้าอกของเรมเป็นของคุณคนเดียวนะคะ... บีบแรงๆ ได้ตามใจชอบเลยค่ะ... อื้ออ!"',
-    touchThighs: '"อ๊ะ... มือของคุณอุ่นจังเลยค่ะ ลูบต้นขาเรมแบบนี้... ข้างในของเรมเริ่มชุ่มไปหมดแล้วนะคะ..."',
-    hSlow: '"อื้ออ... ขยับเข้ามาในตัวเรมช้าๆ แบบนี้... เรมรักคุณที่สุดเลยนะคะ..."',
-    hFast: '"อ๊าาา! อ๊ะ! แรงอีกค่ะ! กระแทกเข้ามาในตัวเรมแรงๆ เลยนะคะ เรมกำลังจะถึงแล้วค่ะ!"',
-    hClimax: '"อ๊าาาาาา!! เรมเสร็จแล้วค่ะ!! ข้างในตัวเรมเต็มไปด้วยความรักของคุณแล้ว... มีความสุขที่สุดเลยค่ะ... แฮ่ก..."'
+    steps: [
+      {
+        text: `"คืนนี้ให้เรมได้ปรนนิบัติคุณ${PROTAGONIST}นะคะ... ไม่ว่าคุณ${PROTAGONIST}ปรารถนาสิ่งใด เรมพร้อมมอบให้ทั้งร่างกายและหัวใจเลยค่ะ"`,
+        choices: [
+          { text: `💕 (${PROTAGONIST}) ดึงเรมมานั่งตักแล้วกอดเอวบางของเธอไว้`, love: 15, lust: 10, exp: 'smile', next: 1 },
+          { text: `👗 (${PROTAGONIST}) เปลี่ยนชุดเมดของเรมออกเป็นเดรสสายเดี่ยวสุดเซ็กซี่`, love: 10, lust: 20, outfit: 1, exp: 'shy', next: 1 },
+          { text: `🔥 (${PROTAGONIST}) จูบริมฝีปากเรมแล้วปลดเสื้อผ้าจนเหลือแต่ชุดชั้นในลูกไม้`, love: 15, lust: 30, outfit: 2, exp: 'aroused', next: 2 }
+        ]
+      },
+      {
+        text: `"หัวใจของเรมเต้นแรงมากเลยค่ะคุณ${PROTAGONIST}... ช่วยสัมผัสเรมให้ลึกซึ้งกว่านี้จะได้ไหมคะ?"`,
+        choices: [
+          { text: `💋 (${PROTAGONIST}) ซุกไซ้ซอกคอหอมกรุ่นและลูบไล้หน้าอกอวบอิ่มของเรม`, love: 15, lust: 25, outfit: 2, exp: 'aroused', next: 2 },
+          { text: `🔥 (${PROTAGONIST}) ถอดเสื้อผ้าทุกชิ้นออกแล้วเริ่มบทรักบนเตียงทันที!`, love: 20, lust: 35, outfit: 3, startH: true }
+        ]
+      },
+      {
+        text: `"อื้อออ... เรมเป็นของคุณ${PROTAGONIST}คนเดียวนะคะ เชิญครอบครองเรมได้ตามใจปรารถนาเลยค่ะ..."`,
+        choices: [
+          { text: `🔥 (${PROTAGONIST}) ถอดชุดชั้นในออกจนเปลือยเปล่าแล้วสอดใส่ความเร่าร้อน (เข้าสู่ H-Scene)`, love: 20, lust: 30, outfit: 3, startH: true },
+          { text: `💞 (${PROTAGONIST}) ร่วมรักกับเรมในชุดชั้นในลูกไม้และถุงน่องขาว (เข้าสู่ H-Scene)`, love: 20, lust: 25, outfit: 2, startH: true }
+        ]
+      }
+    ],
+    touchHead: `"งื้ออ... พอถูกคุณ${PROTAGONIST}ลูบหัวอย่างอ่อนโยนแบบนี้ เรมมีความสุขที่สุดเลยค่ะ..."`,
+    touchLips: `"อื้อออ... จูบของคุณ${PROTAGONIST}หวานเหลือเกินค่ะ... เรมขอจูบตอบให้ลึกกว่านี้อีกนะคะ..."`,
+    touchChest: `"อ๊าา...! หน้าอกของเรมเป็นของคุณ${PROTAGONIST}นะคะ... บีบเคล้นแรงๆ ได้ตามใจชอบเลยค่ะ... อื้ออ!"`,
+    touchThighs: `"อ๊ะ... มือของคุณ${PROTAGONIST}อุ่นจังเลยค่ะ ลูบต้นขาเรมแบบนี้... เรมแทบทนไม่ไหวแล้วนะคะ..."`,
+    hSlow: `"อื้ออ... ขยับเข้ามาในตัวเรมช้าๆ แบบนี้... เรมรักคุณ${PROTAGONIST}ที่สุดเลยนะคะ..."`,
+    hFast: `"อ๊าาา! อ๊ะ! คุณ${PROTAGONIST}ขา แรงอีกค่ะ! กระแทกเข้ามาแรงๆ เลย เรมกำลังจะถึงแล้วค่ะ!"`,
+    hClimax: `"อ๊าาาาาา!! คุณ${PROTAGONIST}ขา เรมเสร็จแล้วค่ะ!! ข้างในตัวเรมกระตุกไม่หยุดเลย... มีความสุขที่สุดเลยค่ะ... แฮ่ก..."`
   },
   {
     id: 'echidna',
-    name: 'เอคิดนา (Echidna)',
+    shortName: 'เอคิดนา',
+    fullName: 'เอคิดนา (Echidna)',
     hairTop: '#ffffff',
-    hairMid: '#ebe8f2',
-    hairBot: '#c7c1d6',
-    hairShadow: '#9e96b3',
-    eyeTop: '#1a1626',
-    eyeMid: '#4c3b6e',
-    eyeBot: '#a38fd1',
-    skinLight: '#fff9f7',
+    hairMid: '#ece9f2',
+    hairBot: '#c6bfd6',
+    hairShade: '#9b92b0',
+    eyeTop: '#191524',
+    eyeMid: '#4e3d73',
+    eyeBot: '#a792d6',
+    skinLight: '#fffaf8',
     skinMid: '#ffebe4',
     skinShade: '#ebbab0',
     outfitMain: '#14111c',
     outfitSub: '#b8ff66',
-    stockingColor: 'rgba(22, 16, 34, 0.88)',
+    stocking: 'rgba(22, 16, 34, 0.9)',
     elfEars: false,
-    intro: '"หึหึ... สายตาของเธอกำลังจ้องเรือนร่างของฉันตาไม่กะพริบเลยนะ อยากรู้จังว่าคืนนี้เธอจะทำให้ฉันตื่นเต้นได้แค่ไหนกัน?"',
-    touchHead: '"แหม... กล้าลูบหัวแม่มดแห่งความละโมบอย่างฉันด้วยสายตาอ่อนโยนแบบนั้น ขี้โกงจังเลยนะ..."',
-    touchLips: '"อื้อออ... จูบเร่าร้อนกว่าที่คิดไว้อีกนะเนี่ย... ดูดริมฝีปากฉันแรงแบบนี้ ฉันชักจะติดใจแล้วสิ..."',
-    touchChest: '"อ๊ะ... อื้ออ! สัมผัสหน้าอกฉันได้ตรงจุดชะมัด... ดูสิ ยอดอกของฉันแข็งสู้มือเธอใหญ่แล้วนะ..."',
-    touchThighs: '"อ๊า... ลูบไล้ต้นขาผ่านถุงน่องดำแบบนี้... เธอรู้วิธีปลุกเร้าอารมณ์ผู้หญิงดีจริงๆ เลยนะ..."',
-    hSlow: '"อื้ออ... ค่อยๆ บดเบียดเข้ามาลึกๆ แบบนี้... ร่างกายของฉันกำลังจดจำสัมผัสของเธอทุกตารางนิ้วเลยล่ะ..."',
-    hFast: '"อ๊าา! อ๊ะ! ดะ... เดี๋ยวสิ จังหวะรัวเร็วแบบนี้ฉันควบคุมเสียงตัวเองไม่ได้แล้วนะ... อ๊าา!"',
-    hClimax: '"อ๊าาาาา!! สุดยอด... เสร็จจนได้...! ร่างกายฉันกระตุกไม่หยุดเลย... เธอทำให้ฉันหลงหัวปักหัวปำแล้วสิ... แฮ่ก..."'
+    steps: [
+      {
+        text: `"หึหึ... สายตาของเธอจ้องเรือนร่างฉันไม่วางตาเลยนะคุณ${PROTAGONIST} อยากรู้จังว่าคืนนี้เธอจะทำให้ฉันตื่นเต้นได้แค่ไหนกัน?"`,
+        choices: [
+          { text: `💕 (${PROTAGONIST}) เชยคางเอคิดนาขึ้นมาสบตาแล้วส่งยิ้มเจ้าเล่ห์`, love: 15, lust: 10, exp: 'smile', next: 1 },
+          { text: `👗 (${PROTAGONIST}) เปลี่ยนชุดแม่มดของเธอเป็นเดรสสายเดี่ยวผ่าอกลึก`, love: 10, lust: 20, outfit: 1, exp: 'shy', next: 1 },
+          { text: `🔥 (${PROTAGONIST}) ดันเธอลงกับเตียงแล้วปลดชุดออกจนเหลือแค่ชุดชั้นในลูกไม้`, love: 15, lust: 30, outfit: 2, exp: 'aroused', next: 2 }
+        ]
+      },
+      {
+        text: `"แหม... คุณ${PROTAGONIST}เนี่ยรุกเก่งกว่าที่คิดไว้อีกนะ ลมหายใจของเธอทำเอาผิวของฉันร้อนวูบวาบไปหมดแล้วสิ"`,
+        choices: [
+          { text: `💋 (${PROTAGONIST}) จูบไล่ลงมาขบเม้มเบาๆ ที่เนินอกคู่สวยของเธอ`, love: 15, lust: 25, outfit: 2, exp: 'aroused', next: 2 },
+          { text: `🔥 (${PROTAGONIST}) เปลื้องผ้าเธอออกจนหมดแล้วเริ่มบทรักสุดเร่าร้อนทันที!`, love: 20, lust: 35, outfit: 3, startH: true }
+        ]
+      },
+      {
+        text: `"อ๊า... ไม่ต้องอดทนอีกต่อไปแล้วล่ะคุณ${PROTAGONIST} เข้ามาทำให้ฉันเสียวสะท้านไปทั้งคืนเลยสิ..."`,
+        choices: [
+          { text: `🔥 (${PROTAGONIST}) ถอดชุดชั้นในออกจนเปลือยเปล่าแล้วครอบครองเธอทั้งตัว (เข้าสู่ H-Scene)`, love: 20, lust: 30, outfit: 3, startH: true },
+          { text: `💞 (${PROTAGONIST}) เริ่มบทรักสุดเร่าร้อนในชุดชั้นในลูกไม้สีดำ (เข้าสู่ H-Scene)`, love: 20, lust: 25, outfit: 2, startH: true }
+        ]
+      }
+    ],
+    touchHead: `"แหม... คุณ${PROTAGONIST}กล้าลูบหัวแม่มดแห่งความละโมบด้วยมืออุ่นๆ แบบนี้ ขี้โกงจังเลยนะ..."`,
+    touchLips: `"อื้อออ... คุณ${PROTAGONIST}จูบเร่าร้อนชะมัด... ดูดริมฝีปากฉันแรงแบบนี้ ฉันชักจะติดใจเธอแล้วสิ..."`,
+    touchChest: `"อ๊ะ... อื้ออ! คุณ${PROTAGONIST}สัมผัสหน้าอกฉันได้ตรงจุดจริงๆ... ดูสิ ยอดอกฉันแข็งสู้มือเธอใหญ่แล้วนะ..."`,
+    touchThighs: `"อ๊า... ลูบไล้ต้นขาผ่านถุงน่องดำแบบนี้... คุณ${PROTAGONIST}รู้วิธีปลุกเร้าอารมณ์ผู้หญิงดีจริงๆ เลยนะ..."`,
+    hSlow: `"อื้ออ... คุณ${PROTAGONIST} ค่อยๆ บดเบียดเข้ามาลึกๆ แบบนี้... ร่างกายฉันกำลังจดจำสัมผัสของเธอทุกตารางนิ้วเลย..."`,
+    hFast: `"อ๊าา! อ๊ะ! ดะ... เดี๋ยวสิคุณ${PROTAGONIST} จังหวะรัวเร็วแบบนี้ฉันกลั้นเสียงครางไว้ไม่อยู่แล้วนะ... อ๊าา!"`,
+    hClimax: `"อ๊าาาาา!! สุดยอดเลยคุณ${PROTAGONIST}... ฉันเสร็จจนได้...! ร่างกายกระตุกไม่หยุดเลย... เธอทำให้ฉันหลงหัวปักหัวปำแล้วสิ... แฮ่ก..."`
   }
 ];
 
-const OUTFIT_NAMES = ['ชุดประจำตัว', 'เดรสสายเดี่ยว', 'ชุดชั้นในลูกไม้', 'เปลือยเปล่า (Nude)'];
+const OUTFITS = ['ชุดประจำตัว', 'เดรสสายเดี่ยว', 'ชุดชั้นในลูกไม้', 'เปลือยเปล่า'];
+const CAMERAS = ['ครึ่งตัว', 'ซูมใกล้ชิด', 'เต็มตัว'];
 
 const state = {
-  heroineIdx: 0,
+  charIdx: 0,
   outfitIdx: 0,
-  zoomMode: 0, // 0: Half-body, 1: Close-up Chest & Face, 2: Full thighs view
-  affection: 35,
+  camIdx: 0,
+  love: 35,
   lust: 25,
-  ecstasy: 0,
+  climax: 0,
+  stepIdx: 0,
   isHMode: false,
   hSpeed: 1,
   hPose: 'normal',
   uiHidden: false,
-  exp: 'normal', // 'normal', 'smile', 'shy', 'aroused', 'climax'
-  storyStep: 0,
+  exp: 'shy',
+  isTempReaction: false, // Prevents soft-lock when touching character mid-story
   whiteFlash: 0,
-  // 2.5D Mouse/Touch Gaze Tracking
+  // Gaze tracking
   pointerX: 0,
   pointerY: 0,
-  smoothLookX: 0,
-  smoothLookY: 0,
-  // Dual-Spring Breast Physics (Left & Right independent bounce)
+  lookX: 0,
+  lookY: 0,
+  // Real-time transform cache for accurate hitbox detection
+  lastCenterX: 0,
+  lastCenterY: 0,
+  lastZoom: 1,
+  // Dual-spring breast physics
   bLeftY: 0, bLeftVel: 0,
   bRightY: 0, bRightVel: 0,
   bSquash: 0,
-  // Blink & Animation Timers
+  // Blink & Visual particles
   blinkTimer: 0,
   isBlinking: false,
-  particles: []
+  particles: [],
+  ripples: []
 };
 
-function currentHeroine() {
-  return HEROINES[state.heroineIdx];
+function getHeroine() {
+  return HEROINES[state.charIdx];
 }
 
-// Initialize Bokeh & Floating Heart Particles
+// Initialize Ambient Bokeh & Hearts
 function initParticles() {
   state.particles = [];
-  for (let i = 0; i < 38; i++) {
+  for (let i = 0; i < 34; i++) {
     state.particles.push({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      r: 3 + Math.random() * 12,
+      r: 3 + Math.random() * 10,
       vx: (Math.random() - 0.5) * 0.4,
-      vy: -0.3 - Math.random() * 0.7,
-      alpha: 0.15 + Math.random() * 0.45,
-      kind: Math.random() > 0.72 ? 'heart' : 'bokeh'
+      vy: -0.35 - Math.random() * 0.65,
+      alpha: 0.16 + Math.random() * 0.42,
+      kind: Math.random() > 0.7 ? 'heart' : 'bokeh'
     });
   }
 }
 
-function spawnHeartBurst(x, y, count = 10) {
-  for (let i = 0; i < count; i++) {
+function spawnInteractionFX(x, y, heartCount = 9) {
+  state.ripples.push({ x, y, r: 6, alpha: 0.9 });
+  for (let i = 0; i < heartCount; i++) {
     state.particles.push({
-      x: x + (Math.random() - 0.5) * 50,
-      y: y + (Math.random() - 0.5) * 50,
-      r: 6 + Math.random() * 7,
-      vx: (Math.random() - 0.5) * 2.6,
-      vy: -1.4 - Math.random() * 2.4,
+      x: x + (Math.random() - 0.5) * 40,
+      y: y + (Math.random() - 0.5) * 40,
+      r: 6 + Math.random() * 6,
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: -1.5 - Math.random() * 2.2,
       alpha: 0.95,
       kind: 'heart',
       temp: true
@@ -503,215 +616,237 @@ function spawnHeartBurst(x, y, count = 10) {
   }
 }
 
-function resize() {
+function resizeCanvas() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = window.innerWidth * dpr;
   canvas.height = window.innerHeight * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-window.addEventListener('resize', resize);
-resize();
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 initParticles();
 
-// Pointer Tracking for Live2D-style Look-At
-window.addEventListener('pointermove', (e) => {
-  state.pointerX = (e.clientX / window.innerWidth) * 2 - 1;
-  state.pointerY = (e.clientY / window.innerHeight) * 2 - 1;
-});
+// Build Clean Unified Bottom Action Dock
+function renderActionBar() {
+  const bar = document.getElementById('action-bar');
+  bar.innerHTML = '';
 
-// Update HUD
-function updateHUD() {
-  state.affection = Math.min(100, Math.max(0, state.affection));
-  state.lust = Math.min(100, Math.max(0, state.lust));
-  state.ecstasy = Math.min(100, Math.max(0, state.ecstasy));
-
-  document.getElementById('lbl-love').textContent = `${Math.round(state.affection)}%`;
-  document.getElementById('bar-love').style.width = `${state.affection}%`;
-  document.getElementById('lbl-lust').textContent = `${Math.round(state.lust)}%`;
-  document.getElementById('bar-lust').style.width = `${state.lust}%`;
-
-  const rowEc = document.getElementById('row-ecstasy');
-  const barEcWrap = document.getElementById('bar-ecstasy-wrap');
-  const rightPanel = document.getElementById('right-panel');
-
-  if (state.isHMode) {
-    rowEc.style.display = 'flex';
-    barEcWrap.style.display = 'block';
-    rightPanel.style.display = 'flex';
-    document.getElementById('lbl-ecstasy').textContent = `${Math.round(state.ecstasy)}%`;
-    document.getElementById('bar-ecstasy').style.width = `${state.ecstasy}%`;
-    document.getElementById('btn-hscene').textContent = '📖 กลับสู่เนื้อเรื่อง';
-  } else {
-    rowEc.style.display = 'none';
-    barEcWrap.style.display = 'none';
-    rightPanel.style.display = 'none';
-    document.getElementById('btn-hscene').textContent = '🔥 โหมดฉากรัก (H-Scene)';
-  }
-
-  const h = currentHeroine();
-  document.getElementById('btn-heroine').textContent = `👸 นางเอก: ${h.name}`;
-  document.getElementById('btn-outfit').textContent = `👗 ชุด: ${OUTFIT_NAMES[state.outfitIdx]}`;
-  const zoomNames = ['ครึ่งตัว', 'ซูมใบหน้า & หน้าอก', 'เต็มตัว & ต้นขา'];
-  document.getElementById('btn-zoom').textContent = `🔍 มุมกล้อง: ${zoomNames[state.zoomMode]}`;
-}
-
-function showDialogue(speaker, text, choices = null) {
-  document.getElementById('char-name').textContent = speaker;
-  document.getElementById('vn-text').textContent = text;
-  const cBox = document.getElementById('choices-box');
-  const nextInd = document.getElementById('vn-next');
-  cBox.innerHTML = '';
-
-  if (choices && choices.length > 0) {
-    nextInd.style.display = 'none';
-    choices.forEach(ch => {
+  if (!state.isHMode) {
+    const touches = [
+      { id: 'head', label: '👋 ลูบหัว' },
+      { id: 'lips', label: '💋 จูบริมฝีปาก' },
+      { id: 'chest', label: '💞 สัมผัสหน้าอก' },
+      { id: 'thighs', label: '🦵 ลูบต้นขา' }
+    ];
+    touches.forEach(t => {
       const b = document.createElement('button');
-      b.className = 'choice-item';
-      b.textContent = ch.label;
+      b.className = 'pill-btn';
+      b.textContent = t.label;
       b.onclick = (e) => {
         e.stopPropagation();
-        sfx.tone(660, 0.08, 'triangle', 0.07);
-        if (ch.love) state.affection += ch.love;
-        if (ch.lust) state.lust += ch.lust;
-        if (typeof ch.outfit === 'number') state.outfitIdx = ch.outfit;
-        if (ch.exp) state.exp = ch.exp;
-        if (ch.startH) {
-          startHScene(ch.outfit ?? 3);
-        } else if (typeof ch.nextStep === 'number') {
-          runStoryStep(ch.nextStep);
+        triggerTouchZone(t.id, window.innerWidth * 0.5, window.innerHeight * 0.45);
+      };
+      bar.appendChild(b);
+    });
+  } else {
+    const speeds = [
+      { s: 1, label: '🌸 จังหวะช้า' },
+      { s: 2, label: '🔥 เร่าร้อน' },
+      { s: 3, label: '⚡ รัวเร็ว' }
+    ];
+    speeds.forEach(sp => {
+      const b = document.createElement('button');
+      b.className = 'pill-btn' + (state.hSpeed === sp.s ? ' active' : '');
+      b.textContent = sp.label;
+      b.onclick = (e) => {
+        e.stopPropagation();
+        state.hSpeed = sp.s;
+        sfx.heartbeat();
+        const h = getHeroine();
+        setDialogueBox(h.fullName, state.hSpeed >= 2 ? h.hFast : h.hSlow, null, true);
+        renderActionBar();
+      };
+      bar.appendChild(b);
+    });
+
+    const poseBtn = document.createElement('button');
+    poseBtn.className = 'pill-btn';
+    poseBtn.textContent = state.hPose === 'normal' ? '🌙 ท่า: โอบกอด' : '🌙 ท่า: ขย่มรักบนตัก';
+    poseBtn.onclick = (e) => {
+      e.stopPropagation();
+      state.hPose = state.hPose === 'normal' ? 'cowgirl' : 'normal';
+      state.bLeftVel = -22;
+      state.bRightVel = -18;
+      sfx.play(610, 0.09, 'triangle', 0.08);
+      renderActionBar();
+    };
+    bar.appendChild(poseBtn);
+
+    const climaxBtn = document.createElement('button');
+    climaxBtn.className = 'pill-btn active';
+    climaxBtn.textContent = '💦 ปลดปล่อย (Climax)';
+    climaxBtn.onclick = (e) => {
+      e.stopPropagation();
+      triggerClimaxScene();
+    };
+    bar.appendChild(climaxBtn);
+  }
+}
+
+function updateHUD() {
+  state.love = Math.min(100, Math.max(0, state.love));
+  state.lust = Math.min(100, Math.max(0, state.lust));
+  state.climax = Math.min(100, Math.max(0, state.climax));
+
+  document.getElementById('txt-love').textContent = `${Math.round(state.love)}%`;
+  document.getElementById('fill-love').style.width = `${state.love}%`;
+  document.getElementById('txt-lust').textContent = `${Math.round(state.lust)}%`;
+  document.getElementById('fill-lust').style.width = `${state.lust}%`;
+
+  const climaxStat = document.getElementById('climax-stat');
+  if (state.isHMode) {
+    climaxStat.style.display = 'flex';
+    document.getElementById('txt-climax').textContent = `${Math.round(state.climax)}%`;
+    document.getElementById('fill-climax').style.width = `${state.climax}%`;
+    document.getElementById('btn-hmode').textContent = '📖 กลับเนื้อเรื่อง';
+    document.getElementById('btn-hmode').classList.add('active');
+  } else {
+    climaxStat.style.display = 'none';
+    document.getElementById('btn-hmode').textContent = '🔥 ฉากรัก (H-Scene)';
+    document.getElementById('btn-hmode').classList.remove('active');
+  }
+
+  const h = getHeroine();
+  document.getElementById('btn-char').textContent = `👸 ${h.shortName}`;
+  document.getElementById('btn-outfit').textContent = `👗 ${OUTFITS[state.outfitIdx]}`;
+  document.getElementById('btn-camera').textContent = `🔍 ${CAMERAS[state.camIdx]}`;
+}
+
+function setDialogueBox(speaker, text, choices = null, isTemporary = false) {
+  state.isTempReaction = isTemporary;
+  document.getElementById('speaker-badge').textContent = speaker;
+  document.getElementById('vn-text').textContent = text;
+  const list = document.getElementById('choices-list');
+  const prompt = document.getElementById('vn-prompt');
+  list.innerHTML = '';
+
+  if (choices && choices.length > 0) {
+    prompt.style.display = 'none';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-card';
+      btn.textContent = c.text;
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        sfx.play(650, 0.08, 'triangle', 0.07);
+        if (c.love) state.love += c.love;
+        if (c.lust) state.lust += c.lust;
+        if (typeof c.outfit === 'number') state.outfitIdx = c.outfit;
+        if (c.exp) state.exp = c.exp;
+        if (c.startH) {
+          enterHScene(c.outfit ?? 3);
+        } else if (typeof c.next === 'number') {
+          loadStoryStep(c.next);
         }
         updateHUD();
       };
-      cBox.appendChild(b);
+      list.appendChild(btn);
     });
   } else {
-    nextInd.style.display = state.isHMode ? 'none' : 'block';
+    prompt.style.display = 'block';
+    prompt.textContent = state.isHMode
+      ? 'แตะเรือนร่างนางเอกหรือใช้แถบปุ่มด้านบน ▼'
+      : 'คลิกกล่องข้อความเพื่อแสดงตัวเลือกเนื้อเรื่อง ▼';
   }
 }
 
-// Story Progression per Heroine
-function runStoryStep(step) {
+function loadStoryStep(idx) {
   state.isHMode = false;
-  state.storyStep = step;
-  const h = currentHeroine();
-
-  if (step === 0) {
-    state.exp = 'shy';
-    showDialogue(h.name, h.intro, [
-      { label: '💕 ขยับเข้าไปโอบเอวเธอเข้ามาแนบชิดแล้วจ้องตากัน (+ความรัก)', love: 15, lust: 10, exp: 'smile', nextStep: 1 },
-      { label: '👗 ช่วยปลดชุดของเธอออกให้เหลือแต่เดรสสายเดี่ยวบางเบา (+ความเร่าร้อน)', love: 10, lust: 20, outfit: 1, exp: 'shy', nextStep: 1 },
-      { label: '🔥 ดึงเธอลงมาจูบบนเตียงแล้วปลดชุดออกจนเหลือแต่ชุดชั้นในลูกไม้', love: 15, lust: 30, outfit: 2, exp: 'aroused', nextStep: 2 }
-    ]);
-  } else if (step === 1) {
-    state.exp = 'aroused';
-    showDialogue(
-      h.name,
-      h.id === 'emilia'
-        ? '"ดะ... เดี๋ยวสิคะ พออยู่ใกล้เธอขนาดนี้ ร่างกายของฉันมันร้อนผ่าวไปหมดเลย... คืนนี้ช่วยอ่อนโยนกับฉันหน่อยนะคะ..."'
-        : h.id === 'rem'
-        ? '"หัวใจของเรมเต้นแรงมากเลยค่ะ... ช่วยสัมผัสเรมให้มากกว่านี้จะได้ไหมคะ?"'
-        : '"หึหึ... มือของเธอเริ่มซุกซนใหญ่แล้วนะ อยากเห็นเรือนร่างภายใต้ชุดนี้ของฉันขนาดนั้นเลยเหรอ?"',
-      [
-        { label: '💋 จูบไล่จากซอกคอลงมาที่เนินอกอวบอิ่มของเธอ', love: 15, lust: 25, outfit: 2, exp: 'aroused', nextStep: 2 },
-        { label: '🔥 ถอดเสื้อผ้าทั้งหมดแล้วเริ่มบทรักสุดเร่าร้อนทันที! (เข้าสู่ H-Scene)', love: 20, lust: 35, outfit: 3, startH: true }
-      ]
-    );
-  } else if (step === 2) {
-    state.exp = 'aroused';
-    showDialogue(
-      h.name,
-      h.id === 'emilia'
-        ? '"อื้อออ... ลมหายใจของเธอรดอยู่ตรงหน้าอกของฉัน... ฉันไม่ไหวแล้วค่ะ เข้ามาเป็นหนึ่งเดียวกับฉันเลยนะคะ..."'
-        : h.id === 'rem'
-        ? '"เรมพร้อมแล้วค่ะ... เชิญครอบครองเรมได้ตามที่ปรารถนาเลยนะคะ..."'
-        : '"อ๊า... ไม่ต้องอดทนอีกต่อไปแล้วล่ะ เข้ามาทำให้ฉันเสียวสะท้านไปทั้งคืนเลยสิ..."',
-      [
-        { label: '🔥 ถอดชุดชั้นในออกจนเปลือยเปล่าแล้วสอดใส่เข้ามาอย่างลึกซึ้ง (H-Scene)', love: 20, lust: 30, outfit: 3, startH: true },
-        { label: '💞 เริ่มบทรักทั้งที่ยังสวมชุดชั้นในลูกไม้สุดเซ็กซี่ (H-Scene)', love: 20, lust: 25, outfit: 2, startH: true }
-      ]
-    );
-  }
+  const h = getHeroine();
+  state.stepIdx = idx % h.steps.length;
+  const stepObj = h.steps[state.stepIdx];
+  setDialogueBox(h.fullName, stepObj.text, stepObj.choices, false);
+  renderActionBar();
   updateHUD();
 }
 
-function startHScene(outfit = 3) {
+function enterHScene(outfit = 3) {
   state.isHMode = true;
   state.outfitIdx = outfit;
   state.exp = 'aroused';
-  state.ecstasy = Math.max(15, state.ecstasy);
-  state.bLeftVel = -20;
-  state.bRightVel = -16;
+  state.climax = Math.max(15, state.climax);
+  state.bLeftVel = -22;
+  state.bRightVel = -18;
   sfx.heartbeat();
-  const h = currentHeroine();
-  showDialogue(h.name, h.hSlow);
+  const h = getHeroine();
+  setDialogueBox(h.fullName, h.hSlow, null, true);
+  renderActionBar();
   updateHUD();
 }
 
-function triggerClimax() {
-  const h = currentHeroine();
+function triggerClimaxScene() {
+  const h = getHeroine();
   state.whiteFlash = 1.0;
   state.exp = 'climax';
-  state.ecstasy = 100;
-  state.affection = Math.min(100, state.affection + 15);
+  state.climax = 100;
+  state.love = Math.min(100, state.love + 15);
   state.lust = Math.min(100, state.lust + 20);
   state.bLeftVel = -30;
-  state.bRightVel = -26;
+  state.bRightVel = -25;
   sfx.heartbeat();
-  spawnHeartBurst(window.innerWidth * 0.5, window.innerHeight * 0.42, 26);
+  spawnInteractionFX(window.innerWidth * 0.5, window.innerHeight * 0.42, 24);
 
-  showDialogue(h.name, h.hClimax, [
-    { label: '🔥 ทำต่ออีกยกด้วยจังหวะที่เร่าร้อนกว่าเดิม!', love: 10, lust: 20, startH: true },
-    { label: '🌙 นอนกอดเธอแนบอกฟังเสียงลมหายใจ (กลับสู่โหมดเนื้อเรื่อง)', love: 20, lust: 5, outfit: 3, nextStep: 0 }
-  ]);
+  setDialogueBox(h.fullName, h.hClimax, [
+    { text: `🔥 (${PROTAGONIST}) รักเธอต่ออีกยกอย่างเร่าร้อน!`, love: 10, lust: 20, startH: true },
+    { text: `🌙 (${PROTAGONIST}) นอนกอดเธอแนบอกฟังเสียงหัวใจ (กลับสู่เนื้อเรื่อง)`, love: 20, lust: 5, outfit: 3, next: 0 }
+  ], false);
   updateHUD();
 }
 
-function triggerTouch(zone, cx, cy) {
-  const h = currentHeroine();
-  const x = cx || window.innerWidth * 0.5;
-  const y = cy || window.innerHeight * 0.45;
-  spawnHeartBurst(x, y, 8);
+function triggerTouchZone(zone, clientX, clientY) {
+  const h = getHeroine();
+  spawnInteractionFX(clientX, clientY, 9);
 
   if (zone === 'head') {
-    sfx.tone(600, 0.09, 'sine', 0.07);
-    state.affection += 6;
+    sfx.play(600, 0.09, 'sine', 0.07);
+    state.love += 6;
     state.exp = 'smile';
-    showDialogue(h.name, h.touchHead);
+    setDialogueBox(h.fullName, h.touchHead, null, true);
   } else if (zone === 'lips') {
-    sfx.tone(740, 0.12, 'triangle', 0.08);
-    state.affection += 8;
+    sfx.play(740, 0.11, 'triangle', 0.08);
+    state.love += 8;
     state.lust += 10;
-    if (state.isHMode) state.ecstasy += 14;
+    if (state.isHMode) state.climax += 14;
     state.exp = 'aroused';
-    showDialogue(h.name, h.touchLips);
+    setDialogueBox(h.fullName, h.touchLips, null, true);
   } else if (zone === 'chest') {
     sfx.heartbeat();
     state.lust += 12;
     state.bLeftVel = -26;
     state.bRightVel = -21;
-    state.bSquash = 0.25;
-    if (state.isHMode) state.ecstasy += 18;
+    state.bSquash = 0.26;
+    if (state.isHMode) state.climax += 18;
     state.exp = 'aroused';
-    showDialogue(h.name, h.touchChest);
+    setDialogueBox(h.fullName, h.touchChest, null, true);
   } else if (zone === 'thighs') {
-    sfx.tone(520, 0.11, 'sine', 0.08);
+    sfx.play(520, 0.1, 'sine', 0.08);
     state.lust += 12;
-    if (state.isHMode) state.ecstasy += 15;
+    if (state.isHMode) state.climax += 15;
     state.exp = 'shy';
-    showDialogue(h.name, h.touchThighs);
+    setDialogueBox(h.fullName, h.touchThighs, null, true);
   }
 
-  if (state.isHMode && state.ecstasy >= 100) {
-    triggerClimax();
+  if (state.isHMode && state.climax >= 100) {
+    triggerClimaxScene();
   }
   updateHUD();
 }
 
 // ============================================================================
-// HIGH-DETAIL ANIME CG RENDERING PIPELINE
+// HIGH-DETAIL 2.5D ANIME CG RENDERER
 // ============================================================================
 
-function drawHeartShape(x, y, s, color, alpha = 1) {
+function drawHeart(x, y, s, color, alpha = 1) {
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
@@ -725,129 +860,102 @@ function drawHeartShape(x, y, s, color, alpha = 1) {
   ctx.restore();
 }
 
-function drawMoonlitBedroomCG(w, h, time) {
-  const px = state.smoothLookX * -18;
-  const py = state.smoothLookY * -12;
+function drawBedroomBackground(w, h) {
+  const px = state.lookX * -16;
+  const py = state.lookY * -10;
 
-  // Deep Night Royal Bedroom Gradient
   const bg = ctx.createLinearGradient(0, 0, 0, h);
-  bg.addColorStop(0, '#0c071c');
-  bg.addColorStop(0.45, '#1d1036');
-  bg.addColorStop(1, '#2b0f2b');
+  bg.addColorStop(0, '#0b061a');
+  bg.addColorStop(0.48, '#1c0f36');
+  bg.addColorStop(1, '#2a0d29');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
 
-  // Giant Glowing Moon outside arched window
-  const moonX = w * 0.76 + px * 0.6;
-  const moonY = h * 0.22 + py * 0.6;
-  const moonGlow = ctx.createRadialGradient(moonX, moonY, 15, moonX, moonY, Math.min(w, h) * 0.42);
-  moonGlow.addColorStop(0, 'rgba(255, 245, 255, 0.95)');
-  moonGlow.addColorStop(0.18, 'rgba(220, 195, 255, 0.45)');
-  moonGlow.addColorStop(0.55, 'rgba(165, 95, 230, 0.14)');
-  moonGlow.addColorStop(1, 'rgba(165, 95, 230, 0)');
-  ctx.fillStyle = moonGlow;
+  // Moonlit Window Glow
+  const mx = w * 0.76 + px * 0.6;
+  const my = h * 0.22 + py * 0.6;
+  const mg = ctx.createRadialGradient(mx, my, 12, mx, my, Math.min(w, h) * 0.44);
+  mg.addColorStop(0, 'rgba(255, 245, 255, 0.95)');
+  mg.addColorStop(0.2, 'rgba(220, 190, 255, 0.42)');
+  mg.addColorStop(0.55, 'rgba(165, 90, 235, 0.14)');
+  mg.addColorStop(1, 'rgba(165, 90, 235, 0)');
+  ctx.fillStyle = mg;
   ctx.fillRect(0, 0, w, h);
 
-  // Volumetric God Rays (Moonbeams)
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  const rayGrad = ctx.createLinearGradient(moonX, moonY, w * 0.2, h * 0.9);
-  rayGrad.addColorStop(0, 'rgba(235, 210, 255, 0.16)');
-  rayGrad.addColorStop(1, 'rgba(235, 210, 255, 0)');
-  ctx.fillStyle = rayGrad;
-  ctx.beginPath();
-  ctx.moveTo(moonX - 90, 0);
-  ctx.lineTo(moonX + 160, 0);
-  ctx.lineTo(w * 0.35, h);
-  ctx.lineTo(w * 0.05, h);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-
-  // Luxury Bed Headboard & Silk Pillows
+  // Silk Pillows & Luxury Bed
   ctx.save();
   ctx.translate(px, py);
-  const bedGrad = ctx.createLinearGradient(0, h * 0.48, 0, h);
-  bedGrad.addColorStop(0, '#24112e');
-  bedGrad.addColorStop(1, '#12071a');
-  ctx.fillStyle = bedGrad;
-  ctx.beginPath();
-  ctx.roundRect(w * 0.12, h * 0.5, w * 0.76, h * 0.55, 42);
+  ctx.fillStyle = '#210e2b';
+  drawRoundedRect(w * 0.12, h * 0.5, w * 0.76, h * 0.55, 40);
   ctx.fill();
 
-  // Soft Pink/Violet Silk Pillow behind Heroine
-  const pilGrad = ctx.createRadialGradient(w * 0.5, h * 0.62, 20, w * 0.5, h * 0.62, w * 0.32);
-  pilGrad.addColorStop(0, '#4a204f');
-  pilGrad.addColorStop(1, '#230d29');
+  const pilGrad = ctx.createRadialGradient(w * 0.5, h * 0.62, 18, w * 0.5, h * 0.62, w * 0.3);
+  pilGrad.addColorStop(0, '#4c2052');
+  pilGrad.addColorStop(1, '#230c29');
   ctx.fillStyle = pilGrad;
-  ctx.beginPath();
-  ctx.roundRect(w * 0.22, h * 0.54, w * 0.56, h * 0.34, 60);
+  drawRoundedRect(w * 0.22, h * 0.54, w * 0.56, h * 0.34, 55);
   ctx.fill();
   ctx.restore();
 }
 
-function drawAnimeHeroineCG(w, h, time, dt) {
-  const hero = currentHeroine();
+function drawAnimeHeroine(w, h, time, dt) {
+  const hero = getHeroine();
 
-  // Smooth Gaze Interpolation
-  state.smoothLookX += (state.pointerX - state.smoothLookX) * Math.min(1, dt * 8);
-  state.smoothLookY += (state.pointerY - state.smoothLookY) * Math.min(1, dt * 8);
+  state.lookX += (state.pointerX - state.lookX) * Math.min(1, dt * 8);
+  state.lookY += (state.pointerY - state.lookY) * Math.min(1, dt * 8);
 
-  // Rhythmic body motion
   const freq = state.isHMode ? (state.hSpeed === 1 ? 3.2 : state.hSpeed === 2 ? 6.5 : 11.2) : 1.7;
   const amp = state.isHMode ? (state.hSpeed === 1 ? 9 : state.hSpeed === 2 ? 17 : 26) : 3.2;
-  const bodyBounceY = Math.sin(time * freq) * amp;
-  const bodySwayX = state.isHMode && state.hPose === 'cowgirl' ? Math.cos(time * freq * 0.5) * 9 : 0;
+  const bounceY = Math.sin(time * freq) * amp;
+  const swayX = state.isHMode && state.hPose === 'cowgirl' ? Math.cos(time * freq * 0.5) * 9 : 0;
 
-  // Dual-Spring Breast Physics (Left & Right slight phase offset for ultra-natural jiggle)
+  // Dual-spring breast physics
   const drive = state.isHMode ? Math.cos(time * freq) * (state.hSpeed * 13) : Math.cos(time * freq) * 1.5;
   const k = 155;
   const damp = 8.5;
 
-  const fL = -k * state.bLeftY - damp * state.bLeftVel + drive;
-  state.bLeftVel += fL * dt;
+  state.bLeftVel += (-k * state.bLeftY - damp * state.bLeftVel + drive) * dt;
   state.bLeftY = Math.max(-26, Math.min(26, state.bLeftY + state.bLeftVel * dt));
 
-  const fR = -k * state.bRightY - damp * state.bRightVel + drive * 0.92;
-  state.bRightVel += fR * dt;
+  state.bRightVel += (-k * state.bRightY - damp * state.bRightVel + drive * 0.92) * dt;
   state.bRightY = Math.max(-26, Math.min(26, state.bRightY + state.bRightVel * dt));
-
   state.bSquash *= 0.9;
 
-  // Camera Zoom Configuration
   let zoom = Math.min(w / 540, h / 760);
-  let centerY = h * 0.45;
-  if (state.zoomMode === 1) {
+  let baseCy = h * 0.45;
+  if (state.camIdx === 1) {
     zoom *= 1.38;
-    centerY = h * 0.54;
-  } else if (state.zoomMode === 2) {
+    baseCy = h * 0.54;
+  } else if (state.camIdx === 2) {
     zoom *= 0.88;
-    centerY = h * 0.41;
+    baseCy = h * 0.41;
   }
 
-  const cx = w * 0.5 + bodySwayX;
-  const cy = centerY + bodyBounceY;
+  const cx = w * 0.5 + swayX;
+  const cy = baseCy + bounceY;
+
+  // Store real-time transform for 100% accurate click/touch hitboxes
+  state.lastCenterX = cx;
+  state.lastCenterY = cy;
+  state.lastZoom = zoom;
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(zoom, zoom);
 
-  const lookX = state.smoothLookX * 12;
-  const lookY = state.smoothLookY * 8;
+  const lx = state.lookX * 12;
+  const ly = state.lookY * 8;
 
-  // =========================================================================
-  // 1. BACK LONG FLOWING ANIME HAIR (Multi-Strand S-Curve Volume)
-  // =========================================================================
-  ctx.save();
-  ctx.translate(-lookX * 0.35, -lookY * 0.2);
-  const backHairGrad = ctx.createLinearGradient(0, -230, 0, 320);
-  backHairGrad.addColorStop(0, hero.hairTop);
-  backHairGrad.addColorStop(0.55, hero.hairMid);
-  backHairGrad.addColorStop(1, hero.hairBot);
-
+  // 1. Back Long Hair
   if (hero.id !== 'rem') {
-    // Long Flowing Hair (Emilia & Echidna)
-    ctx.fillStyle = hero.hairShadow;
+    ctx.save();
+    ctx.translate(-lx * 0.35, -ly * 0.2);
+    const bhGrad = ctx.createLinearGradient(0, -230, 0, 320);
+    bhGrad.addColorStop(0, hero.hairTop);
+    bhGrad.addColorStop(0.55, hero.hairMid);
+    bhGrad.addColorStop(1, hero.hairBot);
+
+    ctx.fillStyle = hero.hairShade;
     ctx.beginPath();
     ctx.moveTo(-102, -135);
     ctx.bezierCurveTo(-175, -10, -190, 180, -138, 340);
@@ -856,11 +964,10 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = backHairGrad;
+    ctx.fillStyle = bhGrad;
     ctx.beginPath();
     ctx.moveTo(-96, -140);
     ctx.bezierCurveTo(-162, -15, -172, 165, -120, 325);
-    // Individual hair tail tips at bottom
     ctx.lineTo(-85, 295);
     ctx.lineTo(-55, 335);
     ctx.lineTo(-15, 305);
@@ -870,22 +977,18 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.bezierCurveTo(172, 165, 162, -15, 96, -140);
     ctx.closePath();
     ctx.fill();
-
     ctx.strokeStyle = '#32223d';
     ctx.lineWidth = 2.2;
     ctx.stroke();
+    ctx.restore();
   }
-  ctx.restore();
 
-  // =========================================================================
-  // 2. ANIME HOURGLASS TORSO, WAIST, HIPS, THIGHS & GARTER STOCKINGS
-  // =========================================================================
+  // 2. Neck, Hourglass Torso, Hips & Thighs
   const skinGrad = ctx.createLinearGradient(0, -70, 0, 340);
   skinGrad.addColorStop(0, hero.skinLight);
   skinGrad.addColorStop(0.55, hero.skinMid);
   skinGrad.addColorStop(1, hero.skinShade);
 
-  // Slender Neck + Cast Shadow
   ctx.fillStyle = hero.skinMid;
   ctx.beginPath();
   ctx.moveTo(-23, -72);
@@ -895,59 +998,37 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   ctx.closePath();
   ctx.fill();
 
-  // Head cast shadow on neck
   ctx.fillStyle = hero.skinShade;
   ctx.beginPath();
   ctx.ellipse(0, -42, 22, 14, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Torso, Hourglass Waist & Curvy Hips/Thighs
-  const cowgirlSpread = state.hPose === 'cowgirl' ? 26 : 0;
+  const hipSpread = state.hPose === 'cowgirl' ? 26 : 0;
   ctx.fillStyle = skinGrad;
   ctx.beginPath();
-  // Left Shoulder -> Upper Arm
   ctx.moveTo(-116, 14);
   ctx.bezierCurveTo(-142, 70, -135, 165, -112, 235);
   ctx.lineTo(-92, 235);
   ctx.bezierCurveTo(-102, 160, -102, 95, -86, 48);
-  // Left Ribcage -> Narrow Waist -> Wide Curvy Hip & Thigh
   ctx.bezierCurveTo(-76, 98, -56, 138, -58, 168);
-  ctx.bezierCurveTo(-62, 205, -108 - cowgirlSpread, 255, -112 - cowgirlSpread, 360);
+  ctx.bezierCurveTo(-62, 205, -108 - hipSpread, 255, -112 - hipSpread, 360);
   ctx.lineTo(-18, 360);
-  // Inner Thigh Gap
   ctx.quadraticCurveTo(0, 268, 18, 360);
-  ctx.lineTo(112 + cowgirlSpread, 360);
-  ctx.bezierCurveTo(108 + cowgirlSpread, 255, 62, 205, 58, 168);
+  ctx.lineTo(112 + hipSpread, 360);
+  ctx.bezierCurveTo(108 + hipSpread, 255, 62, 205, 58, 168);
   ctx.bezierCurveTo(56, 138, 76, 98, 86, 48);
-  // Right Arm
   ctx.bezierCurveTo(102, 95, 102, 160, 92, 235);
   ctx.lineTo(112, 235);
   ctx.bezierCurveTo(135, 165, 142, 70, 116, 14);
-  // Shoulders Slope
   ctx.bezierCurveTo(75, -10, -75, -10, -116, 14);
   ctx.closePath();
   ctx.fill();
 
-  // Anime Line-Art for Body Silhouette
   ctx.strokeStyle = '#472531';
   ctx.lineWidth = 2.2;
   ctx.stroke();
 
-  // Warm Body Blush (Shoulders, Stomach, Thighs)
-  const drawBodyGlow = (gx, gy, gr) => {
-    const g = ctx.createRadialGradient(gx, gy, 4, gx, gy, gr);
-    g.addColorStop(0, 'rgba(255, 105, 135, 0.28)');
-    g.addColorStop(1, 'rgba(255, 105, 135, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(gx, gy, gr, 0, Math.PI * 2);
-    ctx.fill();
-  };
-  drawBodyGlow(-92, 18, 34);
-  drawBodyGlow(92, 18, 34);
-  drawBodyGlow(0, 175, 48);
-
-  // Delicate Collarbone (Clavicle) Shading & Highlight
+  // Collarbone & Navel
   ctx.strokeStyle = '#c98882';
   ctx.lineWidth = 2.4;
   ctx.beginPath();
@@ -957,53 +1038,40 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   ctx.bezierCurveTo(45, 18, 22, 16, 9, 11);
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.moveTo(-68, 6);
-  ctx.quadraticCurveTo(-36, 14, -12, 9);
-  ctx.moveTo(68, 6);
-  ctx.quadraticCurveTo(36, 14, 12, 9);
-  ctx.stroke();
-
-  // Belly Button (Navel) & Waist Definition
   ctx.fillStyle = '#c9827b';
   ctx.beginPath();
   ctx.ellipse(0, 182, 2.6, 5.2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Thigh-High Stockings & Lace Garter Straps (Visible on thighs)
+  // Stockings & Garter Straps
   ctx.save();
-  ctx.fillStyle = hero.stockingColor;
-  // Left Stocking
+  ctx.fillStyle = hero.stocking;
   ctx.beginPath();
-  ctx.moveTo(-104 - cowgirlSpread * 0.7, 278);
+  ctx.moveTo(-104 - hipSpread * 0.7, 278);
   ctx.quadraticCurveTo(-60, 292, -18, 282);
   ctx.lineTo(-14, 360);
-  ctx.lineTo(-114 - cowgirlSpread, 360);
+  ctx.lineTo(-114 - hipSpread, 360);
   ctx.closePath();
   ctx.fill();
-  // Right Stocking
+
   ctx.beginPath();
   ctx.moveTo(18, 282);
-  ctx.quadraticCurveTo(60, 292, 104 + cowgirlSpread * 0.7, 278);
-  ctx.lineTo(114 + cowgirlSpread, 360);
+  ctx.quadraticCurveTo(60, 292, 104 + hipSpread * 0.7, 278);
+  ctx.lineTo(114 + hipSpread, 360);
   ctx.lineTo(14, 360);
   ctx.closePath();
   ctx.fill();
 
-  // Lace Garter Top Trim
   ctx.strokeStyle = hero.outfitSub;
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(-104 - cowgirlSpread * 0.7, 278);
+  ctx.moveTo(-104 - hipSpread * 0.7, 278);
   ctx.quadraticCurveTo(-60, 292, -18, 282);
   ctx.moveTo(18, 282);
-  ctx.quadraticCurveTo(60, 292, 104 + cowgirlSpread * 0.7, 278);
+  ctx.quadraticCurveTo(60, 292, 104 + hipSpread * 0.7, 278);
   ctx.stroke();
   ctx.restore();
 
-  // Panties / Lower Lingerie (When not completely Nude)
   if (state.outfitIdx <= 2) {
     ctx.fillStyle = state.outfitIdx === 2 ? 'rgba(24, 12, 36, 0.85)' : hero.outfitSub;
     ctx.beginPath();
@@ -1013,38 +1081,24 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.quadraticCurveTo(-36, 265, -84, 218);
     ctx.closePath();
     ctx.fill();
-  } else {
-    // Subtle lower anatomy blush & line in Nude mode
-    drawBodyGlow(0, 252, 34);
-    ctx.strokeStyle = '#cc7a82';
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(0, 246);
-    ctx.lineTo(0, 266);
-    ctx.stroke();
   }
 
-  // =========================================================================
-  // 3. NATURAL TEARDROP ANIME BREASTS WITH DUAL-SPRING JIGGLE PHYSICS
-  // =========================================================================
-  const drawTeardropBreast = (side) => {
-    // side: -1 for Left, +1 for Right
-    const bOffset = side === -1 ? state.bLeftY : state.bRightY;
-    const by = 72 + bOffset;
-    const squash = 1 + state.bSquash * 0.14;
+  // 3. Teardrop Breasts with Dual-Spring Physics
+  const drawBreast = (side) => {
+    const bOff = side === -1 ? state.bLeftY : state.bRightY;
+    const by = 72 + bOff;
+    const sq = 1 + state.bSquash * 0.14;
 
     ctx.save();
     ctx.translate(side * 45, by);
-    ctx.scale(squash, 1 / squash);
+    ctx.scale(sq, 1 / sq);
 
-    // Under-breast cast shadow on ribcage
     ctx.fillStyle = 'rgba(185, 95, 95, 0.38)';
     ctx.beginPath();
     ctx.bezierCurveTo(-side * 42, 12, -side * 38, 64, 0, 64);
     ctx.bezierCurveTo(side * 46, 64, side * 56, 24, side * 48, -6);
     ctx.fill();
 
-    // Teardrop Anime Breast Volume Gradient
     const bGrad = ctx.createRadialGradient(-side * 10, -8, 6, 0, 12, 64);
     bGrad.addColorStop(0, '#fff9f7');
     bGrad.addColorStop(0.55, hero.skinMid);
@@ -1053,23 +1107,12 @@ function drawAnimeHeroineCG(w, h, time, dt) {
 
     ctx.fillStyle = bGrad;
     ctx.beginPath();
-    // Upper slope from collarbone into outer swell and full rounded bottom
     ctx.moveTo(-side * 42, -32);
     ctx.bezierCurveTo(-side * 46, 4, -side * 44, 52, 0, 54);
     ctx.bezierCurveTo(side * 48, 54, side * 58, 12, side * 38, -28);
     ctx.closePath();
     ctx.fill();
 
-    // Soft Pink Blush on Breast Swell
-    const blushG = ctx.createRadialGradient(side * 8, 16, 2, side * 8, 16, 38);
-    blushG.addColorStop(0, 'rgba(255, 105, 145, 0.36)');
-    blushG.addColorStop(1, 'rgba(255, 105, 145, 0)');
-    ctx.fillStyle = blushG;
-    ctx.beginPath();
-    ctx.arc(side * 8, 16, 38, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Outer & Under Breast Line-Art (tapered anime contour)
     ctx.strokeStyle = '#472531';
     ctx.lineWidth = 2.4;
     ctx.beginPath();
@@ -1078,47 +1121,35 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.bezierCurveTo(side * 48, 54, side * 56, 12, side * 38, -26);
     ctx.stroke();
 
-    // Detailed Areola & Erect Nipple (In Nude & Sheer Lingerie)
     if (state.outfitIdx >= 2) {
       const alpha = state.outfitIdx === 3 ? 0.92 : 0.5;
       const nx = side * 12;
       const ny = 18;
-
-      const areolaGrad = ctx.createRadialGradient(nx, ny, 2, nx, ny, 14);
-      areolaGrad.addColorStop(0, `rgba(245, 95, 130, ${alpha})`);
-      areolaGrad.addColorStop(0.7, `rgba(255, 145, 168, ${alpha * 0.85})`);
-      areolaGrad.addColorStop(1, 'rgba(255, 160, 175, 0)');
-      ctx.fillStyle = areolaGrad;
+      const ag = ctx.createRadialGradient(nx, ny, 2, nx, ny, 14);
+      ag.addColorStop(0, `rgba(245, 95, 130, ${alpha})`);
+      ag.addColorStop(0.7, `rgba(255, 145, 168, ${alpha * 0.85})`);
+      ag.addColorStop(1, 'rgba(255, 160, 175, 0)');
+      ctx.fillStyle = ag;
       ctx.beginPath();
       ctx.arc(nx, ny, 14, 0, Math.PI * 2);
       ctx.fill();
 
-      // Nipple Bud
       ctx.fillStyle = `rgba(225, 60, 105, ${alpha})`;
       ctx.beginPath();
       ctx.arc(nx + side * 1.5, ny, 4.8, 0, Math.PI * 2);
       ctx.fill();
-
-      // Tiny glossy catchlight on nipple
-      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
-      ctx.beginPath();
-      ctx.arc(nx + side * 1, ny - 1.8, 1.6, 0, Math.PI * 2);
-      ctx.fill();
     }
 
-    // Glossy Specular Anime Highlight on Upper Breast
     ctx.fillStyle = 'rgba(255, 255, 255, 0.58)';
     ctx.beginPath();
     ctx.ellipse(side * 6, -4, 15, 6.5, side * 0.35, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.restore();
   };
 
-  drawTeardropBreast(-1);
-  drawTeardropBreast(1);
+  drawBreast(-1);
+  drawBreast(1);
 
-  // Center Cleavage Shadow Accent
   const avgBY = 72 + (state.bLeftY + state.bRightY) * 0.5;
   ctx.strokeStyle = '#5e2936';
   ctx.lineWidth = 2.6;
@@ -1127,11 +1158,8 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   ctx.quadraticCurveTo(-2, avgBY + 14, 0, avgBY + 38);
   ctx.stroke();
 
-  // =========================================================================
-  // 4. OUTFITS & COSTUMES OVERLAY
-  // =========================================================================
+  // 4. Outfits Layer
   if (state.outfitIdx === 0) {
-    // Signature Anime Outfit (Emilia Royal Corset / Rem Maid Top / Echidna Witch Gown)
     ctx.save();
     ctx.fillStyle = hero.outfitMain;
     ctx.beginPath();
@@ -1142,27 +1170,11 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.quadraticCurveTo(0, 248, -74, 225);
     ctx.closePath();
     ctx.fill();
-
-    // Accent Ribbon & Trim
     ctx.strokeStyle = hero.outfitSub;
     ctx.lineWidth = 5;
     ctx.stroke();
 
-    // Center Chest Bow / Gem
-    ctx.fillStyle = hero.outfitSub;
-    ctx.beginPath();
-    ctx.moveTo(0, avgBY - 4);
-    ctx.lineTo(-18, avgBY - 14);
-    ctx.lineTo(-14, avgBY + 8);
-    ctx.closePath();
-    ctx.moveTo(0, avgBY - 4);
-    ctx.lineTo(18, avgBY - 14);
-    ctx.lineTo(14, avgBY + 8);
-    ctx.closePath();
-    ctx.fill();
-
     if (hero.id === 'emilia') {
-      // Emilia's Emerald Green Crystal Brooch
       ctx.fillStyle = '#2ecc71';
       ctx.beginPath();
       ctx.moveTo(0, avgBY - 14);
@@ -1174,12 +1186,11 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     }
     ctx.restore();
   } else if (state.outfitIdx === 1) {
-    // Sultry Date Night Slip Dress
     ctx.save();
-    const dressG = ctx.createLinearGradient(0, 30, 0, 260);
-    dressG.addColorStop(0, '#c91e5a');
-    dressG.addColorStop(1, '#5e0b2c');
-    ctx.fillStyle = dressG;
+    const dg = ctx.createLinearGradient(0, 30, 0, 260);
+    dg.addColorStop(0, '#c91e5a');
+    dg.addColorStop(1, '#5e0b2c');
+    ctx.fillStyle = dg;
     ctx.beginPath();
     ctx.moveTo(-82, 46);
     ctx.quadraticCurveTo(-45, avgBY - 22, 0, avgBY + 22);
@@ -1190,7 +1201,6 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.fill();
     ctx.restore();
   } else if (state.outfitIdx === 2) {
-    // Sheer Lace Lingerie Bra
     ctx.save();
     ctx.fillStyle = 'rgba(20, 10, 34, 0.58)';
     [-1, 1].forEach(s => {
@@ -1205,44 +1215,35 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.restore();
   }
 
-  // =========================================================================
-  // 5. ANIME HEAD, ELF EARS, 10-LAYER EYES & EXPRESSIONS
-  // =========================================================================
+  // 5. Head, Ears, 10-Layer Eyes & Expressions
   ctx.save();
-  ctx.translate(lookX * 0.65, lookY * 0.55 - 122);
-  ctx.rotate(state.smoothLookX * 0.05);
+  ctx.translate(lx * 0.65, ly * 0.55 - 122);
+  ctx.rotate(state.lookX * 0.05);
 
-  // Elf Ears (for Emilia) or Human Anime Ears
-  const drawEar = (side) => {
-    ctx.save();
+  [-1, 1].forEach(s => {
     ctx.fillStyle = hero.skinMid;
     ctx.strokeStyle = '#472531';
     ctx.lineWidth = 2;
     ctx.beginPath();
     if (hero.elfEars) {
-      ctx.moveTo(side * 68, -6);
-      ctx.quadraticCurveTo(side * 108, -28, side * 118, -42);
-      ctx.quadraticCurveTo(side * 102, 8, side * 66, 24);
+      ctx.moveTo(s * 68, -6);
+      ctx.quadraticCurveTo(s * 108, -28, s * 118, -42);
+      ctx.quadraticCurveTo(s * 102, 8, s * 66, 24);
     } else {
-      ctx.moveTo(side * 68, -8);
-      ctx.quadraticCurveTo(side * 86, -12, side * 82, 12);
-      ctx.quadraticCurveTo(side * 76, 24, side * 66, 22);
+      ctx.moveTo(s * 68, -8);
+      ctx.quadraticCurveTo(s * 86, -12, s * 82, 12);
+      ctx.quadraticCurveTo(s * 76, 24, s * 66, 22);
     }
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.restore();
-  };
-  drawEar(-1);
-  drawEar(1);
+  });
 
-  // Delicate Anime V-Jawline Face Contour
-  const faceGrad = ctx.createLinearGradient(0, -95, 0, 95);
-  faceGrad.addColorStop(0, hero.skinLight);
-  faceGrad.addColorStop(0.75, hero.skinMid);
-  faceGrad.addColorStop(1, '#f5c6ba');
-
-  ctx.fillStyle = faceGrad;
+  const fg = ctx.createLinearGradient(0, -95, 0, 95);
+  fg.addColorStop(0, hero.skinLight);
+  fg.addColorStop(0.75, hero.skinMid);
+  fg.addColorStop(1, '#f5c6ba');
+  ctx.fillStyle = fg;
   ctx.strokeStyle = '#472531';
   ctx.lineWidth = 2.3;
   ctx.beginPath();
@@ -1255,11 +1256,10 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   ctx.fill();
   ctx.stroke();
 
-  // Cheek Blush + Anime Blush Slash Lines
-  const blushIntensity = Math.min(0.88, 0.25 + (state.lust / 100) * 0.45 + (state.isHMode ? 0.25 : 0));
+  const blushAlpha = Math.min(0.88, 0.25 + (state.lust / 100) * 0.45 + (state.isHMode ? 0.25 : 0));
   [-38, 38].forEach(bx => {
     const cg = ctx.createRadialGradient(bx, 28, 2, bx, 28, 28);
-    cg.addColorStop(0, `rgba(255, 70, 120, ${blushIntensity})`);
+    cg.addColorStop(0, `rgba(255, 70, 120, ${blushAlpha})`);
     cg.addColorStop(1, 'rgba(255, 70, 120, 0)');
     ctx.fillStyle = cg;
     ctx.beginPath();
@@ -1267,7 +1267,6 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.fill();
   });
 
-  // Blinking logic
   state.blinkTimer += dt;
   if (state.blinkTimer > 3.8) {
     state.isBlinking = true;
@@ -1277,22 +1276,16 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     }
   }
 
-  // 10-Layer Detailed Anime Eyes
-  const drawDetailedAnimeEye = (side) => {
-    const ex = side * 34;
-    const ey = 2;
+  const drawEye = (side) => {
     ctx.save();
-    ctx.translate(ex, ey);
-
+    ctx.translate(side * 34, 2);
     if (state.isBlinking || state.exp === 'climax') {
-      // Closed Blissful/Climax Eyelash Curve
       ctx.strokeStyle = '#2b1222';
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.arc(0, 4, 18, 0.12 * Math.PI, 0.88 * Math.PI);
       ctx.stroke();
     } else {
-      // 1. Sclera Base
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.moveTo(-19, 0);
@@ -1301,57 +1294,33 @@ function drawAnimeHeroineCG(w, h, time, dt) {
       ctx.closePath();
       ctx.fill();
 
-      // 2. Sclera Upper Soft Shadow
-      ctx.fillStyle = 'rgba(180, 165, 210, 0.35)';
-      ctx.beginPath();
-      ctx.ellipse(0, -8, 17, 6, 0, 0, Math.PI * 2);
-      ctx.fill();
+      const gx = state.lookX * 4.5;
+      const gy = state.lookY * 3.5;
 
-      // Gaze Offset inside Eye
-      const gx = state.smoothLookX * 4.5;
-      const gy = state.smoothLookY * 3.5;
-
-      // 3. Multi-Stop Iris
-      const irisGrad = ctx.createLinearGradient(gx, gy - 14, gx, gy + 14);
-      irisGrad.addColorStop(0, hero.eyeTop);
-      irisGrad.addColorStop(0.55, hero.eyeMid);
-      irisGrad.addColorStop(1, hero.eyeBot);
-      ctx.fillStyle = irisGrad;
+      const ig = ctx.createLinearGradient(gx, gy - 14, gx, gy + 14);
+      ig.addColorStop(0, hero.eyeTop);
+      ig.addColorStop(0.55, hero.eyeMid);
+      ig.addColorStop(1, hero.eyeBot);
+      ctx.fillStyle = ig;
       ctx.beginPath();
       ctx.ellipse(gx, gy + 1, 13.5, 14, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Dark Outer Iris Limbal Ring
-      ctx.strokeStyle = hero.eyeTop;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // 5. Lower Glowing Crescent inside Iris
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(gx, gy + 1, 9.5, 0.2 * Math.PI, 0.8 * Math.PI);
-      ctx.stroke();
-
-      // 6. Pupil + Heart Pupil when Aroused
       ctx.fillStyle = '#1a091e';
       ctx.beginPath();
       ctx.arc(gx, gy + 1.5, 5.5, 0, Math.PI * 2);
       ctx.fill();
 
       if (state.exp === 'aroused' || state.isHMode || state.lust >= 50) {
-        drawHeartShape(gx, gy - 4.5, 6.2, '#ffb3d9', 0.95);
+        drawHeart(gx, gy - 4.5, 6.2, '#ffb3d9', 0.95);
       }
 
-      // 7. Primary & Secondary Glossy Specular Catchlights
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.ellipse(gx - 6, gy - 6, 4.8, 3.8, -0.3, 0, Math.PI * 2);
       ctx.arc(gx + 6, gy + 5, 2.3, 0, Math.PI * 2);
-      ctx.arc(gx - 5, gy + 6, 1.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // 8. Thick Winged Upper Eyelash
       ctx.fillStyle = '#240d1e';
       ctx.beginPath();
       ctx.moveTo(-22, 2);
@@ -1360,43 +1329,14 @@ function drawAnimeHeroineCG(w, h, time, dt) {
       ctx.bezierCurveTo(14, -22, -14, -22, -22, 2);
       ctx.closePath();
       ctx.fill();
-
-      // 9. Double Eyelid Crease
-      ctx.strokeStyle = '#6e3b4b';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(0, -1, 19, 1.18 * Math.PI, 1.82 * Math.PI);
-      ctx.stroke();
     }
-
-    // 10. Expressive Eyebrow
-    ctx.strokeStyle = hero.id === 'rem' ? '#2b66ad' : '#7a5c9e';
-    ctx.lineWidth = 2.6;
-    ctx.beginPath();
-    if (state.exp === 'shy' || state.exp === 'aroused' || state.isHMode) {
-      ctx.moveTo(-16, -24 - side * 2);
-      ctx.quadraticCurveTo(0, -30, 16, -20 + side * 2);
-    } else {
-      ctx.moveTo(-16, -23);
-      ctx.quadraticCurveTo(0, -28, 16, -23);
-    }
-    ctx.stroke();
-
     ctx.restore();
   };
 
-  drawDetailedAnimeEye(-1);
-  drawDetailedAnimeEye(1);
+  drawEye(-1);
+  drawEye(1);
 
-  // Delicate Anime Nose with tiny highlight
-  ctx.fillStyle = '#d48a84';
-  ctx.beginPath();
-  ctx.moveTo(-1, 24);
-  ctx.lineTo(-3, 29);
-  ctx.lineTo(1, 30);
-  ctx.fill();
-
-  // Glossy Anime Lips & Panting Expressions
+  // Lips & Mouth
   ctx.save();
   ctx.translate(0, 54);
   if (state.exp === 'smile') {
@@ -1410,20 +1350,11 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.beginPath();
     ctx.ellipse(0, 2, 10, openH, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Soft Pink Tongue
     ctx.fillStyle = '#ff7ca3';
     ctx.beginPath();
     ctx.ellipse(0, 5, 7, openH * 0.65, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Upper Teeth Hint
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(-6, -openH + 2, 12, 3.5, 2);
-    ctx.fill();
   } else {
-    // Glossy Kissable Lips
     ctx.fillStyle = 'rgba(255, 115, 150, 0.55)';
     ctx.beginPath();
     ctx.ellipse(0, 1, 9, 4.5, 0, 0, Math.PI * 2);
@@ -1437,19 +1368,16 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   }
   ctx.restore();
 
-  // =========================================================================
-  // 6. FRONT HAIR LOCKS, ACCESSORIES & ANGEL RING HIGHLIGHT
-  // =========================================================================
-  const frontHairGrad = ctx.createLinearGradient(0, -110, 0, 110);
-  frontHairGrad.addColorStop(0, hero.hairTop);
-  frontHairGrad.addColorStop(0.65, hero.hairMid);
-  frontHairGrad.addColorStop(1, hero.hairBot);
+  // Front Hair Bangs & Accessories
+  const fhGrad = ctx.createLinearGradient(0, -110, 0, 110);
+  fhGrad.addColorStop(0, hero.hairTop);
+  fhGrad.addColorStop(0.65, hero.hairMid);
+  fhGrad.addColorStop(1, hero.hairBot);
 
-  ctx.fillStyle = frontHairGrad;
+  ctx.fillStyle = fhGrad;
   ctx.strokeStyle = '#32223d';
   ctx.lineWidth = 2;
 
-  // Side Cheek-Framing Hair Locks
   [-1, 1].forEach(s => {
     ctx.beginPath();
     ctx.moveTo(s * 66, -55);
@@ -1460,12 +1388,10 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.stroke();
   });
 
-  // Forehead Bangs
   ctx.beginPath();
   ctx.moveTo(-76, -35);
   ctx.bezierCurveTo(-68, -108, 68, -108, 76, -35);
   if (hero.id === 'rem') {
-    // Rem's Iconic Right-Eye Covering Bangs
     ctx.lineTo(52, 12);
     ctx.lineTo(18, 22);
     ctx.lineTo(4, -18);
@@ -1473,7 +1399,6 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.lineTo(-34, -26);
     ctx.lineTo(-56, -6);
   } else {
-    // Emilia / Echidna Detailed Parted Anime Bangs
     ctx.lineTo(56, -6);
     ctx.lineTo(36, -34);
     ctx.lineTo(16, 2);
@@ -1486,9 +1411,7 @@ function drawAnimeHeroineCG(w, h, time, dt) {
   ctx.fill();
   ctx.stroke();
 
-  // Heroine Hair Accessories
   if (hero.id === 'emilia') {
-    // Emilia's White/Purple Rose Hair Ornaments
     [-64, 64].forEach(rx => {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
@@ -1499,19 +1422,12 @@ function drawAnimeHeroineCG(w, h, time, dt) {
       ctx.stroke();
     });
   } else if (hero.id === 'rem') {
-    // Rem's Ruffled Maid Headband & Pink Flower Clip
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 9;
     ctx.beginPath();
     ctx.arc(0, -26, 68, 1.18 * Math.PI, 1.82 * Math.PI);
     ctx.stroke();
-
-    ctx.fillStyle = '#ff6ea7';
-    ctx.beginPath();
-    ctx.arc(-52, -32, 10, 0, Math.PI * 2);
-    ctx.fill();
   } else if (hero.id === 'echidna') {
-    // Echidna's Dark Butterfly Hairpin
     ctx.fillStyle = '#1b1429';
     ctx.strokeStyle = '#b8ff66';
     ctx.lineWidth = 2;
@@ -1520,32 +1436,21 @@ function drawAnimeHeroineCG(w, h, time, dt) {
     ctx.lineTo(-74, -52);
     ctx.lineTo(-68, -22);
     ctx.closePath();
-    ctx.moveTo(-54, -36);
-    ctx.lineTo(-36, -48);
-    ctx.lineTo(-42, -22);
-    ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
-
-  // Anime Hair Angel Ring (Glossy Halo Highlight)
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.lineWidth = 4.5;
-  ctx.beginPath();
-  ctx.arc(0, -32, 54, 1.22 * Math.PI, 1.78 * Math.PI);
-  ctx.stroke();
 
   ctx.restore(); // End Head
   ctx.restore(); // End Heroine
 }
 
-function renderParticles(w, h) {
+function drawParticlesAndRipples(w, h) {
   for (let i = state.particles.length - 1; i >= 0; i--) {
     const p = state.particles[i];
     p.x += p.vx;
     p.y += p.vy;
     if (p.temp) {
-      p.alpha -= 0.016;
+      p.alpha -= 0.018;
       if (p.alpha <= 0) {
         state.particles.splice(i, 1);
         continue;
@@ -1556,165 +1461,172 @@ function renderParticles(w, h) {
     }
 
     if (p.kind === 'heart' || state.isHMode) {
-      drawHeartShape(p.x, p.y, p.r * 0.7, '#ff5c9e', p.alpha);
+      drawHeart(p.x, p.y, p.r * 0.7, '#ff5c9e', p.alpha);
     } else {
       ctx.save();
       ctx.globalAlpha = p.alpha;
-      const g = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, p.r);
-      g.addColorStop(0, '#fff0fa');
-      g.addColorStop(1, 'rgba(255, 160, 220, 0)');
-      ctx.fillStyle = g;
+      ctx.fillStyle = '#ffe6f7';
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
   }
+
+  // Visual Touch Feedback Ripples
+  for (let i = state.ripples.length - 1; i >= 0; i--) {
+    const rp = state.ripples[i];
+    rp.r += 2.4;
+    rp.alpha -= 0.04;
+    if (rp.alpha <= 0) {
+      state.ripples.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.strokeStyle = `rgba(255, 130, 190, ${rp.alpha})`;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
-// Main Animation Loop
+// Main Loop
 let lastTime = performance.now();
 let hVoiceTimer = 0;
 
-function animate(now) {
+function gameLoop(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
   const time = now / 1000;
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  if (state.isHMode && state.ecstasy < 100) {
-    const gain = state.hSpeed === 1 ? 4.0 : state.hSpeed === 2 ? 8.5 : 15.0;
-    state.ecstasy = Math.min(100, state.ecstasy + gain * dt);
-    document.getElementById('lbl-ecstasy').textContent = `${Math.round(state.ecstasy)}%`;
-    document.getElementById('bar-ecstasy').style.width = `${state.ecstasy}%`;
+  if (state.isHMode && state.climax < 100) {
+    const rate = state.hSpeed === 1 ? 4.2 : state.hSpeed === 2 ? 8.8 : 15.5;
+    state.climax = Math.min(100, state.climax + rate * dt);
+    document.getElementById('txt-climax').textContent = `${Math.round(state.climax)}%`;
+    document.getElementById('fill-climax').style.width = `${state.climax}%`;
 
     hVoiceTimer += dt;
     if (hVoiceTimer > 4.0) {
       hVoiceTimer = 0;
-      const hero = currentHeroine();
-      showDialogue(hero.name, state.hSpeed >= 2 ? hero.hFast : hero.hSlow);
+      const hero = getHeroine();
+      setDialogueBox(hero.fullName, state.hSpeed >= 2 ? hero.hFast : hero.hSlow, null, true);
     }
 
-    if (state.ecstasy >= 100) {
-      triggerClimax();
+    if (state.climax >= 100) {
+      triggerClimaxScene();
     }
   }
 
-  drawMoonlitBedroomCG(w, h, time);
-  drawAnimeHeroineCG(w, h, time, dt);
-  renderParticles(w, h);
+  drawBedroomBackground(w, h);
+  drawAnimeHeroine(w, h, time, dt);
+  drawParticlesAndRipples(w, h);
 
-  // Pink Heat Vignette in H-Mode
-  if (state.isHMode) {
-    const v = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.25, w * 0.5, h * 0.5, w * 0.72);
-    v.addColorStop(0, 'rgba(255, 50, 120, 0)');
-    v.addColorStop(1, `rgba(255, 40, 115, ${0.22 + Math.sin(time * 6) * 0.06})`);
-    ctx.fillStyle = v;
-    ctx.fillRect(0, 0, w, h);
-  }
-
-  // Climax White Screen Flash
   if (state.whiteFlash > 0) {
     ctx.fillStyle = `rgba(255, 245, 252, ${state.whiteFlash})`;
     ctx.fillRect(0, 0, w, h);
     state.whiteFlash = Math.max(0, state.whiteFlash - dt * 1.5);
   }
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(gameLoop);
 }
 
-// Direct Body Touch Hitboxes on Canvas
+// ============================================================================
+// RELIABLE INPUT & EVENT HANDLERS (ZERO DEAD CLICKS)
+// ============================================================================
+
+window.addEventListener('pointermove', (e) => {
+  state.pointerX = (e.clientX / window.innerWidth) * 2 - 1;
+  state.pointerY = (e.clientY / window.innerHeight) * 2 - 1;
+});
+
+// Direct Canvas Touch / Click using real-time animated transform coordinates
 canvas.addEventListener('pointerdown', (e) => {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  let zoom = Math.min(w / 540, h / 760);
-  let centerY = h * 0.45;
-  if (state.zoomMode === 1) { zoom *= 1.38; centerY = h * 0.54; }
-  else if (state.zoomMode === 2) { zoom *= 0.88; centerY = h * 0.41; }
+  const lx = (e.clientX - state.lastCenterX) / state.lastZoom;
+  const ly = (e.clientY - state.lastCenterY) / state.lastZoom;
 
-  const lx = (e.clientX - w * 0.5) / zoom;
-  const ly = (e.clientY - centerY) / zoom;
-
-  if (Math.abs(lx) < 120) {
-    if (ly >= -220 && ly < -95) {
-      triggerTouch('head', e.clientX, e.clientY);
-    } else if (ly >= -95 && ly < -30) {
-      triggerTouch('lips', e.clientX, e.clientY);
-    } else if (ly >= -30 && ly < 140) {
-      triggerTouch('chest', e.clientX, e.clientY);
-    } else if (ly >= 140 && ly <= 360) {
-      triggerTouch('thighs', e.clientX, e.clientY);
+  if (Math.abs(lx) < 135) {
+    if (ly >= -230 && ly < -95) {
+      triggerTouchZone('head', e.clientX, e.clientY);
+      return;
+    } else if (ly >= -95 && ly < -25) {
+      triggerTouchZone('lips', e.clientX, e.clientY);
+      return;
+    } else if (ly >= -25 && ly < 145) {
+      triggerTouchZone('chest', e.clientX, e.clientY);
+      return;
+    } else if (ly >= 145 && ly <= 360) {
+      triggerTouchZone('thighs', e.clientX, e.clientY);
+      return;
     }
+  }
+  // Clicking outside the body still gives a subtle ripple & restores story choices if interrupted
+  spawnInteractionFX(e.clientX, e.clientY, 3);
+  if (!state.isHMode && state.isTempReaction) {
+    loadStoryStep(state.stepIdx);
   }
 });
 
-// UI Button Bindings
-document.getElementById('btn-heroine').addEventListener('click', () => {
-  state.heroineIdx = (state.heroineIdx + 1) % HEROINES.length;
+// Clicking Dialogue Box ALWAYS recovers story choices or advances step
+document.getElementById('vn-box').addEventListener('click', () => {
+  sfx.play(500, 0.06, 'sine', 0.05);
+  if (state.isHMode) {
+    triggerTouchZone('chest', window.innerWidth * 0.5, window.innerHeight * 0.48);
+    return;
+  }
+  if (state.isTempReaction) {
+    loadStoryStep(state.stepIdx);
+  } else {
+    loadStoryStep(state.stepIdx + 1);
+  }
+});
+
+// Top Toolbar Buttons
+document.getElementById('btn-char').addEventListener('click', () => {
+  state.charIdx = (state.charIdx + 1) % HEROINES.length;
   state.bLeftVel = -18;
   state.bRightVel = -14;
-  sfx.tone(620, 0.09, 'triangle', 0.08);
-  runStoryStep(0);
+  sfx.play(620, 0.08, 'triangle', 0.08);
+  loadStoryStep(0);
 });
 
 document.getElementById('btn-outfit').addEventListener('click', () => {
-  state.outfitIdx = (state.outfitIdx + 1) % OUTFIT_NAMES.length;
+  state.outfitIdx = (state.outfitIdx + 1) % OUTFITS.length;
   state.bLeftVel = -16;
   state.bRightVel = -13;
-  sfx.tone(540, 0.08, 'sine', 0.07);
+  sfx.play(550, 0.08, 'sine', 0.07);
   updateHUD();
 });
 
-document.getElementById('btn-zoom').addEventListener('click', () => {
-  state.zoomMode = (state.zoomMode + 1) % 3;
-  sfx.tone(580, 0.07, 'sine', 0.06);
+document.getElementById('btn-camera').addEventListener('click', () => {
+  state.camIdx = (state.camIdx + 1) % CAMERAS.length;
+  sfx.play(580, 0.07, 'sine', 0.06);
   updateHUD();
 });
 
-document.getElementById('btn-hscene').addEventListener('click', () => {
-  if (state.isHMode) runStoryStep(0);
-  else startHScene(3);
+document.getElementById('btn-hmode').addEventListener('click', () => {
+  if (state.isHMode) loadStoryStep(state.stepIdx);
+  else enterHScene(3);
 });
 
-document.getElementById('btn-hide-ui').addEventListener('click', () => {
+document.getElementById('btn-toggle-ui').addEventListener('click', () => {
   state.uiHidden = !state.uiHidden;
-  document.getElementById('bottom-area').style.opacity = state.uiHidden ? '0' : '1';
-  document.getElementById('bottom-area').style.pointerEvents = state.uiHidden ? 'none' : 'auto';
-  document.getElementById('btn-hide-ui').textContent = state.uiHidden ? '👁️ แสดงข้อความ' : '👁️ ซ่อนข้อความ';
-});
-
-document.querySelectorAll('#left-panel .btn').forEach(btn => {
-  btn.addEventListener('click', () => triggerTouch(btn.dataset.touch));
-});
-
-document.querySelectorAll('#right-panel .btn[data-speed]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#right-panel .btn[data-speed]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.hSpeed = parseInt(btn.dataset.speed, 10);
-    sfx.heartbeat();
-    const hero = currentHeroine();
-    showDialogue(hero.name, state.hSpeed >= 2 ? hero.hFast : hero.hSlow);
+  const uiLayer = document.getElementById('ui-layer');
+  uiLayer.style.opacity = state.uiHidden ? '0' : '1';
+  uiLayer.style.pointerEvents = 'none';
+  // Disable child pointer events when hidden so full screen canvas is touchable
+  document.querySelectorAll('#ui-layer .status-pill, #ui-layer .top-actions, #ui-layer #action-bar, #ui-layer #choices-list, #ui-layer #vn-box').forEach(el => {
+    el.style.pointerEvents = state.uiHidden ? 'none' : 'auto';
   });
+  document.getElementById('btn-toggle-ui').textContent = state.uiHidden ? '👁️ แสดง UI' : '👁️ ซ่อน UI';
 });
 
-document.querySelectorAll('#right-panel .btn[data-pose]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#right-panel .btn[data-pose]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.hPose = btn.dataset.pose;
-    state.bLeftVel = -22;
-    state.bRightVel = -18;
-    sfx.tone(600, 0.1, 'triangle', 0.08);
-  });
-});
-
-document.getElementById('btn-climax').addEventListener('click', triggerClimax);
-
-// Boot
-runStoryStep(0);
-requestAnimationFrame(animate);
+// Boot Game
+loadStoryStep(0);
+requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
